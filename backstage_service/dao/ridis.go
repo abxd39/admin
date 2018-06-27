@@ -1,8 +1,8 @@
 package dao
 
 import (
-	cf "digicon/user_service/conf"
-	"digicon/user_service/log"
+	cf "admin/backstage_service/conf"
+	"admin/backstage_service/log"
 	"time"
 
 	"github.com/go-redis/redis"

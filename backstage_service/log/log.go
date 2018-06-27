@@ -1,7 +1,7 @@
 package log
 
 import (
-	cf "digicon/backstage_service/conf"
+	cf "admin/backstage_service/conf"
 	"os"
 
 	"github.com/sirupsen/logrus"

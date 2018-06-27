@@ -1,8 +1,8 @@
 package dao
 
 import (
-	"digicon/backstage_service/conf"
-	"digicon/backstage_service/log"
+	"admin/backstage_service/conf"
+	"admin/backstage_service/log"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"

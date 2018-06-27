@@ -2,8 +2,8 @@ package handler
 
 import (
 	"context"
-	def "digicon/proto/common"
-	proto "digicon/proto/rpc"
+	def "admin/proto/common"
+	proto "admin/proto/rpc"
 )
 
 type RPCServer struct{}

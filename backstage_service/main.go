@@ -1,8 +1,8 @@
 package main
 
 import (
-	"digicon/backstage_service/log"
-	"digicon/backstage_service/rpc"
+	"admin/backstage_service/log"
+	"admin/backstage_service/rpc"
 	"flag"
 	"fmt"
 	"os"

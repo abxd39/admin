@@ -1,9 +1,9 @@
 package rpc
 
 import (
-	cf "digicon/backstage_service/conf"
-	"digicon/backstage_service/rpc/handler"
-	proto "digicon/proto/rpc"
+	cf "admin/backstage_service/conf"
+	"admin/backstage_service/rpc/handler"
+	proto "admin/proto/rpc"
 	"fmt"
 	"log"
 	"time"
