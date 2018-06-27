@@ -15,7 +15,7 @@ type RedisCli struct {
 }
 
 func NewRedisCli() *RedisCli {
-	addr := cf.Cfg.MustValue("redis", "addr")
+	addr := cf.Inif.MustValue("redis", "addr")
 
 	client := redis.NewClient(&redis.Options{
 		Addr:     addr,
@@ -29,7 +29,7 @@ func NewRedisCli() *RedisCli {
 	}
 	log.Log.Infoln(pong)
 
-	ct, err := cf.Cfg.Int64("redis", "ttl")
+	ct, err := cf.Inif.Int64("redis", "ttl")
 	if err != nil {
 		ct = 30
 	}

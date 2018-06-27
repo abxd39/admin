@@ -9,7 +9,7 @@ import (
 
 var Log *logrus.Logger
 
-func init() {
+func InitLog() {
 	Log = logrus.New()
 	filename := cf.Inif.MustValue("log", "log_path")
 

@@ -3,6 +3,7 @@ package client
 import (
 	cf "admin/gateway/conf"
 	proto "admin/proto/rpc"
+	"context"
 
 	micro "github.com/micro/go-micro"
 	"github.com/micro/go-micro/registry"
@@ -13,16 +14,16 @@ type ContentRPCCli struct {
 	conn proto.BackstageRPCService
 }
 
-func NewCurrencyRPCCli() (u *ContentRPCCli) {
+func NewBackstageRPCCli() (u *ContentRPCCli) {
 	consul_addr := cf.Cfg.MustValue("consul", "addr")
 	r := consul.NewRegistry(registry.Addrs(consul_addr))
 	service := micro.NewService(
-		micro.Name("currency.client"),
+		micro.Name("Backstage.client"),
 		micro.Registry(r),
 	)
 	service.Init()
 
-	service_name := cf.Cfg.MustValue("base", "service_client_currency")
+	service_name := cf.Cfg.MustValue("base", "service_client_Backstage")
 	greeter := proto.NewBackstageRPCService(service_name, service.Client())
 	u = &ContentRPCCli{
 		conn: greeter,
@@ -38,3 +39,11 @@ func NewCurrencyRPCCli() (u *ContentRPCCli) {
 // 	}
 // 	return
 // }
+
+func (s *ContentRPCCli) CallAddFriendlyLink(req *proto.AddFriendlyLinkRequest) (rsp *proto.AddFriendlyLinkResponse, err error) {
+	return s.conn.AddFriendlyLink(context.TODO(), req)
+}
+
+func (s *ContentRPCCli) CallGetFriendlyLink(req *proto.FriendlyLinkRequest) (rsp *proto.FriendlyLinkResponse, err error) {
+	return s.conn.GetFriendlyLink(context.TODO(), req)
+}

@@ -13,7 +13,7 @@ type Mysql struct {
 }
 
 func NewMysql() (mysql *Mysql) {
-	dsource := conf.Cfg.MustValue("mysql", "conn")
+	dsource := conf.Inif.MustValue("mysql", "conn")
 	//root:current@tcp(47.106.136.96:3306)/rumi?charset=utf8
 	engine, err := xorm.NewEngine("mysql", dsource)
 	if err != nil {

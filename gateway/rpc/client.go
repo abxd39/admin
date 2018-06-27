@@ -5,7 +5,7 @@ import "admin/gateway/rpc/client"
 var InnerService *RPCClient
 
 type RPCClient struct {
-	UserSevice *client.UserRPCCli
+	BackstageSevice *client.ContentRPCCli
 	// CurrencyService *client.CurrencyRPCCli
 	// TokenService    *client.TokenRPCCli
 	// WallService     *client.WalletRPCCli
@@ -17,7 +17,7 @@ type RPCClient struct {
 func NewRPCClient() (c *RPCClient) {
 	c = &RPCClient{
 
-		UserSevice: client.NewUserRPCCli(),
+		BackstageSevice: client.NewBackstageRPCCli(),
 		// CurrencyService: client.NewCurrencyRPCCli(),
 		// TokenService:    client.NewTokenRPCCli(),
 		// WallService:     client.NewWalletRPCCli(),

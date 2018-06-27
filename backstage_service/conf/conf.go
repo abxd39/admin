@@ -13,7 +13,6 @@ func init() {
 	if l := len(Inifpath); l == 0 {
 		panic("数据库配置文件路径获取失败")
 	}
-	NewConfi(Inifpath)
 }
 
 func NewConfi(path string) *goconfig.ConfigFile {
@@ -22,4 +21,8 @@ func NewConfi(path string) *goconfig.ConfigFile {
 		panic(err.Error())
 	}
 	return ini
+}
+
+func Init() {
+	Inif = NewConfi(Inifpath)
 }
