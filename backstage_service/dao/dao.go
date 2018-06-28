@@ -1,13 +1,13 @@
 package dao
 
-var globalDb Dbs
+var GlobalDb *Dbs
 
 type Dbs struct {
 	sql   *Mysql
 	redis *RedisCli
 }
 
-func NewDbs(dbs *Dbs) {
+func NewDbs() (dbs *Dbs) {
 	sql := NewMysql()
 	redis := NewRedisCli()
 	dbs = &Dbs{
@@ -18,5 +18,9 @@ func NewDbs(dbs *Dbs) {
 }
 
 func init() {
-	NewDbs(&globalDb)
+
+}
+
+func InitDao() {
+	GlobalDb = NewDbs()
 }

@@ -1,6 +1,8 @@
 package main
 
 import (
+	cf "admin/backstage_service/conf"
+	"admin/backstage_service/dao"
 	"admin/backstage_service/log"
 	"admin/backstage_service/rpc"
 	"flag"
@@ -12,6 +14,9 @@ import (
 
 func main() {
 	flag.Parse()
+	cf.Init()
+	log.InitLog()
+	dao.InitDao()
 	log.Log.Infof("begin run backstage servce")
 	go rpc.RPCServerInit()
 

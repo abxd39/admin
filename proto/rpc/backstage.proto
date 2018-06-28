@@ -3,7 +3,12 @@ syntax = "proto3";
 package g2u;
 
 service BackstageRPC {
+    //test
     rpc Test(TestRequest)returns (TestResponse){};
+    //get friendly link list
+    rpc  GetFriendlyLink (FriendlyLinkRequest) returns (FriendlyLinkResponse){};
+    //add one item friendly link 
+    rpc AddFriendlyLink (AddFriendlyLinkRequest) returns (AddFriendlyLinkResponse){};
 }
 
 message TestRequest{
@@ -14,4 +19,37 @@ message TestResponse{
     int32   code    =1;
     string  data    =2;
     string  msg     =3;
+}
+
+message AddFriendlyLinkRequest{
+    string web_name     =1;
+    string link_name         =2;
+    int32 aorder         =3;
+    int32 link_state    =4;
+}
+
+message AddFriendlyLinkResponse{
+    int32 code  =1;
+    string data =2;
+    string msg  =3;
+}
+
+message FriendlyLinkRequest{
+    int32 page                      =1;
+    int32 count                     =2;
+}
+
+message FriendlyLinkResponse{
+    message friendlylink{
+        int32 id            =1;
+        string web_name     =2;
+        string link_name    =3;
+        int32 aorder         =4;
+        int32 link_state    =5;
+    }
+    repeated friendlylink friend    =1;
+    int32 code                      =2;
+    int32 page                      =3;
+    string data                     =4;
+    string msg                      =5; 
 }
