@@ -20,7 +20,7 @@ func NewConfig(path string) *goconfig.ConfigFile {
 }
 
 func init() {
-	flag.StringVar(&confPath, "conf", "backstage.ini", "config path")
+	flag.StringVar(&confPath, "conf", "admin.ini", "config path")
 }
 
 func Init() {

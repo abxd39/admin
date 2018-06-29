@@ -1,26 +1,27 @@
 package controller
 
 import (
-	"github.com/gin-gonic/gin"
+	"admin/utils"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 	//"github.com/gorilla/websocket"
 	"log"
-	"newbtc-ws/utils"
 )
 
 type WebsocketController struct {
 }
 
-
-func (this *WebsocketController)Router(r *gin.Engine){
+func (this *WebsocketController) Router(r *gin.Engine) {
 	r.GET("/websocket", this.Websocket)
 	go this.broadcast()
 }
 
-func (this *WebsocketController)Websocket(ctx *gin.Context){
-	this.websocketHander(ctx.Writer,ctx.Request)
+func (this *WebsocketController) Websocket(ctx *gin.Context) {
+	this.websocketHander(ctx.Writer, ctx.Request)
 }
-func (this *WebsocketController)websocketHander(w http.ResponseWriter, r *http.Request){
+
+func (this *WebsocketController) websocketHander(w http.ResponseWriter, r *http.Request) {
 
 	ws, err := utils.Upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -29,8 +30,8 @@ func (this *WebsocketController)websocketHander(w http.ResponseWriter, r *http.R
 	defer ws.Close()
 	utils.Clients[ws] = true
 	for {
-		var msg=make(map[string]interface{})          // Read in a new message as JSON and map it to a Message object
-		
+		var msg = make(map[string]interface{}) // Read in a new message as JSON and map it to a Message object
+
 		err := ws.ReadJSON(&msg)
 		if err != nil {
 			log.Printf("error: %v", err)
@@ -42,21 +43,20 @@ func (this *WebsocketController)websocketHander(w http.ResponseWriter, r *http.R
 	}
 }
 
+func (this *WebsocketController) broadcast() {
+	for {
+		// Grab the next message from the broadcast channel
+		msg := <-utils.Broadcast
 
-func (this *WebsocketController)broadcast(){
-		for {
-			// Grab the next message from the broadcast channel
-			msg := <-utils.Broadcast
+		// Send it out to every client that is currently connected
+		for client := range utils.Clients {
+			err := client.WriteJSON(msg)
+			if err != nil {
 
-			// Send it out to every client that is currently connected
-			for client := range utils.Clients {
-				err := client.WriteJSON(msg)
-				if err != nil {
-
-					log.Printf("error: %v", err)
-					client.Close()
-					delete(utils.Clients, client)
-				}
+				log.Printf("error: %v", err)
+				client.Close()
+				delete(utils.Clients, client)
 			}
 		}
+	}
 }
