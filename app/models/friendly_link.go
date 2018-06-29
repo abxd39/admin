@@ -3,6 +3,7 @@ package models
 import (
 	"admin/log"
 	"admin/utils"
+	"errors"
 	"fmt"
 )
 
@@ -28,9 +29,9 @@ func (f *FriendlyLink) Add(order, state int, wn, ln string) error {
 		return nil
 	}
 	if result == 0 {
-		log.AdminLog.Errorf("friendly link insert fail!!")
-
-		return nil
+		err = errors.New("friendly link insert fail!!")
+		log.AdminLog.Errorf(err.Error())
+		return err
 	}
 
 	return nil

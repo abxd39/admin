@@ -60,3 +60,27 @@ func (cm *ContextController) GetFriendlyLink(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"code": 0, "data": result, "msg": "成功"})
 	return
 }
+
+func (cm *ContextController) AddBanner(c *gin.Context) {
+	req := struct {
+		Order       int    `form:"order" json:"order" binding:"required"`
+		PictureName string `form:"picture_n" json:"picture_n" binding:"required"`
+		PicturePath string `form:"picture_p" json:"picture_p" binding:"required"`
+		LinkAddr    string `form:"link_addr" json:"link_addr" binding:"required"`
+		Start_t     string `form:"start_t" json:"start_t" binding:"required"`
+		End_t       string `form:"end_t" json:"end_t" binding:"required"`
+		State       int    `form:"state" json:"state" binding:"required"`
+	}{}
+
+	err := c.ShouldBind(&req)
+	if err != nil {
+		log.AdminLog.Errorf(err.Error())
+		return
+	}
+	err = new(models.Banner).Add(req.Order, req.State, req.PictureName, req.PicturePath, req.LinkAddr, req.Start_t, req.End_t)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+	}
+	c.JSON(http.StatusOK, gin.H{"code": 0, "data": "", "msg": "成功"})
+	return
+}
