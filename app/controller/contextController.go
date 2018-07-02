@@ -16,6 +16,7 @@ func (cm *ContextController) Router(r *gin.Engine) {
 	{
 		g.POST("/addlink", cm.AddFriendlyLink)
 		g.GET("/linklist", cm.GetFriendlyLink)
+		g.GET("/article")
 	}
 }
 
@@ -83,4 +84,17 @@ func (cm *ContextController) AddBanner(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{"code": 0, "data": "", "msg": "成功"})
 	return
+}
+
+func (cm *ContextController) GetArticleList(c *gin.Context) {
+	req := struct {
+		Page int `form:"page" json:"page" binding:"required"`
+		Rows int `form:"rows" json:"rows" binding:"required"`
+		Type int `form:"type" json:"type" binding:"required"`
+	}{}
+	err := c.ShouldBind(&req)
+	if err != nil {
+		log.AdminLog.Errorf(err.Error())
+		return
+	}
 }
