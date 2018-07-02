@@ -2,7 +2,6 @@ package models
 
 import (
 	"admin/utils"
-	"digicon/user_service/dao"
 	"fmt"
 )
 
@@ -43,6 +42,7 @@ func (a *ArticleList) TableName() string {
 }
 
 func (a *ArticleList) GetArticleList(page, rows, tp int) ([]*ArticleList, int, error) {
+
 	if page <= 0 {
 		page = 1
 	}
@@ -54,8 +54,7 @@ func (a *ArticleList) GetArticleList(page, rows, tp int) ([]*ArticleList, int, e
 	if page > 1 {
 		start_rows = (page - 1) * rows
 	}
-	engine := dao.DB.GetMysqlConn()
-
+	engine := utils.Engine_backstage
 	fmt.Println("type=", tp, "page=", page, "起始行star_row=", start_rows, "page_num=", rows)
 	u := make([]Article, 0)
 	err := engine.Where("type=?", tp).Limit(rows, start_rows).Find(u)
@@ -92,8 +91,7 @@ func (a *ArticleList) GetArticleList(page, rows, tp int) ([]*ArticleList, int, e
 }
 
 func (a *Article) AddArticle(u *Article) error {
-
-	engine := dao.DB.GetMysqlConn()
+	engine := utils.Engine_backstage
 	result, err := engine.InsertOne(u)
 	if err != nil {
 		return err
