@@ -2,7 +2,7 @@ package controller
 
 import (
 	"admin/app/models"
-	"admin/log"
+	"admin/utils"
 	"fmt"
 	"net/http"
 
@@ -30,12 +30,12 @@ func (cm *ContextController) AddFriendlyLink(c *gin.Context) {
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
-		log.AdminLog.Errorf(err.Error())
+		utils.AdminLog.Errorf(err.Error())
 		return
 	}
 	err = new(models.FriendlyLink).Add(req.Aorder, req.LinkState, req.WebName, req.LinkName)
 	if err != nil {
-		log.AdminLog.Errorf(err.Error())
+		utils.AdminLog.Errorf(err.Error())
 		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
 	}
 	c.JSON(http.StatusOK, gin.H{"code": 0, "data": "", "msg": "成功"})
@@ -50,7 +50,7 @@ func (cm *ContextController) GetFriendlyLink(c *gin.Context) {
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
-		log.AdminLog.Errorf(err.Error())
+		utils.AdminLog.Errorf(err.Error())
 		return
 	}
 	//operator db         GetFriendlyLinkList
@@ -75,7 +75,7 @@ func (cm *ContextController) AddBanner(c *gin.Context) {
 
 	err := c.ShouldBind(&req)
 	if err != nil {
-		log.AdminLog.Errorf(err.Error())
+		utils.AdminLog.Errorf(err.Error())
 		return
 	}
 	err = new(models.Banner).Add(req.Order, req.State, req.PictureName, req.PicturePath, req.LinkAddr, req.Start_t, req.End_t)
@@ -94,7 +94,7 @@ func (cm *ContextController) GetArticleList(c *gin.Context) {
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
-		log.AdminLog.Errorf(err.Error())
+		utils.AdminLog.Errorf(err.Error())
 		return
 	}
 	reuslt, total, er := new(models.ArticleList).GetArticleList(req.Page, req.Rows, req.Type)

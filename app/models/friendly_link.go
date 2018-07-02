@@ -1,7 +1,6 @@
 package models
 
 import (
-	"admin/log"
 	"admin/utils"
 	"errors"
 	"fmt"
@@ -25,12 +24,12 @@ func (f *FriendlyLink) Add(order, state int, wn, ln string) error {
 	}
 	result, err := utils.Engine_context.Insert(flink)
 	if err != nil {
-		log.AdminLog.Errorln(err.Error())
+		utils.AdminLog.Errorln(err.Error())
 		return nil
 	}
 	if result == 0 {
 		err = errors.New("friendly link insert fail!!")
-		log.AdminLog.Errorf(err.Error())
+		utils.AdminLog.Errorf(err.Error())
 		return err
 	}
 
@@ -51,7 +50,7 @@ func (f *FriendlyLink) GetFriendlyLinkList(page, count int) ([]*FriendlyLink, er
 	u := &FriendlyLink{}
 	total, err := engine.Count(u)
 	if err != nil {
-		log.AdminLog.Errorln("统计所有记录失败")
+		utils.AdminLog.Errorln("统计所有记录失败")
 		return nil, err
 	}
 
@@ -67,7 +66,7 @@ func (f *FriendlyLink) GetFriendlyLinkList(page, count int) ([]*FriendlyLink, er
 
 	err = engine.Limit(count, limit).Find(&friendlist)
 	if err != nil {
-		log.AdminLog.Errorln(err.Error())
+		utils.AdminLog.Errorln(err.Error())
 		return nil, err
 	}
 	fmt.Println("00000000000000000000000000")

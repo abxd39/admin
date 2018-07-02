@@ -10,6 +10,7 @@ import (
 )
 
 type AdminController struct {
+
 }
 
 func (this *AdminController) Router(r *gin.Engine) {
