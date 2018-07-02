@@ -10,7 +10,7 @@ import (
 
 var AdminLog *logrus.Logger
 
-func InitLog() {
+func init() {
 	AdminLog = logrus.New()
 
 	filename := Cfg.MustValue("log", "path")
