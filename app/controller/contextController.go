@@ -16,7 +16,7 @@ func (cm *ContextController) Router(r *gin.Engine) {
 	{
 		g.POST("/addlink", cm.AddFriendlyLink)
 		g.GET("/linklist", cm.GetFriendlyLink)
-		g.GET("/article")
+		g.GET("/article", cm.GetArticleList)
 	}
 }
 
@@ -97,4 +97,35 @@ func (cm *ContextController) GetArticleList(c *gin.Context) {
 		log.AdminLog.Errorf(err.Error())
 		return
 	}
+	reuslt, total, er := new(models.ArticleList).GetArticleList(req.Page, req.Rows, req.Type)
+	if er != nil {
+		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": er.Error()})
+	}
+	c.JSON(http.StatusOK, gin.H{"code": 0, "data": reuslt, "total": total, "msg": "成功"})
+}
+
+func (cm *ContextController) AddArticle(c *gin.Context) {
+	req := struct {
+		Title         string `form:"title" json:"title" binding:"required"`
+		Description   string `form:"desc" json:"desc" `
+		Content       string `form:"content" json:"content" binding:"required"`
+		Covers        string `form:"covers" json:"covers"`
+		ContentImages string `form:"content_Image" json:"content_Image" `
+		Type          int    `form:"tpye" json:"type" binding:"required"`
+		Author        string `form:"author" json:"author" binding:"required"`
+		Weight        int    `form:"weight" json:"weight" binding:"required"`
+		Astatus       int    `form:"status" json:"status" binding:"required"`
+		//AdminId       int    `form:"admin_id" json:"admin_id" binding:"required"`
+		//AdminNickname string `form:"admin_name" json:"admin_name" binding:"required"`
+	}{}
+	err := c.ShouldBind(&req)
+	if err != nil {
+		log.AdminLog.Errorf(err.Error())
+		return
+	}
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+	}
+	c.JSON(http.StatusOK, gin.H{"code": 0, "data": "", "msg": "成功"})
+	return
 }
