@@ -1,10 +1,14 @@
 package controller
 
 import (
+	"admin/app/models"
+	"admin/utils"
+	"crypto/md5"
 	"fmt"
 	"log"
 	"net/http"
 
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/mojocn/base64Captcha"
 )
@@ -58,9 +62,8 @@ func verifyCaptcha(idkey, verifyValue string) bool {
 
 func (this *AdminController) Login(ctx *gin.Context) {
 	req := struct {
-		UserName string `form:"uname" json:"uname" binding:"required"`
+		Phone    string `form:"phone" json:"phone" binding:"required"`
 		LoginPwd string `form:"pwd" json:"pwd" binding:"required"`
-		Idkey    string `form:"idkey" json:"idkey" binding:"required"`
 		Verify   string `form:"verify" json:"verify" binding:"required"`
 	}{}
 	err := ctx.ShouldBind(&req)
@@ -69,24 +72,48 @@ func (this *AdminController) Login(ctx *gin.Context) {
 		return
 	}
 	//verify code
-	verifyResult := verifyCaptcha(req.Idkey, req.Verify)
-	if verifyResult {
-		//success
-		fmt.Println("verify success")
-		//添加cooke 用户名
-		ctx.JSON(http.StatusOK, gin.H{"code": 0, "data": "url", "msg": "登录成功"})
-
-	} else {
+	var idkey string
+	verifyResult := verifyCaptcha(idkey, req.Verify)
+	if !verifyResult {
 		//failed
 		fmt.Println("verify failed!!")
 		ctx.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": "登录失败"})
 		return
 	}
+	//md5加密
+	//var hanlen int
+	has := md5.New()
+	_, err = has.Write([]byte(req.LoginPwd))
+	if err != nil {
+		utils.AdminLog.Errorln("md5 加密失败!!")
+		ctx.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": "登录失败"})
+		return
+	}
+	hasvalue := has.Sum(nil)
+	//查数据库 验证用户名和密码
+	var uid int
+	uid, err = new(models.User).Login(string(hasvalue), req.Phone)
+	if err != nil {
+		ctx.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": "登录失败"})
+		return
+	}
+
+	//success
+	fmt.Println("verify success")
+	//添加cooke 用户名
+	session := sessions.Default(ctx)
+	session.Clear()
+	session.Set("idkey", idkey)
+	session.Set("uid", uid)
+	session.Set("phone", req.Phone)
+	session.Save()
+	ctx.JSON(http.StatusOK, gin.H{"code": 0, "data": "url", "msg": "登录成功"})
 	return
 }
 
 func (this *AdminController) Loginout(ctx *gin.Context) {
-
+	session := sessions.Default(ctx)
+	session.Clear()
 	return
 }
 func (this *AdminController) List(ctx *gin.Context) {

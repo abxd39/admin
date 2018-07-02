@@ -1,7 +1,6 @@
 package models
 
 import (
-
 	"admin/utils"
 	"errors"
 	_ "time"
@@ -19,7 +18,7 @@ type Banner struct {
 }
 
 func (b *Banner) Add(or, state int, picname, picp, linkaddr, st, et string) error {
-	engine := utils.Engine_backstage
+	engine := utils.Engine_common
 	//current := time.Now().Format("2006-01-02 15:04:05")
 	ban := &Banner{
 		Order:       or,
