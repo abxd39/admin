@@ -1,7 +1,7 @@
 package models
 
 import (
-	"admin/log"
+
 	"admin/utils"
 	"errors"
 	_ "time"
@@ -32,12 +32,12 @@ func (b *Banner) Add(or, state int, picname, picp, linkaddr, st, et string) erro
 	}
 	result, err := engine.InsertOne(ban)
 	if err != nil {
-		log.AdminLog.Errorf(err.Error())
+		utils.AdminLog.Errorf(err.Error())
 		return err
 	}
 	if 0 == result {
 		err = errors.New("Unkown error")
-		log.AdminLog.Errorf(err.Error())
+		utils.AdminLog.Errorf(err.Error())
 		return err
 	}
 	return nil

@@ -1,11 +1,11 @@
-package log
+package utils
 
 import (
-	cf "admin/conf"
-	"os"
 
-	"github.com/liudng/godump"
-	"github.com/sirupsen/logrus"
+"os"
+
+"github.com/liudng/godump"
+"github.com/sirupsen/logrus"
 )
 
 var AdminLog *logrus.Logger
@@ -13,7 +13,7 @@ var AdminLog *logrus.Logger
 func InitLog() {
 	AdminLog = logrus.New()
 
-	filename := cf.Cfg.MustValue("log", "log_path")
+	filename := Cfg.MustValue("log", "path")
 	godump.Dump(filename)
 	file, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY, 0666)
 	if err == nil {
