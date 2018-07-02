@@ -1,9 +1,9 @@
 package models
 
 import (
+	"admin/utils"
 	"digicon/user_service/dao"
 	"fmt"
-	"log"
 )
 
 type Article struct {
@@ -31,6 +31,7 @@ type ArticleList struct {
 	Weight     int    `xorm:"not null default 0 comment('权重，排序字段') TINYINT(4)"`
 	Title      string `xorm:"not null default '' comment('文章标题') VARCHAR(100)"`
 	Author     string `xorm:"not null default '' comment('作者名字') VARCHAR(150)"`
+	Covers     string `xorm:"not null default '' comment('封面图片') VARCHAR(1000)"`
 	CreateTime string `xorm:"not null default '' comment('创建时间') VARCHAR(36)"`
 	Hits       int    `xorm:"not null default 0 comment('点击数量') INT(11)"`
 	Astatus    int    `xorm:"not null default 1 comment('1 显示 0 不显示') TINYINT(1)"`
@@ -41,7 +42,7 @@ func (a *ArticleList) TableName() string {
 	return "article"
 }
 
-func (ArticleList) GetArticleList(page, rows, tp int) ([]*ArticleList, int, error) {
+func (a *ArticleList) GetArticleList(page, rows, tp int) ([]*ArticleList, int, error) {
 	if page <= 0 {
 		page = 1
 	}
@@ -59,7 +60,7 @@ func (ArticleList) GetArticleList(page, rows, tp int) ([]*ArticleList, int, erro
 	u := make([]Article, 0)
 	err := engine.Where("type=?", tp).Limit(rows, start_rows).Find(u)
 	if err != nil {
-		log.Fatalf(err.Error())
+		utils.AdminLog.Errorln(err.Error())
 		return nil, 0, err
 	}
 	list := make([]*ArticleList, 0)
@@ -68,6 +69,7 @@ func (ArticleList) GetArticleList(page, rows, tp int) ([]*ArticleList, int, erro
 			Weight:     v.Weight,
 			Title:      v.Title,
 			Author:     v.Author,
+			Covers:     v.Covers,
 			CreateTime: v.CreateTime,
 			Hits:       v.Hits,
 			Astatus:    v.Astatus,
@@ -89,19 +91,15 @@ func (ArticleList) GetArticleList(page, rows, tp int) ([]*ArticleList, int, erro
 
 }
 
-func (Article) AddArticle(Id int32, u *Article) error {
+func (a *Article) AddArticle(u *Article) error {
+
 	engine := dao.DB.GetMysqlConn()
-	_ = engine
-	//ok, err := engine.Where("id=?", Id).Get(u)
-	// if err != nil {
-	// 	Dlog.Log.Errorln(err.Error())
-	// 	return ERRCODE_UNKNOWN
-	// }
-	// if ok {
-	// 	return ERRCODE_SUCCESS
-
-	// }
-
-	// return ERRCODE_ARTICLE_NOT_EXIST
+	result, err := engine.InsertOne(u)
+	if err != nil {
+		return err
+	}
+	if result == 0 {
+		utils.AdminLog.Errorln("article InsertOne failed ")
+	}
 	return nil
 }

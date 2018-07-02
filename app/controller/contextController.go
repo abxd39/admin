@@ -108,21 +108,37 @@ func (cm *ContextController) AddArticle(c *gin.Context) {
 	req := struct {
 		Title         string `form:"title" json:"title" binding:"required"`
 		Description   string `form:"desc" json:"desc" `
-		Content       string `form:"content" json:"content" binding:"required"`
-		Covers        string `form:"covers" json:"covers"`
-		ContentImages string `form:"content_Image" json:"content_Image" `
-		Type          int    `form:"tpye" json:"type" binding:"required"`
-		Author        string `form:"author" json:"author" binding:"required"`
-		Weight        int    `form:"weight" json:"weight" binding:"required"`
-		Astatus       int    `form:"status" json:"status" binding:"required"`
+		Content       string `form:"content" json:"content" binding:"required"` //path
+		Covers        string `form:"covers" json:"covers"`                      //图片内容
+		ContentImages string `form:"content_Image" json:"content_Image" `       //缩略图
+		Type          int    `form:"tpye" json:"type" binding:"required"`       //文章类型
+		//Author        string `form:"author" json:"author" binding:"required"`
+		Weight  int `form:"weight" json:"weight" binding:"required"`
+		Astatus int `form:"status" json:"status" binding:"required"`
 		//AdminId       int    `form:"admin_id" json:"admin_id" binding:"required"`
 		//AdminNickname string `form:"admin_name" json:"admin_name" binding:"required"`
 	}{}
+
 	err := c.ShouldBind(&req)
 	if err != nil {
-		log.AdminLog.Errorf(err.Error())
+		utils.AdminLog.Errorf(err.Error())
 		return
 	}
+	//获取作者 用户名
+	//获取管理员ID
+	//管理员 用户名
+	//获取Cooke 用户登录ID
+	err = new(models.Article).AddArticle(&models.Article{
+		Title:         req.Title,
+		Description:   req.Description,
+		Content:       req.Content,
+		Covers:        req.Covers,
+		ContentImages: req.ContentImages,
+		Type:          req.Type,
+		//Author:        req.Author,
+		Weight:  req.Weight,
+		Astatus: req.Astatus,
+	})
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
 	}

@@ -10,7 +10,6 @@ import (
 )
 
 type AdminController struct {
-
 }
 
 func (this *AdminController) Router(r *gin.Engine) {
@@ -74,6 +73,7 @@ func (this *AdminController) Login(ctx *gin.Context) {
 	if verifyResult {
 		//success
 		fmt.Println("verify success")
+		//添加cooke 用户名
 		ctx.JSON(http.StatusOK, gin.H{"code": 0, "data": "url", "msg": "登录成功"})
 
 	} else {
