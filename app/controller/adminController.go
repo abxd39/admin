@@ -69,7 +69,7 @@ func (this *AdminController) Login(ctx *gin.Context) {
 	req := struct {
 		Phone    string `form:"phone" json:"phone" binding:"required"`
 		LoginPwd string `form:"pwd" json:"pwd" binding:"required"`
-		Verify   string `form:"verify" json:"verify" binding:"required"`
+		//Verify   string `form:"verify" json:"verify" binding:"required"`
 	}{}
 	err := ctx.ShouldBind(&req)
 	if err != nil {
@@ -81,22 +81,22 @@ func (this *AdminController) Login(ctx *gin.Context) {
 	fmt.Println("0000.0.0.0000.0.0.0.0.0.0.0.0.0.0.0000....0.0.00.0.0..0..")
 	fmt.Println(req)
 	session := sessions.Default(ctx) //因为每次获取验证码时都会清除一次。所以再次不应该调用clear函数
-	var idkey string
-	v := session.Get("idkey")
-	if v == nil {
-		utils.AdminLog.Errorln("sessions 中idkey 的值获取失败")
-		return
-	} else {
-		idkey = v.(string)
-	}
-	fmt.Println("idkey=", idkey, "verify=", req.Verify)
-	verifyResult := verifyCaptcha(idkey, req.Verify)
-	if !verifyResult {
-		//failed
-		fmt.Println("verify failed!!")
-		ctx.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": "验证错误"})
-		return
-	}
+	// var idkey string
+	// v := session.Get("idkey")
+	// if v == nil {
+	// 	utils.AdminLog.Errorln("sessions 中idkey 的值获取失败")
+	// 	return
+	// } else {
+	// 	idkey = v.(string)
+	// }
+	// fmt.Println("idkey=", idkey, "verify=", req.Verify)
+	// verifyResult := verifyCaptcha(idkey, req.Verify)
+	// if !verifyResult {
+	// 	//failed
+	// 	fmt.Println("verify failed!!")
+	// 	ctx.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": "验证错误"})
+	// 	return
+	// }
 	//md5加密
 	//var hanlen int
 	//fmt.Println("vvvvvvvvvvvvvvvvvvvvv", req.LoginPwd)
@@ -113,7 +113,7 @@ func (this *AdminController) Login(ctx *gin.Context) {
 	}
 
 	//success
-	fmt.Println("verify success")
+	//fmt.Println("verify success")
 	//添加cooke 用户名
 
 	session.Set("uid", uid)

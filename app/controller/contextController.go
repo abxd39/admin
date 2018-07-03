@@ -14,9 +14,11 @@ type ContextController struct{}
 func (this *ContextController) Router(r *gin.Engine) {
 	g := r.Group("/content")
 	{
-		g.POST("/addlink", this.AddFriendlyLink)
-		g.GET("/linklist", this.GetFriendlyLink)
+		g.POST("/add_link", this.AddFriendlyLink)
+		g.GET("/link_list", this.GetFriendlyLink)
 		g.GET("/article", this.GetArticleList)
+		g.POST("/add_banner", this.AddBanner)
+		g.POST("/add_article", this.AddArticle)
 	}
 }
 
