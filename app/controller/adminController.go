@@ -31,8 +31,8 @@ func (this *AdminController) Router(r *gin.Engine) {
 func (this *AdminController) Code(ctx *gin.Context) {
 	fmt.Println("...............................................")
 	var configD = base64Captcha.ConfigDigit{
-		Height:     80,
-		Width:      240,
+		Height:     40,
+		Width:      120,
 		MaxSkew:    0.7,
 		DotCount:   80,
 		CaptchaLen: 4,

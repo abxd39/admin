@@ -11,6 +11,6 @@ func main() {
 
 	router := gin.Default()
 	app.Router(router)
-	router.Run(fmt.Sprintf(":%d", 8000))
+	router.Run(fmt.Sprintf(":%d", 8001))
 
 }

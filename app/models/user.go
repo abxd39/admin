@@ -22,7 +22,7 @@ func (u *User) Login(pwd, phone string) (int, error) {
 	engine := utils.Engine_backstage
 	fmt.Println("login")
 	use := &User{}
-	err := engine.Where("phone=?", phone).Find(use)
+	_, err := engine.Where("phone=?", phone).Get(use)
 	if err != nil {
 		utils.AdminLog.Errorln(err.Error())
 		fmt.Println("login", err.Error())
