@@ -17,6 +17,7 @@ func init() {
 			panic("utils.session:" + err.Error())
 		}
 		Store, err = redis.NewStore(10, "tcp", addr, "ailaiduokeji657@@@", []byte("secret"))
+		//Store, err = redis.NewStore(10, "tcp", "localhost:6379", "", []byte("secret"))
 		if err != nil {
 			panic("utils.session:" + err.Error())
 		}

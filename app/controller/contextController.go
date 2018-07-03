@@ -11,16 +11,16 @@ import (
 
 type ContextController struct{}
 
-func (cm *ContextController) Router(r *gin.Engine) {
+func (this *ContextController) Router(r *gin.Engine) {
 	g := r.Group("/content")
 	{
-		g.POST("/addlink", cm.AddFriendlyLink)
-		g.GET("/linklist", cm.GetFriendlyLink)
-		g.GET("/article", cm.GetArticleList)
+		g.POST("/addlink", this.AddFriendlyLink)
+		g.GET("/linklist", this.GetFriendlyLink)
+		g.GET("/article", this.GetArticleList)
 	}
 }
 
-func (cm *ContextController) AddFriendlyLink(c *gin.Context) {
+func (this *ContextController) AddFriendlyLink(c *gin.Context) {
 	fmt.Println("..........................................")
 	req := struct {
 		WebName   string `form:"web_name" json:"web_name" binding:"required"`
@@ -42,7 +42,7 @@ func (cm *ContextController) AddFriendlyLink(c *gin.Context) {
 	return
 }
 
-func (cm *ContextController) GetFriendlyLink(c *gin.Context) {
+func (this *ContextController) GetFriendlyLink(c *gin.Context) {
 
 	req := struct {
 		Page  int `form:"page" json:"page" binding:"required"`
@@ -62,7 +62,7 @@ func (cm *ContextController) GetFriendlyLink(c *gin.Context) {
 	return
 }
 
-func (cm *ContextController) AddBanner(c *gin.Context) {
+func (this *ContextController) AddBanner(c *gin.Context) {
 	req := struct {
 		Order       int    `form:"order" json:"order" binding:"required"`
 		PictureName string `form:"picture_n" json:"picture_n" binding:"required"`
@@ -86,7 +86,7 @@ func (cm *ContextController) AddBanner(c *gin.Context) {
 	return
 }
 
-func (cm *ContextController) GetArticleList(c *gin.Context) {
+func (this *ContextController) GetArticleList(c *gin.Context) {
 	req := struct {
 		Page int `form:"page" json:"page" binding:"required"`
 		Rows int `form:"rows" json:"rows" binding:"required"`
@@ -104,7 +104,7 @@ func (cm *ContextController) GetArticleList(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"code": 0, "data": reuslt, "total": total, "msg": "成功"})
 }
 
-func (cm *ContextController) AddArticle(c *gin.Context) {
+func (this *ContextController) AddArticle(c *gin.Context) {
 	req := struct {
 		Title         string `form:"title" json:"title" binding:"required"`
 		Description   string `form:"desc" json:"desc" `

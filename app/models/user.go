@@ -20,10 +20,12 @@ type User struct {
 
 func (u *User) Login(pwd, phone string) (int, error) {
 	engine := utils.Engine_backstage
+	fmt.Println("login")
 	use := &User{}
 	err := engine.Where("phone=?", phone).Find(use)
 	if err != nil {
 		utils.AdminLog.Errorln(err.Error())
+		fmt.Println("login", err.Error())
 		return 0, err
 	}
 	//find 如果不存在 数据库是否会返回 一个错误给我

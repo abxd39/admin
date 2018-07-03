@@ -4,6 +4,7 @@ import (
 	"admin/app/models"
 	"admin/utils"
 	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 	"net/http"
 
@@ -46,12 +47,12 @@ func (this *AdminController) Code(ctx *gin.Context) {
 	// }
 	//以base64编码
 	base64stringD := base64Captcha.CaptchaWriteToBase64Encoding(capD)
-	ctx.Data(0, idKeyD, capD.BinaryEncodeing())
 	//ctx.Request.AddCookie(cook)
 	session := sessions.Default(ctx)
 	session.Clear()
 	session.Set("idkey", idKeyD)
 	session.Save()
+	ctx.Data(0, idKeyD, capD.BinaryEncodeing())
 	fmt.Printf("idke=%s", idKeyD)
 	fmt.Println(idKeyD, base64stringD)
 	return
@@ -82,36 +83,30 @@ func (this *AdminController) Login(ctx *gin.Context) {
 	session := sessions.Default(ctx) //因为每次获取验证码时都会清除一次。所以再次不应该调用clear函数
 	var idkey string
 	v := session.Get("idkey")
-	fmt.Println("11121212121211121")
-	fmt.Println(v)
 	if v == nil {
 		utils.AdminLog.Errorln("sessions 中idkey 的值获取失败")
 		return
 	} else {
 		idkey = v.(string)
 	}
-
+	fmt.Println("idkey=", idkey, "verify=", req.Verify)
 	verifyResult := verifyCaptcha(idkey, req.Verify)
 	if !verifyResult {
 		//failed
 		fmt.Println("verify failed!!")
-		ctx.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": "登录失败"})
+		ctx.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": "验证错误"})
 		return
 	}
 	//md5加密
 	//var hanlen int
+	//fmt.Println("vvvvvvvvvvvvvvvvvvvvv", req.LoginPwd)
 	has := md5.New()
-	_, err = has.Write([]byte(req.LoginPwd))
-	if err != nil {
-		utils.AdminLog.Errorln("md5 加密失败!!")
-		ctx.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": "登录失败"})
-		return
-	}
+	has.Write([]byte(req.LoginPwd))
 	hasvalue := has.Sum(nil)
 	//查数据库 验证用户名和密码
-	fmt.Printf("hasvalue=%s", hasvalue)
+	fmt.Println("hasvalue=", hex.EncodeToString(hasvalue))
 	var uid int
-	uid, err = new(models.User).Login(string(hasvalue), req.Phone)
+	uid, err = new(models.User).Login(hex.EncodeToString(hasvalue), req.Phone)
 	if err != nil {
 		ctx.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": "登录失败"})
 		return
