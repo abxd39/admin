@@ -5,7 +5,6 @@ import (
 	"admin/utils"
 	"crypto/md5"
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/gin-contrib/sessions"
@@ -40,15 +39,20 @@ func (this *AdminController) Code(ctx *gin.Context) {
 
 	//ctx.Request.AddCookie()
 	idKeyD, capD := base64Captcha.GenerateCaptcha("", configD)
-	cook := &http.Cookie{
-		Name:  "idkey",
-		Path:  "/",
-		Value: idKeyD,
-	}
+	// cook := &http.Cookie{
+	// 	Name:  "idkey",
+	// 	Path:  "/",
+	// 	Value: idKeyD,
+	// }
 	//以base64编码
 	base64stringD := base64Captcha.CaptchaWriteToBase64Encoding(capD)
 	ctx.Data(0, idKeyD, capD.BinaryEncodeing())
-	ctx.Request.AddCookie(cook)
+	//ctx.Request.AddCookie(cook)
+	session := sessions.Default(ctx)
+	session.Clear()
+	session.Set("idkey", idKeyD)
+	session.Save()
+	fmt.Printf("idke=%s", idKeyD)
 	fmt.Println(idKeyD, base64stringD)
 	return
 }
@@ -68,11 +72,25 @@ func (this *AdminController) Login(ctx *gin.Context) {
 	}{}
 	err := ctx.ShouldBind(&req)
 	if err != nil {
-		log.Fatalln("param buind failed !!")
+		utils.AdminLog.Errorln("param buind failed !!")
+		ctx.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": "登录失败"})
 		return
 	}
 	//verify code
+	fmt.Println("0000.0.0.0000.0.0.0.0.0.0.0.0.0.0.0000....0.0.00.0.0..0..")
+	fmt.Println(req)
+	session := sessions.Default(ctx) //因为每次获取验证码时都会清除一次。所以再次不应该调用clear函数
 	var idkey string
+	v := session.Get("idkey")
+	fmt.Println("11121212121211121")
+	fmt.Println(v)
+	if v == nil {
+		utils.AdminLog.Errorln("sessions 中idkey 的值获取失败")
+		return
+	} else {
+		idkey = v.(string)
+	}
+
 	verifyResult := verifyCaptcha(idkey, req.Verify)
 	if !verifyResult {
 		//failed
@@ -91,6 +109,7 @@ func (this *AdminController) Login(ctx *gin.Context) {
 	}
 	hasvalue := has.Sum(nil)
 	//查数据库 验证用户名和密码
+	fmt.Printf("hasvalue=%s", hasvalue)
 	var uid int
 	uid, err = new(models.User).Login(string(hasvalue), req.Phone)
 	if err != nil {
@@ -101,9 +120,7 @@ func (this *AdminController) Login(ctx *gin.Context) {
 	//success
 	fmt.Println("verify success")
 	//添加cooke 用户名
-	session := sessions.Default(ctx)
-	session.Clear()
-	session.Set("idkey", idkey)
+
 	session.Set("uid", uid)
 	session.Set("phone", req.Phone)
 	session.Save()

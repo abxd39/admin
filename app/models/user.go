@@ -3,6 +3,7 @@ package models
 import (
 	"admin/utils"
 	"errors"
+	"fmt"
 )
 
 type User struct {
@@ -29,6 +30,7 @@ func (u *User) Login(pwd, phone string) (int, error) {
 	if use.States == 0 {
 		return 0, errors.New("该用户已锁定")
 	}
+	fmt.Printf("数据库中的has值为%s", use.Pwd)
 	if pwd != use.Pwd {
 		return 0, errors.New("密码不对！！")
 	}
