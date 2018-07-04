@@ -113,17 +113,15 @@ func (this *ContextController) AddArticle(c *gin.Context) {
 		Content       string `form:"content" json:"content" binding:"required"` //path
 		Covers        string `form:"covers" json:"covers"`                      //图片内容
 		ContentImages string `form:"content_Image" json:"content_Image" `       //缩略图
-		Type          int    `form:"tpye" json:"type" binding:"required"`       //文章类型
-		//Author        string `form:"author" json:"author" binding:"required"`
-		Weight  int `form:"weight" json:"weight" binding:"required"`
-		Astatus int `form:"status" json:"status" binding:"required"`
-		//AdminId       int    `form:"admin_id" json:"admin_id" binding:"required"`
-		//AdminNickname string `form:"admin_name" json:"admin_name" binding:"required"`
+		Type          int    `form:"type" json:"type" binding:"required"`       //文章类型
+		Weight        int    `form:"weight" json:"weight" `
+		Astatus       int    `form:"status" json:"status" binding:"required"`
 	}{}
 
 	err := c.ShouldBind(&req)
 	if err != nil {
 		utils.AdminLog.Errorf(err.Error())
+		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
 		return
 	}
 	//获取作者 用户名
@@ -137,9 +135,8 @@ func (this *ContextController) AddArticle(c *gin.Context) {
 		Covers:        req.Covers,
 		ContentImages: req.ContentImages,
 		Type:          req.Type,
-		//Author:        req.Author,
-		Weight:  req.Weight,
-		Astatus: req.Astatus,
+		Weight:        req.Weight,
+		Astatus:       req.Astatus,
 	})
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})

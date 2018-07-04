@@ -2,9 +2,10 @@ package app
 
 import (
 	"admin/app/controller"
-	"github.com/gin-gonic/gin"
-	"github.com/gin-contrib/sessions"
 	"admin/utils"
+
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-gonic/gin"
 )
 
 func Router(r *gin.Engine) {
@@ -16,5 +17,5 @@ func Router(r *gin.Engine) {
 	new(controller.WebsocketController).Router(r)
 	new(controller.AdminController).Router(r)
 	new(controller.ContextController).Router(r)
+	new(controller.WebUserManageController).Router(r)
 }
-

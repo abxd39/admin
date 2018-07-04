@@ -20,8 +20,8 @@ func (this *AdminController) Router(r *gin.Engine) {
 	group := r.Group("/admin")
 	{
 		group.GET("/code", this.Code)
-		group.GET("/login", this.Login)
-		group.GET("/loginout", this.Loginout)
+		group.POST("/login", this.Login)
+		group.GET("/logout", this.Logout)
 		group.GET("/list", this.List)
 		group.GET("/delete", this.Delete)
 		group.GET("/update", this.Update)
@@ -74,7 +74,7 @@ func (this *AdminController) Login(ctx *gin.Context) {
 	err := ctx.ShouldBind(&req)
 	if err != nil {
 		utils.AdminLog.Errorln("param buind failed !!")
-		ctx.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": "登录失败"})
+		ctx.JSON(http.StatusOK, gin.H{"code": 2, "data": "", "msg": err})
 		return
 	}
 	//verify code
@@ -123,7 +123,7 @@ func (this *AdminController) Login(ctx *gin.Context) {
 	return
 }
 
-func (this *AdminController) Loginout(ctx *gin.Context) {
+func (this *AdminController) Logout(ctx *gin.Context) {
 	session := sessions.Default(ctx)
 	session.Clear()
 	return
