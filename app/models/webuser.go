@@ -18,7 +18,7 @@ type UserEx struct {
 }
 
 type WebUser struct {
-	Uid              int64  `xorm:"not null pk autoincr comment('用户ID') BIGINT(11)"`
+	Uid              uint64 `xorm:"not null pk autoincr comment('用户ID') BIGINT(11)"`
 	Account          string `xorm:"comment('账号') unique VARCHAR(64)"`
 	Pwd              string `xorm:"comment('密码') VARCHAR(255)"`
 	Country          string `xorm:"comment('地区号') VARCHAR(32)"`
@@ -45,6 +45,7 @@ type UserGroup struct {
 func (w *WebUser) TableName() string {
 	return "user"
 }
+
 func (w *UserGroup) TableName() string {
 	return "user"
 }

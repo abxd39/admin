@@ -18,7 +18,7 @@ type User struct {
 	UpdatedTime string `xorm:"not null comment('修改时间') DATETIME"`
 }
 
-func (u *User) Login(pwd, phone string) (int, error) {
+func (u *User) Login(pwd, phone string) (string, int, error) {
 	engine := utils.Engine_backstage
 	fmt.Println("login")
 	use := &User{}
@@ -26,16 +26,16 @@ func (u *User) Login(pwd, phone string) (int, error) {
 	if err != nil {
 		utils.AdminLog.Errorln(err.Error())
 		fmt.Println("login", err.Error())
-		return 0, err
+		return "", 0, err
 	}
 	//find 如果不存在 数据库是否会返回 一个错误给我
 	if use.States == 0 {
-		return 0, errors.New("该用户已锁定")
+		return "", 0, errors.New("该用户已锁定")
 	}
 	fmt.Printf("数据库中的has值为%s", use.Pwd)
 	if pwd != use.Pwd {
-		return 0, errors.New("密码不对！！")
+		return "", 0, errors.New("密码不对！！")
 	}
 	//
-	return use.Uid, nil
+	return use.NickName, use.Uid, nil
 }

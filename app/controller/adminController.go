@@ -106,7 +106,8 @@ func (this *AdminController) Login(ctx *gin.Context) {
 	//查数据库 验证用户名和密码
 	fmt.Println("hasvalue=", hex.EncodeToString(hasvalue))
 	var uid int
-	uid, err = new(models.User).Login(hex.EncodeToString(hasvalue), req.Phone)
+	var name string
+	name, uid, err = new(models.User).Login(hex.EncodeToString(hasvalue), req.Phone)
 	if err != nil {
 		ctx.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": "登录失败"})
 		return
@@ -119,7 +120,7 @@ func (this *AdminController) Login(ctx *gin.Context) {
 	session.Set("uid", uid)
 	session.Set("phone", req.Phone)
 	session.Save()
-	ctx.JSON(http.StatusOK, gin.H{"code": 0, "data": "url", "msg": "登录成功"})
+	ctx.JSON(http.StatusOK, gin.H{"code": 0, "data": "", "uid": uid, "name": name, "msg": "登录成功"})
 	return
 }
 

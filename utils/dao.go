@@ -6,7 +6,7 @@ import (
 	"github.com/go-xorm/xorm"
 )
 
-var Engine_wallet *xorm.Engine
+var Engine_currency *xorm.Engine
 var Engine_token *xorm.Engine
 var Engine_common *xorm.Engine
 var Engine_context *xorm.Engine
@@ -17,12 +17,12 @@ func init() {
 	var err error
 
 	//mysql初始化
-	dsource := "root:current@tcp(47.106.136.96:3306)/g_wallet?charset=utf8"
-	Engine_wallet, err = xorm.NewEngine("mysql", dsource)
+	dsource := "ccbk:ecrf981@@tcp(47.106.136.96:3306)/g_currency?charset=utf8"
+	Engine_currency, err = xorm.NewEngine("mysql", dsource)
 	if err != nil {
 		panic(err)
 	}
-	err = Engine_wallet.Ping()
+	err = Engine_currency.Ping()
 	if err != nil {
 		panic(err)
 	}
