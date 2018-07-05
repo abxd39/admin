@@ -57,7 +57,7 @@ func (a *ArticleList) GetArticleList(page, rows, tp int) ([]*ArticleList, int, e
 	engine := utils.Engine_common
 	fmt.Println("type=", tp, "page=", page, "起始行star_row=", start_rows, "page_num=", rows)
 	u := make([]Article, 0)
-	err := engine.Where("type=?", tp).Limit(rows, start_rows).Find(u)
+	err := engine.Where("type=?", tp).Limit(rows, start_rows).Find(&u)
 	if err != nil {
 		utils.AdminLog.Errorln(err.Error())
 		return nil, 0, err

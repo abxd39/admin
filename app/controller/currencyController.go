@@ -15,6 +15,7 @@ func (this *CurrencyController) Router(r *gin.Engine) {
 	g := r.Group("/currency")
 	{
 		g.GET("/list", this.GetTradeList)
+		g.GET("/tokens", this.GetTokensList)
 	}
 }
 
@@ -31,9 +32,21 @@ func (cu *CurrencyController) GetTradeList(c *gin.Context) {
 	fmt.Println(req)
 	result, total, reerr := new(models.Ads).GetAdsList(req)
 	if reerr != nil {
-		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": reerr.Error()})
+		return
 	}
 	c.JSON(http.StatusOK, gin.H{"code": 0, "total": total, "data": result, "msg": "成功"})
 	return
 
+}
+
+func (cu *CurrencyController) GetTokensList(c *gin.Context) {
+	fmt.Println("tttttttttttttttttttttttttttttttttttttttt")
+	list, err := new(models.Tokens).GetTokensList()
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"code": 0, "data": list, "msg": "成功"})
+	return
 }

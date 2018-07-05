@@ -82,30 +82,37 @@ func (AdsUserCurrencyCount) TableName() string {
 
 //法币挂单信息参数信息
 type Currency struct {
-	Page    int    `form:"page" json:"page" binding:"required"`
-	PageNum int    `form:"rows" json:"rows" `
-	Uid     uint64 `form:"uid" json:"uid" `
+	Page    int `form:"page" json:"page" binding:"required"`
+	PageNum int `form:"rows" json:"rows" `
+	//g_backstage
+	Uid     int    `form:"uid" json:"uid" `
 	Uname   string `form:"uname" json:"uname" `
 	Phone   string `form:"phone" json:"phone" `
 	Email   string `form:"email" json:"email" `
-	Ustatus int    `form:"ustatus" json:"ustatus" `
-	///
-	Date      int64  `form:"date" json:"date" `     //挂单日期
+	Ustatus int    `form:"ustatus" json:"ustatus" ` //用户登录状态
+	/// g_currency
+	Date      string `form:"date" json:"date" `     //挂单日期
 	Verify    int    `form:"verify" json:"verify" ` //实名认证 二级认证 google 验证
-	Status    int    `form:"status" json:"status" ` //交易状态
 	TokenName string `form:"tname" json:"tname" `   //货币名称
-	TradeId   uint32 `form:"tid" json:"tid" `       //买卖ID
+	TradeId   int    `form:"tid" json:"tid" `       //买卖ID
 }
 
 // 法币交易列表 - (广告(买卖))
 func (this *Ads) GetAdsList(cur Currency) ([]AdsUserCurrencyCount, int64, error) {
+	if cur.PageNum <= 0 {
+		cur.PageNum = 100
+	}
+
 	engine := utils.Engine_currency
 	total, err := engine.Count(new(Ads))
 	if err != nil {
 		utils.AdminLog.Errorln(err.Error())
 		return nil, 0, err
 	}
-
+	total = total / int64(cur.PageNum)
+	if total <= 0 {
+		total = 1
+	}
 	limit := 0
 	if cur.Page > 0 {
 		limit = int((cur.Page - 1) * cur.PageNum)
@@ -119,15 +126,39 @@ func (this *Ads) GetAdsList(cur Currency) ([]AdsUserCurrencyCount, int64, error)
 	// 	Limit(int(cur.PageNum), limit).
 	// 	Find(&data)
 	//
-	err = engine.Join("INNER", "user_currency", "ads.uid=user_currency.uid").
-		Join("LEFT", "user_currency_count", "ads.uid=user_currency_count.uid").
-		Desc("updated_time").
-		Limit(int(cur.PageNum), limit).
-		Find(&data)
-	if err != nil {
-		utils.AdminLog.Errorln(err.Error())
-		return nil, 0, err
+	//挂单日期
+	if cur.TradeId != 0 {
+		this.trade_id(cur.Page, cur.PageNum, cur.TradeId, &data)
+	} else if cur.Uid != 0 {
+		this.uid(cur.Page, cur.PageNum, cur.Uid, &data)
+	} else if len(cur.TokenName) != 0 {
+		this.token_name(cur.Page, cur.PageNum, cur.TokenName, &data)
+	} else if len(cur.Date) != 0 {
+		this.date(cur.Page, cur.PageNum, cur.Date, &data)
+	} else if len(cur.Phone) != 0 {
+		this.phone(cur.Page, cur.PageNum, cur.Phone, &data)
+	} else if len(cur.Email) != 0 {
+		this.email(cur.Page, cur.PageNum, cur.Phone, &data)
+	} else if cur.Ustatus != 0 {
+		this.ustatus(cur.Page, cur.PageNum, cur.Ustatus, &data)
+	} else if len(cur.Uname) != 0 {
+		this.uname(cur.Page, cur.PageNum, cur.Uname, &data)
+	} else if cur.Verify != 0 {
+		this.verify(cur.Page, cur.PageNum, cur.Verify, &data)
+	} else {
+		err = engine.Join("INNER", "user_currency", "ads.uid=user_currency.uid").
+			Join("LEFT", "user_currency_count", "ads.uid=user_currency_count.uid").
+			Desc("updated_time").
+			Limit(int(cur.PageNum), limit).
+			Find(&data)
+		if err != nil {
+			utils.AdminLog.Errorln(err.Error())
+			return nil, 0, err
+		}
 	}
+
+	//无条件判断
+
 	uid := make([]uint64, 0)
 	for _, v := range data {
 		uid = append(uid, v.Uid)
@@ -157,8 +188,131 @@ func (a *Ads) getUserList(uid []uint64) (ulist []UserGroup, err error) {
 		utils.AdminLog.Errorln(err.Error())
 		return
 	}
-	fmt.Printf("getUserList%#v", ulist)
+	//fmt.Printf("getUserList%#v", ulist)
 	return
+}
+
+func (a *Ads) date(page, limit int, date string, result *[]AdsUserCurrencyCount) error {
+	engine := utils.Engine_currency
+
+	err := engine.Join("INNER", "user_currency", "ads.uid=user_currency.uid").
+		Join("LEFT", "user_currency_count", "ads.uid=user_currency_count.uid").
+		Where("date<?", date).
+		Desc("updated_time").
+		Limit(page, limit).
+		Find(result)
+	if err != nil {
+		utils.AdminLog.Errorln(err.Error())
+		return err
+	}
+	return nil
+}
+
+func (a *Ads) phone(page, limit int, phone string, result *[]AdsUserCurrencyCount) error {
+	engine := utils.Engine_currency
+
+	err := engine.Join("INNER", "user_currency", "ads.uid=user_currency.uid").
+		Join("LEFT", "user_currency_count", "ads.uid=user_currency_count.uid").
+		Where("phone=?", phone).
+		Find(result)
+	if err != nil {
+		utils.AdminLog.Errorln(err.Error())
+		return err
+	}
+	return nil
+}
+
+func (a *Ads) email(page, limit int, email string, result *[]AdsUserCurrencyCount) error {
+	engine := utils.Engine_currency
+	err := engine.Join("INNER", "user_currency", "ads.uid=user_currency.uid").
+		Join("LEFT", "user_currency_count", "ads.uid=user_currency_count.uid").
+		Where("email=?", email).
+		Find(result)
+	if err != nil {
+		utils.AdminLog.Errorln(err.Error())
+		return err
+	}
+	return nil
+}
+
+func (a *Ads) uid(page, limit int, uid int, result *[]AdsUserCurrencyCount) error {
+	engine := utils.Engine_currency
+	err := engine.Join("INNER", "user_currency", "ads.uid=user_currency.uid").
+		Join("LEFT", "user_currency_count", "ads.uid=user_currency_count.uid").
+		Where("uid=?", uid).
+		Find(result)
+	if err != nil {
+		utils.AdminLog.Errorln(err.Error())
+		return err
+	}
+	return nil
+}
+
+func (a *Ads) ustatus(page, limit int, status int, result *[]AdsUserCurrencyCount) error {
+	engine := utils.Engine_currency
+	err := engine.Join("INNER", "user_currency", "ads.uid=user_currency.uid").
+		Join("LEFT", "user_currency_count", "ads.uid=user_currency_count.uid").
+		Where("status=?", status).
+		Find(result)
+	if err != nil {
+		utils.AdminLog.Errorln(err.Error())
+		return err
+	}
+	return nil
+}
+
+func (a *Ads) uname(page, limit int, uname string, result *[]AdsUserCurrencyCount) error {
+	engine := utils.Engine_currency
+	err := engine.Join("INNER", "user_currency", "ads.uid=user_currency.uid").
+		Join("LEFT", "user_currency_count", "ads.uid=user_currency_count.uid").
+		Where("name=?", uname).
+		Find(result)
+	if err != nil {
+		utils.AdminLog.Errorln(err.Error())
+		return err
+	}
+	return nil
+}
+
+func (a *Ads) trade_id(page, limit int, tradeid int, result *[]AdsUserCurrencyCount) error {
+	engine := utils.Engine_currency
+	err := engine.Join("INNER", "user_currency", "ads.uid=user_currency.uid").
+		Join("LEFT", "user_currency_count", "ads.uid=user_currency_count.uid").
+		Where("type_id=?", tradeid).
+		Find(result)
+	fmt.Printf("tid%#v\n", tradeid)
+	fmt.Printf("trade_id%#v\n", result)
+	if err != nil {
+		utils.AdminLog.Errorln(err.Error())
+		return err
+	}
+	return nil
+}
+
+func (a *Ads) token_name(page, limit int, tokenname string, result *[]AdsUserCurrencyCount) error {
+	engine := utils.Engine_currency
+	err := engine.Join("INNER", "user_currency", "ads.uid=user_currency.uid").
+		Join("LEFT", "user_currency_count", "ads.uid=user_currency_count.uid").
+		Where("token_name=?", tokenname).
+		Find(result)
+	if err != nil {
+		utils.AdminLog.Errorln(err.Error())
+		return err
+	}
+	return nil
+}
+
+func (a *Ads) verify(page, limit int, verify int, result *[]AdsUserCurrencyCount) error {
+	engine := utils.Engine_currency
+	err := engine.Join("INNER", "user_currency", "ads.uid=user_currency.uid").
+		Join("LEFT", "user_currency_count", "ads.uid=user_currency_count.uid").
+		Where("security_auth=?", verify).
+		Find(result)
+	if err != nil {
+		utils.AdminLog.Errorln(err.Error())
+		return err
+	}
+	return nil
 }
 
 // 个人法币交易列表 - (广告(买卖))

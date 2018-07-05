@@ -127,6 +127,7 @@ func (this *AdminController) Login(ctx *gin.Context) {
 func (this *AdminController) Logout(ctx *gin.Context) {
 	session := sessions.Default(ctx)
 	session.Clear()
+	ctx.JSON(http.StatusOK, gin.H{"code": 0, "data": "", "msg": "成功"})
 	return
 }
 func (this *AdminController) List(ctx *gin.Context) {

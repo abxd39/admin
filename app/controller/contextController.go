@@ -16,26 +16,28 @@ func (this *ContextController) Router(r *gin.Engine) {
 	{
 		g.POST("/add_link", this.AddFriendlyLink)
 		g.GET("/link_list", this.GetFriendlyLink)
-		g.GET("/article", this.GetArticleList)
+		g.GET("/article_list", this.GetArticleList)
 		g.POST("/add_banner", this.AddBanner)
 		g.POST("/add_article", this.AddArticle)
 	}
 }
 
 func (this *ContextController) AddFriendlyLink(c *gin.Context) {
-	fmt.Println("..........................................")
+
 	req := struct {
+		Order     string `form:"order" json:"order" binding:"required"`
 		WebName   string `form:"web_name" json:"web_name" binding:"required"`
 		LinkName  string `form:"link_name" json:"link_name" binding:"required"`
-		Aorder    int    `form:"order" json:"order" binding:"required"`
 		LinkState int    `form:"link_state" json:"link_state" binding:"required"`
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
 		utils.AdminLog.Errorf(err.Error())
+		c.JSON(http.StatusOK, gin.H{"code": 2, "data": "", "msg": err.Error()})
 		return
 	}
-	err = new(models.FriendlyLink).Add(req.Aorder, req.LinkState, req.WebName, req.LinkName)
+	fmt.Println("..........................................")
+	err = new(models.FriendlyLink).Add(1, req.LinkState, req.WebName, req.LinkName)
 	if err != nil {
 		utils.AdminLog.Errorf(err.Error())
 		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
@@ -72,15 +74,16 @@ func (this *ContextController) AddBanner(c *gin.Context) {
 		LinkAddr    string `form:"link_addr" json:"link_addr" binding:"required"`
 		Start_t     string `form:"start_t" json:"start_t" binding:"required"`
 		End_t       string `form:"end_t" json:"end_t" binding:"required"`
-		State       int    `form:"state" json:"state" binding:"required"`
+		Status      int    `form:"status" json:"status" binding:"required"`
 	}{}
 
 	err := c.ShouldBind(&req)
 	if err != nil {
 		utils.AdminLog.Errorf(err.Error())
+		c.JSON(http.StatusOK, gin.H{"code": 2, "data": "", "msg": err.Error()})
 		return
 	}
-	err = new(models.Banner).Add(req.Order, req.State, req.PictureName, req.PicturePath, req.LinkAddr, req.Start_t, req.End_t)
+	err = new(models.Banner).Add(req.Order, req.Status, req.PictureName, req.PicturePath, req.LinkAddr, req.Start_t, req.End_t)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
 	}
@@ -91,12 +94,14 @@ func (this *ContextController) AddBanner(c *gin.Context) {
 func (this *ContextController) GetArticleList(c *gin.Context) {
 	req := struct {
 		Page int `form:"page" json:"page" binding:"required"`
-		Rows int `form:"rows" json:"rows" binding:"required"`
+		Rows int `form:"rows" json:"rows" `
 		Type int `form:"type" json:"type" binding:"required"`
 	}{}
+	fmt.Println("获取文章列表")
 	err := c.ShouldBind(&req)
 	if err != nil {
 		utils.AdminLog.Errorf(err.Error())
+		c.JSON(http.StatusOK, gin.H{"code": 2, "data": "", "msg": err.Error()})
 		return
 	}
 	reuslt, total, er := new(models.ArticleList).GetArticleList(req.Page, req.Rows, req.Type)
