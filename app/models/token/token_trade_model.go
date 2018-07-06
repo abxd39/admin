@@ -20,7 +20,7 @@ type EntrustDetail struct {
 	CreatedTime int    `xorm:"not null comment('添加时间') created INT(10)"`
 }
 
-func (this *EntrustDetail) GetTokenRecordList(page, rows, trade_id, trade_duad, ad_id int, start_t, end_t string) ([]EntrustDetail, int, error) {
+func (this *EntrustDetail) GetTokenRecordList(page, rows, trade_id, trade_duad, ad_id int, start_t, end_t string) ([]EntrustDetail, int, int, error) {
 	engine := utils.Engine_token
 	//
 	if page <= 1 {
@@ -33,7 +33,7 @@ func (this *EntrustDetail) GetTokenRecordList(page, rows, trade_id, trade_duad, 
 	tok := new(EntrustDetail)
 	count, err := engine.Count(tok)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, 0, err
 	}
 	if int(count) < rows {
 		total = 1
@@ -48,12 +48,12 @@ func (this *EntrustDetail) GetTokenRecordList(page, rows, trade_id, trade_duad, 
 	fmt.Printf("$$$$$$$$$$$$$$$%#v\n", rows)
 	err = engine.Where("states=0").Limit(rows, (page-1)*rows).Find(&list)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, 0, err
 	}
-	return list, total, nil
+	return list, total, total * rows, nil
 }
 
-func (this *EntrustDetail) GetTokenOrderList(page, rows, trade_id, trade_duad, ad_id, status int, start_t, end_t string) ([]EntrustDetail, int, error) {
+func (this *EntrustDetail) GetTokenOrderList(page, rows, trade_id, trade_duad, ad_id, status int, start_t, end_t string) ([]EntrustDetail, int, int, error) {
 	engine := utils.Engine_token
 	//
 	if page <= 1 {
@@ -66,7 +66,7 @@ func (this *EntrustDetail) GetTokenOrderList(page, rows, trade_id, trade_duad, a
 	tok := new(EntrustDetail)
 	count, err := engine.Count(tok)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, 0, err
 	}
 	if int(count) < rows {
 		total = 1
@@ -81,7 +81,7 @@ func (this *EntrustDetail) GetTokenOrderList(page, rows, trade_id, trade_duad, a
 	fmt.Printf("@@@@@@@@@@%#v\n", rows)
 	err = engine.Limit(rows, (page-1)*rows).Find(&list)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, 0, err
 	}
-	return list, total, nil
+	return list, total, total * rows, nil
 }

@@ -18,7 +18,7 @@ func (this *ContextController) Router(r *gin.Engine) {
 		g.GET("/link_list", this.GetFriendlyLink)
 		g.GET("/article_list", this.GetArticleList)
 		g.POST("/add_banner", this.AddBanner)
-		g.GET("/bammer_list", this.GetBannerList)
+		g.GET("/banner_list", this.GetBannerList)
 		g.POST("/add_article", this.AddArticle)
 	}
 }
@@ -100,6 +100,7 @@ func (this *ContextController) GetBannerList(c *gin.Context) {
 		End_t   string `form:"end_t" json:"end_t" `
 		Status  int    `form:"status" json:"status" `
 	}{}
+	fmt.Printf("GetBannerList%#v\n", req)
 	err := c.ShouldBind(&req)
 	if err != nil {
 		utils.AdminLog.Errorf(err.Error())

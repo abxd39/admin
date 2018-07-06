@@ -3,6 +3,7 @@ package models
 import (
 	"admin/utils"
 	"errors"
+	"fmt"
 	_ "time"
 )
 
@@ -14,7 +15,7 @@ type Banner struct {
 	TimeEnd     string `xorm:"not null comment('展示结束日期') DATETIME"`
 	LinkPath    string `xorm:"not null default '' comment('链接地址') VARCHAR(255)"`
 	PicturePath string `xorm:"not null default '' comment('图片路径') VARCHAR(255)"`
-	State       int    `xorm:"not null default 1 comment('上架状态 1 上架 0下架') TINYINT(4)"`
+	Status      int    `xorm:"not null default 1 comment('上架状态 1 上架 0下架') TINYINT(4)"`
 }
 
 func (b *Banner) Add(or, state int, picname, picp, linkaddr, st, et string) error {
@@ -27,7 +28,7 @@ func (b *Banner) Add(or, state int, picname, picp, linkaddr, st, et string) erro
 		TimeStart:   st,
 		TimeEnd:     et,
 		LinkPath:    linkaddr,
-		State:       state,
+		Status:      state,
 	}
 	result, err := engine.InsertOne(ban)
 	if err != nil {
@@ -68,7 +69,9 @@ func (b *Banner) GetBannerList(page, rows, status int, start_t, end_t string) ([
 		}
 	}
 	list := make([]Banner, 0)
+	fmt.Println("///////////////////////////////", rows, limit)
 	if status != 0 {
+
 		err := engine.Where("status=?", status).Limit(rows, limit).Find(&list)
 		if err != nil {
 			return nil, 0, err

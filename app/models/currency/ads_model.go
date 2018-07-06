@@ -99,23 +99,36 @@ type Currency struct {
 }
 
 // 法币交易列表 - (广告(买卖))
-func (this *Ads) GetAdsList(cur Currency) ([]AdsUserCurrencyCount, int64, error) {
+func (this *Ads) GetAdsList(cur Currency) ([]AdsUserCurrencyCount, int, int, error) {
 	if cur.PageNum <= 0 {
 		cur.PageNum = 100
 	}
 
 	engine := utils.Engine_currency
-	total, err := engine.Count(new(Ads))
+	result, err := engine.Count(new(Ads))
+	var total int
+	total = int(result)
 	if err != nil {
 		utils.AdminLog.Errorln(err.Error())
-		return nil, 0, err
+		return nil, 0, 0, err
 	}
-	total = total / int64(cur.PageNum)
-	if total <= 0 {
-		total = 1
+	//总页数
+	var page int
+	if total > cur.PageNum {
+		page = total / cur.PageNum
+		v := total % cur.PageNum
+		if v != 0 {
+			page = page + 1
+		}
+	} else {
+		page = 1
+	}
+
+	if cur.Page <= 1 {
+		cur.Page = 1
 	}
 	limit := 0
-	if cur.Page > 0 {
+	if cur.Page > 1 {
 		limit = int((cur.Page - 1) * cur.PageNum)
 	}
 
@@ -154,7 +167,7 @@ func (this *Ads) GetAdsList(cur Currency) ([]AdsUserCurrencyCount, int64, error)
 			Find(&data)
 		if err != nil {
 			utils.AdminLog.Errorln(err.Error())
-			return nil, 0, err
+			return nil, 0, 0, err
 		}
 	}
 
@@ -166,7 +179,7 @@ func (this *Ads) GetAdsList(cur Currency) ([]AdsUserCurrencyCount, int64, error)
 	}
 	ulist, uerr := this.getUserList(uid)
 	if uerr != nil {
-		return nil, 0, err
+		return nil, 0, 0, err
 	}
 	for index, value := range data {
 		for _, v := range ulist {
@@ -179,7 +192,7 @@ func (this *Ads) GetAdsList(cur Currency) ([]AdsUserCurrencyCount, int64, error)
 			}
 		}
 	}
-	return data, total, nil
+	return data, page, total, nil
 }
 
 func (a *Ads) getUserList(uid []uint64) (ulist []models.UserGroup, err error) {

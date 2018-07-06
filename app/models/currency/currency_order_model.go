@@ -30,7 +30,7 @@ type Order struct {
 //func (this *Order) GetList
 
 //列出订单
-func (this *Order) GetOrderList(Page, PageNum, AdType, States, TokenId int, StartTime, EndTime string) (*[]Order, int, error) {
+func (this *Order) GetOrderList(Page, PageNum, AdType, States, TokenId int, StartTime, EndTime string) (*[]Order, int, int, error) {
 
 	engine := utils.Engine_currency
 	if Page <= 1 {
@@ -74,8 +74,9 @@ func (this *Order) GetOrderList(Page, PageNum, AdType, States, TokenId int, Star
 	total, _ := countQuery.Count(orderModel)
 
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, 0, err
 	}
-	return &list, int(total) / PageNum, nil
+	page := int(total) / PageNum
+	return &list, page, page * PageNum, nil
 
 }

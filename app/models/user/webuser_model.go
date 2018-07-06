@@ -92,7 +92,7 @@ func (w *WebUser) GetAllUser(page, rows, status int) ([]UserGroup, int, error) {
 	return users, total, nil
 }
 
-func (w *WebUser) UserList(page, rows, verify, status int, uname, phone, email string, date, uid int64) ([]*UserGroup, int, error) {
+func (w *WebUser) UserList(page, rows, verify, status int, uname, phone, email string, date, uid int64) ([]*UserGroup, int, int, error) {
 	if rows == 0 {
 		rows = 50
 	}
@@ -118,7 +118,7 @@ func (w *WebUser) UserList(page, rows, verify, status int, uname, phone, email s
 		})
 		if err != nil {
 			utils.AdminLog.Errorln(err.Error())
-			return nil, 0, err
+			return nil, 0, 0, err
 		}
 		sql := fmt.Sprintf("select a.*,b.nick_name,b.register_time from `user` a left join user_ex b on a.uid=b.uid where a.uid=%d", uid)
 		err = engine.Sql(sql).Limit(rows, begin).Find(&users)
@@ -126,10 +126,10 @@ func (w *WebUser) UserList(page, rows, verify, status int, uname, phone, email s
 		//err = engine.Where("states=?", status).Limit(rows, begin).Find(list)
 		if err != nil {
 			utils.AdminLog.Errorln(err.Error())
-			return nil, 0, err
+			return nil, 0, 0, err
 		}
 		total = int(count) / rows
-		return users, total, nil
+		return users, total, total * rows, nil
 	}
 	//刷选条件为电话号码
 	if len(phone) != 0 {
@@ -139,7 +139,7 @@ func (w *WebUser) UserList(page, rows, verify, status int, uname, phone, email s
 		})
 		if err != nil {
 			utils.AdminLog.Errorln(err.Error())
-			return nil, 0, err
+			return nil, 0, 0, err
 		}
 		sql := fmt.Sprintf("select a.*,b.nick_name,b.register_time from `user` a left join user_ex b on a.uid=b.uid where a.phone=%s", phone)
 		err = engine.Sql(sql).Limit(rows, begin).Find(&users)
@@ -147,10 +147,10 @@ func (w *WebUser) UserList(page, rows, verify, status int, uname, phone, email s
 		//err = engine.Where("states=?", status).Limit(rows, begin).Find(list)
 		if err != nil {
 			utils.AdminLog.Errorln(err.Error())
-			return nil, 0, err
+			return nil, 0, 0, err
 		}
 		total = int(count) / rows
-		return users, total, nil
+		return users, total, total * rows, nil
 	}
 	//刷选选条件为用户名
 	if len(uname) != 0 {
@@ -160,7 +160,7 @@ func (w *WebUser) UserList(page, rows, verify, status int, uname, phone, email s
 		})
 		if err != nil {
 			utils.AdminLog.Errorln(err.Error())
-			return nil, 0, err
+			return nil, 0, 0, err
 		}
 		sql := fmt.Sprintf("select a.*,b.nick_name,b.register_time from `user` a left join user_ex b on a.uid=b.uid where b.nick_name=%s", uname)
 		fmt.Println(sql)
@@ -169,10 +169,10 @@ func (w *WebUser) UserList(page, rows, verify, status int, uname, phone, email s
 		//err = engine.Where("states=?", status).Limit(rows, begin).Find(list)
 		if err != nil {
 			utils.AdminLog.Errorln(err.Error())
-			return nil, 0, err
+			return nil, 0, 0, err
 		}
 		total = int(count) / rows
-		return users, total, nil
+		return users, total, total * rows, nil
 	}
 	//刷选条件为Email
 	if len(email) != 0 {
@@ -182,7 +182,7 @@ func (w *WebUser) UserList(page, rows, verify, status int, uname, phone, email s
 		})
 		if err != nil {
 			utils.AdminLog.Errorln(err.Error())
-			return nil, 0, err
+			return nil, 0, 0, err
 		}
 		sql := fmt.Sprintf("select a.*,b.nick_name,b.register_time from `user` a left join user_ex b on a.uid=b.uid where a.email=%s", email)
 		err = engine.Sql(sql).Limit(rows, begin).Find(&users)
@@ -190,10 +190,10 @@ func (w *WebUser) UserList(page, rows, verify, status int, uname, phone, email s
 		//err = engine.Where("states=?", status).Limit(rows, begin).Find(list)
 		if err != nil {
 			utils.AdminLog.Errorln(err.Error())
-			return nil, 0, err
+			return nil, 0, 0, err
 		}
 		total = int(count) / rows
-		return users, total, nil
+		return users, total, total * rows, nil
 	}
 	//刷选条件为 用户状态
 	if status == 1 {
@@ -203,7 +203,7 @@ func (w *WebUser) UserList(page, rows, verify, status int, uname, phone, email s
 		})
 		if err != nil {
 			utils.AdminLog.Errorln(err.Error())
-			return nil, 0, err
+			return nil, 0, 0, err
 		}
 		sql := fmt.Sprintf("select a.*,b.nick_name,b.register_time from `user` a left join user_ex b on a.uid=b.uid where a.status=%d", status)
 		err = engine.Sql(sql).Limit(rows, begin).Find(&users)
@@ -211,10 +211,10 @@ func (w *WebUser) UserList(page, rows, verify, status int, uname, phone, email s
 		//err = engine.Where("states=?", status).Limit(rows, begin).Find(list)
 		if err != nil {
 			utils.AdminLog.Errorln(err.Error())
-			return nil, 0, err
+			return nil, 0, 0, err
 		}
 		total = int(count) / rows
-		return users, total, nil
+		return users, total, total * rows, nil
 	}
 	//刷选条件为用户注册的日期
 	if date != 0 {
@@ -224,17 +224,17 @@ func (w *WebUser) UserList(page, rows, verify, status int, uname, phone, email s
 		})
 		if err != nil {
 			utils.AdminLog.Errorln(err.Error())
-			return nil, 0, err
+			return nil, 0, 0, err
 		}
 		sql := fmt.Sprintf("select a.*,b.nick_name,b.register_time from `user` a left join user_ex b on a.uid=b.uid where b.rregister_time=%d", date)
 		err = engine.Sql(sql).Limit(rows, begin).Find(&users)
 		//err := engine.Join("INNER", "register_time", "userex.uid = web.uid").Where("register_time>?", date).Limit(rows, begin).Find(&users)
 		if err != nil {
 			utils.AdminLog.Errorln(err.Error())
-			return nil, 0, err
+			return nil, 0, 0, err
 		}
 		total = int(count) / rows
-		return users, total, nil
+		return users, total, total * rows, nil
 	}
 	//刷选条件为用户的验证方式
 	if verify != 0 {
@@ -244,17 +244,17 @@ func (w *WebUser) UserList(page, rows, verify, status int, uname, phone, email s
 		})
 		if err != nil {
 			utils.AdminLog.Errorln(err.Error())
-			return nil, 0, err
+			return nil, 0, 0, err
 		}
 		sql := fmt.Sprintf("select a.*,b.nick_name,b.register_time from `user` a left join user_ex b on a.uid=b.uid where a.security_auth=%d", verify)
 		err = engine.Sql(sql).Limit(rows, begin).Find(&users)
 		//err := engine.Join("INNER", "register_time", "userex.uid = web.uid").Where("verify=?", verify).Limit(rows, begin).Find(&users)
 		if err != nil {
 			utils.AdminLog.Errorln(err.Error())
-			return nil, 0, err
+			return nil, 0, 0, err
 		}
 		total = int(count) / rows
-		return users, total, nil
+		return users, total, total * rows, nil
 	}
 	//无条件刷选
 	if status == 0 {
@@ -264,7 +264,7 @@ func (w *WebUser) UserList(page, rows, verify, status int, uname, phone, email s
 		})
 		if err != nil {
 			utils.AdminLog.Errorln(err.Error())
-			return nil, 0, err
+			return nil, 0, 0, err
 		}
 		sql := fmt.Sprintf("select a.*,b.nick_name,b.register_time from `user` a left join user_ex b on a.uid=b.uid where a.status=%d", status)
 		err = engine.Sql(sql).Limit(rows, begin).Find(&users)
@@ -272,11 +272,11 @@ func (w *WebUser) UserList(page, rows, verify, status int, uname, phone, email s
 		//err = engine.Where("states=?", status).Limit(rows, begin).Find(list)
 		if err != nil {
 			utils.AdminLog.Errorln(err.Error())
-			return nil, 0, err
+			return nil, 0, 0, err
 		}
 		fmt.Printf("查询结果为%#v\n", users)
 		total = int(count) / rows
-		return users, total, nil
+		return users, total, total * rows, nil
 	}
-	return users, total, nil
+	return users, total, total * rows, nil
 }

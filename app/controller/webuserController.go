@@ -36,11 +36,11 @@ func (w *WebUserManageController) GetWebUserList(c *gin.Context) {
 		return
 	}
 	fmt.Printf("list param %#v\n", req)
-	reuslt, total, erro := new(models.WebUser).UserList(req.Page, req.Rows, req.Verify, req.Status, req.Uname, req.Phone, req.Email, req.Date, req.Uid)
+	reuslt, page, total, erro := new(models.WebUser).UserList(req.Page, req.Rows, req.Verify, req.Status, req.Uname, req.Phone, req.Email, req.Date, req.Uid)
 	if erro != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": erro.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"code": 0, "data": reuslt, "total": total, "msg": "成功"})
+	c.JSON(http.StatusOK, gin.H{"code": 0, "page": page, "data": reuslt, "total": total, "msg": "成功"})
 	return
 }

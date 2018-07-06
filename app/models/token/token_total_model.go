@@ -35,12 +35,12 @@ func NewTotal() {
 
 //所有用户 的全部币币资产
 //第一步get 所有用户
-func (t *PersonalProperty) TotalUserBalance(page, rows, status int) ([]map[int]PersonalProperty, int, error) {
+func (t *PersonalProperty) TotalUserBalance(page, rows, status int) ([]map[int]PersonalProperty, int, int, error) {
 	//查 用户表
 
 	list, total, err := new(u.WebUser).GetAllUser(page, rows, status)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, 0, err
 	}
 	var uid []uint64
 	for _, v := range list {
@@ -51,7 +51,7 @@ func (t *PersonalProperty) TotalUserBalance(page, rows, status int) ([]map[int]P
 	token := make([]UserToken, 0)
 	err = engine.In("uid", uid).Find(&token)
 	if err != nil {
-		return nil, 0, nil
+		return nil, 0, 0, nil
 	}
 	for _, ob := range list {
 		pp := &PersonalProperty{}
@@ -69,5 +69,5 @@ func (t *PersonalProperty) TotalUserBalance(page, rows, status int) ([]map[int]P
 		m[int(pp.Uid)] = *pp
 		Total = append(Total, m)
 	}
-	return Total, total, nil
+	return Total, total, total * rows, nil
 }
