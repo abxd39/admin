@@ -2,6 +2,7 @@ package models
 
 import (
 	"admin/utils"
+
 	"fmt"
 )
 
@@ -20,6 +21,7 @@ type Tokens struct {
 	Decimal   int    `xorm:"not null default 1 comment('精度 1个eos最小精度的10的18次方') INT(11)"`
 }
 
+//获取数据货币的名称
 func (t *Tokens) GetTokensList() ([]Tokens, error) {
 	fmt.Println("1321321313212")
 	engin := utils.Engine_common

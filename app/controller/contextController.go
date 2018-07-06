@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"admin/app/models"
+	models "admin/app/models/backstage"
 	"admin/utils"
 	"fmt"
 	"net/http"
@@ -18,6 +18,7 @@ func (this *ContextController) Router(r *gin.Engine) {
 		g.GET("/link_list", this.GetFriendlyLink)
 		g.GET("/article_list", this.GetArticleList)
 		g.POST("/add_banner", this.AddBanner)
+		g.GET("/bammer_list", this.GetBannerList)
 		g.POST("/add_article", this.AddArticle)
 	}
 }
@@ -58,7 +59,7 @@ func (this *ContextController) GetFriendlyLink(c *gin.Context) {
 		return
 	}
 	//operator db         GetFriendlyLinkList
-	result, err := new(models.FriendlyLink).GetFriendlyLinkList(req.Count, req.Page)
+	result, err := new(models.FriendlyLink).GetFriendlyLinkList(req.Page, req.Count)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
 	}
@@ -91,6 +92,28 @@ func (this *ContextController) AddBanner(c *gin.Context) {
 	return
 }
 
+func (this *ContextController) GetBannerList(c *gin.Context) {
+	req := struct {
+		Page    int    `form:"page" json:"page" binding:"required"`
+		Rows    int    `form:"rows" json:"rows" `
+		Start_t string `form:"start_t" json:"start_t" `
+		End_t   string `form:"end_t" json:"end_t" `
+		Status  int    `form:"status" json:"status" `
+	}{}
+	err := c.ShouldBind(&req)
+	if err != nil {
+		utils.AdminLog.Errorf(err.Error())
+		c.JSON(http.StatusOK, gin.H{"code": 2, "data": "", "msg": err.Error()})
+		return
+	}
+	list, total, err := new(models.Banner).GetBannerList(req.Page, req.Rows, req.Status, req.Start_t, req.End_t)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+	}
+	c.JSON(http.StatusOK, gin.H{"code": 0, "total": total, "data": list, "msg": "成功"})
+
+}
+
 func (this *ContextController) GetArticleList(c *gin.Context) {
 	req := struct {
 		Page int `form:"page" json:"page" binding:"required"`
@@ -115,10 +138,10 @@ func (this *ContextController) AddArticle(c *gin.Context) {
 	req := struct {
 		Title         string `form:"title" json:"title" binding:"required"`
 		Description   string `form:"desc" json:"desc" `
-		Content       string `form:"content" json:"content" binding:"required"` //path
-		Covers        string `form:"covers" json:"covers"`                      //图片内容
-		ContentImages string `form:"content_Image" json:"content_Image" `       //缩略图
-		Type          int    `form:"type" json:"type" binding:"required"`       //文章类型
+		Content       string `form:"path" json:"path" binding:"required"` //path
+		Covers        string `form:"covers" json:"covers"`                //图片内容
+		ContentImages string `form:"content_Image" json:"content_Image" ` //缩略图
+		Type          int    `form:"type" json:"type" binding:"required"` //文章类型
 		Weight        int    `form:"weight" json:"weight" `
 		Astatus       int    `form:"status" json:"status" binding:"required"`
 	}{}

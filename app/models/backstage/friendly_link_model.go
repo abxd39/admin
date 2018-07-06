@@ -39,8 +39,14 @@ func (f *FriendlyLink) Add(order, state int, wn, ln string) error {
 func (f *FriendlyLink) GetFriendlyLinkList(page, count int) ([]*FriendlyLink, error) {
 	engine := utils.Engine_context
 	//page !=0
-	if 0 == page {
+	if 1 >= page {
 		page = 1
+	}
+	var limit int
+	if 1 >= page {
+		limit = 0
+	} else {
+		limit = (page - 1) * count
 	}
 
 	defa := count
@@ -55,15 +61,9 @@ func (f *FriendlyLink) GetFriendlyLinkList(page, count int) ([]*FriendlyLink, er
 	}
 
 	page = int(total) / count
-	var limit int
-	if 1 == page {
-		limit = 1
-	} else {
-		limit = page * count
-	}
 
 	friendlist := make([]FriendlyLink, 0)
-
+	fmt.Println("count=", count, "limit=", limit)
 	err = engine.Limit(count, limit).Find(&friendlist)
 	if err != nil {
 		utils.AdminLog.Errorln(err.Error())

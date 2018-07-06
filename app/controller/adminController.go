@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"admin/app/models"
+	models "admin/app/models/backstage"
 	"admin/utils"
 	"crypto/md5"
 	"encoding/hex"

@@ -1,6 +1,7 @@
 package models
 
 import (
+	models "admin/app/models/user"
 	"admin/utils"
 	"fmt"
 )
@@ -91,10 +92,10 @@ type Currency struct {
 	Email   string `form:"email" json:"email" `
 	Ustatus int    `form:"ustatus" json:"ustatus" ` //用户登录状态
 	/// g_currency
-	Date      string `form:"date" json:"date" `     //挂单日期
-	Verify    int    `form:"verify" json:"verify" ` //实名认证 二级认证 google 验证
-	TokenName string `form:"tname" json:"tname" `   //货币名称
-	TradeId   int    `form:"tid" json:"tid" `       //买卖ID
+	Date    string `form:"date" json:"date" `         //挂单日期
+	Verify  int    `form:"verify" json:"verify" `     //实名认证 二级认证 google 验证
+	TokenId int    `form:"token_id" json:"token_id" ` //货币名称
+	TradeId int    `form:"tid" json:"tid" `           //买卖ID
 }
 
 // 法币交易列表 - (广告(买卖))
@@ -131,8 +132,8 @@ func (this *Ads) GetAdsList(cur Currency) ([]AdsUserCurrencyCount, int64, error)
 		this.trade_id(cur.Page, cur.PageNum, cur.TradeId, &data)
 	} else if cur.Uid != 0 {
 		this.uid(cur.Page, cur.PageNum, cur.Uid, &data)
-	} else if len(cur.TokenName) != 0 {
-		this.token_name(cur.Page, cur.PageNum, cur.TokenName, &data)
+	} else if cur.TokenId != 0 {
+		this.token_id(cur.Page, cur.PageNum, cur.TokenId, &data)
 	} else if len(cur.Date) != 0 {
 		this.date(cur.Page, cur.PageNum, cur.Date, &data)
 	} else if len(cur.Phone) != 0 {
@@ -181,7 +182,7 @@ func (this *Ads) GetAdsList(cur Currency) ([]AdsUserCurrencyCount, int64, error)
 	return data, total, nil
 }
 
-func (a *Ads) getUserList(uid []uint64) (ulist []UserGroup, err error) {
+func (a *Ads) getUserList(uid []uint64) (ulist []models.UserGroup, err error) {
 	engine := utils.Engine_common
 	err = engine.Sql("select a.*,b.nick_name,b.register_time from `user` a left join user_ex b on a.uid=b.uid ").In("uid", uid).Find(&ulist)
 	if err != nil {
@@ -289,11 +290,11 @@ func (a *Ads) trade_id(page, limit int, tradeid int, result *[]AdsUserCurrencyCo
 	return nil
 }
 
-func (a *Ads) token_name(page, limit int, tokenname string, result *[]AdsUserCurrencyCount) error {
+func (a *Ads) token_id(page, limit int, tokenId int, result *[]AdsUserCurrencyCount) error {
 	engine := utils.Engine_currency
 	err := engine.Join("INNER", "user_currency", "ads.uid=user_currency.uid").
 		Join("LEFT", "user_currency_count", "ads.uid=user_currency_count.uid").
-		Where("token_name=?", tokenname).
+		Where("token_id=?", tokenId).
 		Find(result)
 	if err != nil {
 		utils.AdminLog.Errorln(err.Error())

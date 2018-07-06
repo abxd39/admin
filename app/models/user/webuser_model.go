@@ -1,6 +1,7 @@
 package models
 
 import (
+	models "admin/app/models/backstage"
 	"admin/utils"
 	"fmt"
 )
@@ -50,6 +51,47 @@ func (w *UserGroup) TableName() string {
 	return "user"
 }
 
+func (w *WebUser) GetAllUser(page, rows, status int) ([]UserGroup, int, error) {
+	engine := utils.Engine_common
+	if page <= 1 {
+		page = 1
+	}
+	var begin int
+
+	if rows <= 1 {
+		rows = 100
+	}
+
+	if page > 1 {
+		begin = (page - 1) * rows
+	} else {
+		begin = 0
+	}
+	users := make([]UserGroup, 0)
+	u := new(WebUser)
+	count, err := engine.Where("status=?", status).Count(u)
+	if err != nil {
+		return nil, 0, err
+	}
+	var total int
+	if int(count) > rows {
+		total = int(count) / rows
+		v := int(count) % rows
+		if v >= 0 {
+			total = total + 1
+		}
+	} else {
+		total = 1
+	}
+	sql := fmt.Sprintf("select a.*,b.nick_name,b.register_time from `user` a left join user_ex b on a.uid=b.uid ")
+	fmt.Println("GetAllUser", rows, begin)
+	err = engine.Sql(sql).Limit(rows, begin).Find(&users)
+	if err != nil {
+		return nil, 0, err
+	}
+	return users, total, nil
+}
+
 func (w *WebUser) UserList(page, rows, verify, status int, uname, phone, email string, date, uid int64) ([]*UserGroup, int, error) {
 	if rows == 0 {
 		rows = 50
@@ -62,7 +104,7 @@ func (w *WebUser) UserList(page, rows, verify, status int, uname, phone, email s
 	if page <= 1 {
 		begin = 0
 	} else {
-		begin = rows * page
+		begin = rows * (page - 1)
 	}
 
 	//数据查询
@@ -71,7 +113,7 @@ func (w *WebUser) UserList(page, rows, verify, status int, uname, phone, email s
 	//筛选条件为 uid
 	if uid != 0 {
 		fmt.Println("uid")
-		count, err = engine.Count(&User{
+		count, err = engine.Count(&models.User{
 			Uid: int(uid),
 		})
 		if err != nil {

@@ -41,3 +41,51 @@ func (b *Banner) Add(or, state int, picname, picp, linkaddr, st, et string) erro
 	}
 	return nil
 }
+
+func (b *Banner) GetBannerList(page, rows, status int, start_t, end_t string) ([]Banner, int, error) {
+	engine := utils.Engine_common
+	limit := 0
+	if rows <= 0 {
+		rows = 100
+	}
+	if page <= 1 {
+		page = 1
+	} else {
+		limit = (page - 1) * rows
+	}
+	ban := new(Banner)
+	count, err := engine.Count(ban)
+	if err != nil {
+		return nil, 0, err
+	}
+	var total int
+	unmber := int(count)
+	if unmber > rows {
+		total = unmber / rows
+		v := unmber % rows
+		if v != 0 {
+			total = total + 1
+		}
+	}
+	list := make([]Banner, 0)
+	if status != 0 {
+		err := engine.Where("status=?", status).Limit(rows, limit).Find(&list)
+		if err != nil {
+			return nil, 0, err
+		}
+		return list, total, nil
+	} else if len(start_t) != 0 || len(end_t) != 0 {
+		err = engine.Where("time_start>=?", end_t).Where("time_end<=?", start_t).Limit(rows, limit).Find(&list)
+		if err != nil {
+			return nil, 0, err
+		}
+		return list, total, nil
+	} else {
+		err := engine.Limit(rows, limit).Find(&list)
+		if err != nil {
+			return nil, 0, err
+		}
+		return list, total, nil
+	}
+
+}
