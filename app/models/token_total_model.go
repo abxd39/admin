@@ -23,7 +23,7 @@ type PersonalProperty struct {
 	Btc      float32 //折合比特币总数
 	Balance  float64 // 这和人民币总数
 	Status   int     //账号状态
-	Token    []UserToken
+	token    []UserToken
 }
 
 var Total []map[int]PersonalProperty
@@ -61,7 +61,7 @@ func (t *PersonalProperty) TotalUserBalance(page, rows, status int) ([]map[int]P
 		pp.Status = ob.Status
 		for _, result := range token {
 			if ob.Uid == result.Uid {
-				pp.Token = append(pp.Token, result)
+				pp.token = append(pp.token, result)
 			}
 		}
 		m := make(map[int]PersonalProperty, 0)

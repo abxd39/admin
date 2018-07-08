@@ -41,6 +41,7 @@ type UserGroup struct {
 	WebUser            `xorm:"extends"`
 	NickName           string `xorm:"not null default '' comment('用户昵称') VARCHAR(64)"`
 	RegisterTime       int64  `xorm:"comment('注册时间') BIGINT(20)"`
+	RealName           string `xorm:"comment(' 真名') VARCHAR(32)"`
 	RealNameVerifyMark int
 	GoogleVerifyMark   int
 	TWOVerifyMark      int
@@ -81,29 +82,21 @@ func (w *WebUser) GetAllUser(page, rows, status int) ([]UserGroup, int, int, err
 		begin = 0
 	}
 	users := make([]UserGroup, 0)
+
+	query := engine.Desc("user.uid")
+	query = query.Join("INNER", "user_ex", "user_ex.uid=user.uid")
+	tempquery := query
+	err := query.Limit(rows, begin).Find(&users)
+	if err != nil {
+		return nil, 0, 0, err
+	}
 	u := new(WebUser)
-	count, err := engine.Where("status=?", status).Count(u)
+	count, err := tempquery.Count(u)
 	if err != nil {
 		return nil, 0, 0, err
 	}
-	var total int
-	if int(count) > rows {
-		total = int(count) / rows
-		v := int(count) % rows
-		if v >= 0 {
-			total = total + 1
-		}
-	} else {
-		total = 1
-	}
-	err = engine.Join("INNER", "user_ex", "user_ex.uid=user.uid").Limit(rows, begin).Find(&users)
-	// sql := fmt.Sprintf("select a.*,b.nick_name,b.register_time from `user` a left join user_ex b on a.uid=b.uid ")
-	// fmt.Println("GetAllUser", rows, begin)
-	// err = engine.Sql(sql).Limit(rows, begin).Find(&users)
-	if err != nil {
-		return nil, 0, 0, err
-	}
-	return users, total, total * rows, nil
+	total := int(count) / rows
+	return users, total, int(count), nil
 }
 
 func (w *WebUser) UserList(page, rows, verify, status int, uname, phone, email string, date, uid int64) ([]*UserGroup, int, int, error) {
