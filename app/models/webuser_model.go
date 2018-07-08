@@ -86,10 +86,13 @@ func (w *WebUser) GetAllUser(page, rows, status int) ([]UserGroup, int, int, err
 	query := engine.Desc("user.uid")
 	query = query.Join("INNER", "user_ex", "user_ex.uid=user.uid")
 	tempquery := query
-	err := query.Limit(rows, begin).Find(&users)
+	fmt.Println("GetAllUser", rows, begin)
+	query.Limit(rows, begin)
+	err := query.Find(&users)
 	if err != nil {
 		return nil, 0, 0, err
 	}
+	fmt.Println(len(users))
 	u := new(WebUser)
 	count, err := tempquery.Count(u)
 	if err != nil {

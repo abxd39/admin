@@ -26,11 +26,11 @@ type PersonalProperty struct {
 	token    []UserToken
 }
 
-var Total []PersonalProperty
+// var Total []PersonalProperty
 
-func NewTotal() {
-	Total = make([]PersonalProperty, 0)
-}
+// func NewTotal() {
+// 	Total = make([]PersonalProperty, 0)
+// }
 
 //func (u*UserToken)
 //所有用户 的全部币币资产
@@ -53,6 +53,7 @@ func (t *PersonalProperty) TotalUserBalance(page, rows, status int) ([]PersonalP
 	if err != nil {
 		return nil, 0, 0, nil
 	}
+	Total := make([]PersonalProperty, 0)
 	for _, ob := range list {
 		pp := &PersonalProperty{}
 		pp.Uid = int(ob.Uid)
@@ -65,6 +66,7 @@ func (t *PersonalProperty) TotalUserBalance(page, rows, status int) ([]PersonalP
 				pp.token = append(pp.token, result)
 			}
 		}
+
 		Total = append(Total, *pp)
 	}
 	return Total, page, total, nil
