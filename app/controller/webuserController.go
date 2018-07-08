@@ -122,6 +122,31 @@ func (w *WebUserManageController) GetWebUserList(c *gin.Context) {
 	}
 	fmt.Printf("list param %#v\n", req)
 	reuslt, page, total, err := new(models.WebUser).UserList(req.Page, req.Rows, req.Verify, req.Status, req.Uname, req.Phone, req.Email, req.Date, req.Uid)
+	for _, v := range reuslt {
+
+		if v.SecurityAuth == 7 {
+			v.GoogleVerifyMark = 1
+			v.RealNameVerifyMark = 1
+			v.TWOVerifyMark = 1
+		} else if v.SecurityAuth == 1 {
+			v.TWOVerifyMark = 1
+
+		} else if v.SecurityAuth == 2 {
+			v.GoogleVerifyMark = 1
+		} else if v.SecurityAuth == 3 {
+			v.GoogleVerifyMark = 1
+			v.TWOVerifyMark = 1
+		} else if v.SecurityAuth == 4 {
+			v.RealNameVerifyMark = 1
+		} else if v.SecurityAuth == 5 {
+			v.RealNameVerifyMark = 1
+			v.TWOVerifyMark = 1
+		} else if v.SecurityAuth == 6 {
+			v.RealNameVerifyMark = 1
+			v.GoogleVerifyMark = 1
+		}
+
+	}
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
 		return
