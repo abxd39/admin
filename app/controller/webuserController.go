@@ -1,8 +1,7 @@
 package controller
 
 import (
-	cur "admin/app/models/currency"
-	models "admin/app/models/user"
+	"admin/app/models"
 	"admin/utils"
 	"fmt"
 	"net/http"
@@ -49,7 +48,7 @@ func (w *WebUserManageController) GetTotalProperty(c *gin.Context) {
 	// 	c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
 	// 	return
 	// }
-	orderlist, err := new(cur.Order).GetOrderId(userlist, req.Status)
+	orderlist, err := new(models.Order).GetOrderId(userlist, req.Status)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
 		return

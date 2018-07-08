@@ -1,9 +1,7 @@
 package controller
 
 import (
-	models "admin/app/models/currency"
-	m "admin/app/models/token"
-	u "admin/app/models/user"
+	"admin/app/models"
 	"admin/utils"
 	"fmt"
 	"net/http"
@@ -134,7 +132,7 @@ func (cu *CurrencyController) GetTotalCurrencyBalance(c *gin.Context) {
 	list := make([]listCurrency, 0)
 	uid := make([]uint64, 0)
 	//第一步 调用获取 用户资料
-	result, page, total, err := new(u.UserGroup).GetAllUser(req.Page, req.Page_num, req.Status)
+	result, page, total, err := new(models.UserGroup).GetAllUser(req.Page, req.Page_num, req.Status)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
 	}
@@ -202,7 +200,7 @@ func (cu *CurrencyController) GetTradeList(c *gin.Context) {
 
 func (cu *CurrencyController) GetTokensList(c *gin.Context) {
 	fmt.Println("tttttttttttttttttttttttttttttttttttttttt")
-	list, err := new(m.Tokens).GetTokensList()
+	list, err := new(models.Tokens).GetTokensList()
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
 		return

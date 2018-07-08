@@ -1,4 +1,4 @@
-package models
+package backstage
 
 type Role struct {
 	Id     int    `xorm:"not null pk autoincr INT(11)"`

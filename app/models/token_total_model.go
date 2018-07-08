@@ -1,7 +1,6 @@
 package models
 
 import (
-	u "admin/app/models/user"
 	"admin/utils"
 	"fmt"
 )
@@ -38,7 +37,7 @@ func NewTotal() {
 func (t *PersonalProperty) TotalUserBalance(page, rows, status int) ([]map[int]PersonalProperty, int, int, error) {
 	//查 用户表
 
-	list, page, total, err := new(u.WebUser).GetAllUser(page, rows, status)
+	list, page, total, err := new(WebUser).GetAllUser(page, rows, status)
 	if err != nil {
 		return nil, 0, 0, err
 	}

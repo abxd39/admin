@@ -1,7 +1,6 @@
 package models
 
 import (
-	models "admin/app/models/user"
 	"admin/utils"
 	"errors"
 	"fmt"
@@ -222,7 +221,7 @@ func (this *Ads) GetAdsList(cur Currency) ([]AdsUserCurrencyCount, int, int, err
 	return data, page, total, nil
 }
 
-func (a *Ads) getUserList(uid []uint64) (ulist []models.UserGroup, err error) {
+func (a *Ads) getUserList(uid []uint64) (ulist []UserGroup, err error) {
 	engine := utils.Engine_common
 	err = engine.Sql("select a.*,b.nick_name,b.register_time from `user` a left join user_ex b on a.uid=b.uid ").In("uid", uid).Find(&ulist)
 	if err != nil {

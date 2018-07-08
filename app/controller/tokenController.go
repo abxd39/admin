@@ -1,7 +1,7 @@
 package controller
 
 import (
-	models "admin/app/models/token"
+	"admin/app/models"
 	"admin/utils"
 	"fmt"
 	"net/http"

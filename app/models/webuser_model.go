@@ -1,9 +1,9 @@
 package models
 
 import (
-	models "admin/app/models/backstage"
 	"admin/utils"
 	"fmt"
+	//google "code.google.com/a_game/src/models"
 )
 
 type UserEx struct {
@@ -124,8 +124,8 @@ func (w *WebUser) UserList(page, rows, verify, status int, uname, phone, email s
 	//筛选条件为 uid
 	if uid != 0 {
 		fmt.Println("uid")
-		count, err = engine.Count(&models.User{
-			Uid: int(uid),
+		count, err = engine.Count(&WebUser{
+			Uid: uint64(uid),
 		})
 		if err != nil {
 			utils.AdminLog.Errorln(err.Error())

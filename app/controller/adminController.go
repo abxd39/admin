@@ -1,7 +1,7 @@
 package controller
 
 import (
-	models "admin/app/models/backstage"
+	bk "admin/app/models/backstage"
 	"admin/utils"
 	"crypto/md5"
 	"encoding/hex"
@@ -10,7 +10,7 @@ import (
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"github.com/mojocn/base64Captcha"
+	google "github.com/mojocn/base64Captcha"
 )
 
 type AdminController struct {
@@ -30,7 +30,7 @@ func (this *AdminController) Router(r *gin.Engine) {
 
 func (this *AdminController) Code(ctx *gin.Context) {
 	fmt.Println("...............................................")
-	var configD = base64Captcha.ConfigDigit{
+	var configD = google.ConfigDigit{
 		Height:     40,
 		Width:      120,
 		MaxSkew:    0.7,
@@ -39,14 +39,14 @@ func (this *AdminController) Code(ctx *gin.Context) {
 	}
 
 	//ctx.Request.AddCookie()
-	idKeyD, capD := base64Captcha.GenerateCaptcha("", configD)
+	idKeyD, capD := google.GenerateCaptcha("", configD)
 	// cook := &http.Cookie{
 	// 	Name:  "idkey",
 	// 	Path:  "/",
 	// 	Value: idKeyD,
 	// }
 	//以base64编码
-	base64stringD := base64Captcha.CaptchaWriteToBase64Encoding(capD)
+	base64stringD := google.CaptchaWriteToBase64Encoding(capD)
 	//ctx.Request.AddCookie(cook)
 	session := sessions.Default(ctx)
 	session.Clear()
@@ -61,8 +61,8 @@ func (this *AdminController) Code(ctx *gin.Context) {
 //verfiy
 
 func verifyCaptcha(idkey, verifyValue string) bool {
-	return base64Captcha.VerifyCaptcha(idkey, verifyValue)
-
+	// return google.VerifyCaptcha(idkey, verifyValue)
+	return false
 }
 
 func (this *AdminController) Login(ctx *gin.Context) {
@@ -107,7 +107,7 @@ func (this *AdminController) Login(ctx *gin.Context) {
 	fmt.Println("hasvalue=", hex.EncodeToString(hasvalue))
 	var uid int
 	var name string
-	name, uid, err = new(models.User).Login(hex.EncodeToString(hasvalue), req.Phone)
+	name, uid, err = new(bk.User).Login(hex.EncodeToString(hasvalue), req.Phone)
 	if err != nil {
 		ctx.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": "登录失败"})
 		return
