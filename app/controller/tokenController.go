@@ -34,9 +34,9 @@ func (this *TokenController) GetTokenBalance(c *gin.Context) {
 		return
 	}
 	fmt.Printf("GetTokenBalance%#v\n", req)
-	list, page, toal, oerr := new(models.PersonalProperty).TotalUserBalance(req.Page, req.Page_num, req.Status)
-	if oerr != nil {
-		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": oerr.Error()})
+	list, page, toal, err := new(models.PersonalProperty).TotalUserBalance(req.Page, req.Page_num, req.Status)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"code": 0, "page": page, "total": toal, "data": list, "msg": "成功"})
@@ -60,9 +60,9 @@ func (this *TokenController) GetRecordList(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"code": 2, "data": "", "msg": err.Error()})
 		return
 	}
-	list, page, toal, oerr := new(models.EntrustDetail).GetTokenRecordList(req.Page, req.Page_num, req.Trade_id, req.Trade_duad, req.Ad_id, req.Start_t, req.End_t)
-	if oerr != nil {
-		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": oerr.Error()})
+	list, page, toal, err := new(models.EntrustDetail).GetTokenRecordList(req.Page, req.Page_num, req.Trade_id, req.Trade_duad, req.Ad_id, req.Start_t, req.End_t)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"code": 0, "page": page, "total": toal, "data": list, "msg": "成功"})
@@ -88,9 +88,9 @@ func (this *TokenController) GetTokenOderList(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"code": 2, "data": "", "msg": err.Error()})
 		return
 	}
-	list, page, toal, oerr := new(models.EntrustDetail).GetTokenOrderList(req.Page, req.Page_num, req.Trade_id, req.Trade_duad, req.Ad_id, req.Status, req.Start_t, req.End_t)
-	if oerr != nil {
-		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": oerr.Error()})
+	list, page, toal, err := new(models.EntrustDetail).GetTokenOrderList(req.Page, req.Page_num, req.Trade_id, req.Trade_duad, req.Ad_id, req.Status, req.Start_t, req.End_t)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"code": 0, "page": page, "total": toal, "data": list, "msg": "成功"})

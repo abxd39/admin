@@ -25,9 +25,66 @@ func (this *CurrencyController) Router(r *gin.Engine) {
 	}
 }
 func (cu *CurrencyController) GetBuySellList(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"code": 0, "total": 0, "data": 0, "msg": "成功"})
+	//个人用户交易记录
+	req := struct {
+		Uid      int `form:"uid" json:"uid" binding:"required"`
+		Token_id int `form:"token_id" json:"token_id"`
+	}{}
+	err := c.ShouldBind(&req)
+	if err != nil {
+		utils.AdminLog.Errorf(err.Error())
+		c.JSON(http.StatusOK, gin.H{"code": 2, "data": "", "msg": err.Error()})
+		return
+	}
+	uid := make([]int, 0)
+	uid = append(uid, req.Uid)
+	fmt.Printf("GetBuySellList%#v\n", uid)
+	list, err := new(models.Order).GetOrderId(uid, 0)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+		return
+	}
+	type Rsp struct {
+		TokenId        uint64
+		BuyQuantity    float32
+		BuyTotalPrice  float32
+		SellQuantity   float32
+		SellTotalPrice float32
+		Transfer       float32
+	}
+	//法币买入/卖出
+	var mapToken map[uint64]*Rsp
+	mapToken = make(map[uint64]*Rsp, 0)
+	for _, v := range list {
+
+		switch v.AdType {
+		case 1: //出售
+			if _, ok := mapToken[v.TokenId]; ok {
+				mapToken[v.TokenId].SellQuantity += float32(v.Num)
+				mapToken[v.TokenId].SellTotalPrice += float32(v.Price * v.Num)
+			} else {
+				mapToken[v.TokenId] = new(Rsp)
+				mapToken[v.TokenId].SellTotalPrice = float32(v.Price * v.Num)
+				mapToken[v.TokenId].SellQuantity = float32(v.Num)
+			}
+		case 2: //购买
+			if _, ok := mapToken[v.TokenId]; ok {
+				mapToken[v.TokenId].BuyQuantity += float32(v.Num)
+				mapToken[v.TokenId].BuyTotalPrice += float32(v.Price * v.Num)
+			} else {
+				mapToken[v.TokenId] = new(Rsp)
+				mapToken[v.TokenId].BuyQuantity = float32(v.Num)
+				mapToken[v.TokenId].BuyTotalPrice = float32(v.Price * v.Num)
+			}
+		default:
+			continue
+		}
+	}
+	//
+	c.JSON(http.StatusOK, gin.H{"code": 0, "total": len(mapToken), "data": mapToken, "msg": "成功"})
 	return
 }
+
 func (cu *CurrencyController) GetUserDetailList(c *gin.Context) {
 	req := struct {
 		Uid      int `form:"uid" json:"uid" binding:"required"`
@@ -50,6 +107,7 @@ func (cu *CurrencyController) GetUserDetailList(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"code": 0, "page": page, "total": total, "data": result, "msg": "成功"})
 	return
 }
+
 func (cu *CurrencyController) GetTotalCurrencyBalance(c *gin.Context) {
 	req := struct {
 		Page     int    `form:"page" json:"page" binding:"required"`
@@ -76,10 +134,11 @@ func (cu *CurrencyController) GetTotalCurrencyBalance(c *gin.Context) {
 	list := make([]listCurrency, 0)
 	uid := make([]uint64, 0)
 	//第一步 调用获取 用户资料
-	result, total, err := new(u.UserGroup).GetAllUser(req.Page, req.Page_num, req.Status)
+	result, page, total, err := new(u.UserGroup).GetAllUser(req.Page, req.Page_num, req.Status)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
 	}
+	fmt.Printf("GetTotalCurrencyBalance%#v\n", result)
 	for _, v := range result {
 
 		rsp := listCurrency{
@@ -95,6 +154,20 @@ func (cu *CurrencyController) GetTotalCurrencyBalance(c *gin.Context) {
 		uid = append(uid, v.Uid)
 		list = append(list, rsp)
 	}
+	currlist, err := new(models.UserCurrency).GetAll(uid)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+		return
+	}
+	//找出所有相同的uid 的资产
+
+	for _, v := range uid {
+		for _, v1 := range currlist {
+			if v == v1.Uid {
+				//
+			}
+		}
+	}
 	//根据法币账户的成交uid 去获取 用户资料
 
 	// result, total, err := new(models.Ads).xxx(req)
@@ -102,7 +175,7 @@ func (cu *CurrencyController) GetTotalCurrencyBalance(c *gin.Context) {
 	// 	c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
 	// 	return
 	// }
-	c.JSON(http.StatusOK, gin.H{"code": 0, "total": total, "data": list, "msg": "成功"})
+	c.JSON(http.StatusOK, gin.H{"code": 0, "page": page, "total": total, "data": list, "msg": "成功"})
 	return
 }
 
@@ -155,9 +228,9 @@ func (cu *CurrencyController) GetOderList(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"code": 2, "data": "", "msg": err.Error()})
 		return
 	}
-	list, page, toal, oerr := new(models.Order).GetOrderList(req.Page, req.Page_num, req.Ad_type, req.Status, req.Token_id, req.Start_t, req.End_t)
-	if oerr != nil {
-		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": oerr.Error()})
+	list, page, toal, err := new(models.Order).GetOrderList(req.Page, req.Page_num, req.Ad_type, req.Status, req.Token_id, req.Start_t, req.End_t)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"code": 0, "page": page, "total": toal, "data": list, "msg": "成功"})

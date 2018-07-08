@@ -3,6 +3,7 @@ package models
 import (
 	models "admin/app/models/user"
 	"admin/utils"
+	"errors"
 	"fmt"
 )
 
@@ -96,6 +97,32 @@ type Currency struct {
 	Verify  int    `form:"verify" json:"verify" `     //实名认证 二级认证 google 验证
 	TokenId int    `form:"token_id" json:"token_id" ` //货币名称
 	TradeId int    `form:"tid" json:"tid" `           //买卖ID
+}
+
+//更具UID 获取所有广告id
+
+type AdIdOfUid struct {
+	Id     uint64 `xorm:"not null pk autoincr INT(10)" json:"id"`
+	Uid    uint64 `xorm:"INT(10)" json:"uid"`        // 用户ID
+	TypeId uint32 `xorm:"TINYINT(1)" json:"type_id"` // 类型:1出售 2购买
+}
+
+func (a *AdIdOfUid) TableName() string {
+	return "ads"
+}
+
+//根据UID提取广告id
+func (this *Ads) GetIdList(uid []int) ([]AdIdOfUid, error) {
+	if len(uid) <= 0 {
+		return nil, errors.New("uid list is empty !!")
+	}
+	engine := utils.Engine_currency
+	adlist := make([]AdIdOfUid, 0)
+	err := engine.In("uid", uid).Cols("id", "uid", "type_id").Find(&adlist)
+	if err != nil {
+		return nil, err
+	}
+	return adlist, nil
 }
 
 // 法币交易列表 - (广告(买卖))

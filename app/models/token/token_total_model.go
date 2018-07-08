@@ -38,7 +38,7 @@ func NewTotal() {
 func (t *PersonalProperty) TotalUserBalance(page, rows, status int) ([]map[int]PersonalProperty, int, int, error) {
 	//查 用户表
 
-	list, total, err := new(u.WebUser).GetAllUser(page, rows, status)
+	list, page, total, err := new(u.WebUser).GetAllUser(page, rows, status)
 	if err != nil {
 		return nil, 0, 0, err
 	}
@@ -69,5 +69,5 @@ func (t *PersonalProperty) TotalUserBalance(page, rows, status int) ([]map[int]P
 		m[int(pp.Uid)] = *pp
 		Total = append(Total, m)
 	}
-	return Total, total, total * rows, nil
+	return Total, page, total, nil
 }

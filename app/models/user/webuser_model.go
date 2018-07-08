@@ -51,7 +51,17 @@ func (w *UserGroup) TableName() string {
 	return "user"
 }
 
-func (w *WebUser) GetAllUser(page, rows, status int) ([]UserGroup, int, error) {
+func (w *WebUser) GetTotalUser() (int, error) {
+	engine := utils.Engine_common
+	u := new(WebUser)
+	count, err := engine.Count(u)
+	if err != nil {
+		return 0, err
+	}
+	return int(count), nil
+}
+
+func (w *WebUser) GetAllUser(page, rows, status int) ([]UserGroup, int, int, error) {
 	engine := utils.Engine_common
 	if page <= 1 {
 		page = 1
@@ -71,7 +81,7 @@ func (w *WebUser) GetAllUser(page, rows, status int) ([]UserGroup, int, error) {
 	u := new(WebUser)
 	count, err := engine.Where("status=?", status).Count(u)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, 0, err
 	}
 	var total int
 	if int(count) > rows {
@@ -83,13 +93,14 @@ func (w *WebUser) GetAllUser(page, rows, status int) ([]UserGroup, int, error) {
 	} else {
 		total = 1
 	}
-	sql := fmt.Sprintf("select a.*,b.nick_name,b.register_time from `user` a left join user_ex b on a.uid=b.uid ")
-	fmt.Println("GetAllUser", rows, begin)
-	err = engine.Sql(sql).Limit(rows, begin).Find(&users)
+	err = engine.Join("INNER", "user_ex", "user_ex.uid=user.uid").Limit(rows, begin).Find(&users)
+	// sql := fmt.Sprintf("select a.*,b.nick_name,b.register_time from `user` a left join user_ex b on a.uid=b.uid ")
+	// fmt.Println("GetAllUser", rows, begin)
+	// err = engine.Sql(sql).Limit(rows, begin).Find(&users)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, 0, err
 	}
-	return users, total, nil
+	return users, total, total * rows, nil
 }
 
 func (w *WebUser) UserList(page, rows, verify, status int, uname, phone, email string, date, uid int64) ([]*UserGroup, int, int, error) {

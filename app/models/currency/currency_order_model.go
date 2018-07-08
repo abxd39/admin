@@ -2,6 +2,8 @@ package models
 
 import (
 	"admin/utils"
+	"errors"
+	"fmt"
 )
 
 // 订单表
@@ -26,8 +28,36 @@ type Order struct {
 	UpdatedTime string `xorm:"comment('修改时间') DATETIME"    json:"updated_time"`
 }
 
+type OrderGroup struct {
+	Order `xorm:"extends"`
+	Uid   uint64 `xorm:"INT(10)"     json:"uid"`
+}
+
+func (o *Order) TableName() string {
+	return "order"
+}
+
 //
-//func (this *Order) GetList
+//根据 uid  及交易状态 多表查询拉取 所有相关订单的交易记录
+func (this *Order) GetOrderId(uid []int, status int) ([]OrderGroup, error) {
+	if len(uid) <= 0 {
+		return nil, errors.New("uid [] is empty!!")
+	}
+	fmt.Println("GetOrderId", uid, status)
+	list := make([]OrderGroup, 0)
+	engine := utils.Engine_currency
+	query := engine.Desc("order.id")
+	query = query.Join("INNER", "ads", "order.ad_id=ads.id")
+	query = query.In("uid", uid)
+	query = query.Where("pay_status=?", status)
+	err := query.Find(&list)
+
+	//err := engine.In("uid", orderId).Where("status=?", status).Find(&list)
+	if err != nil {
+		return nil, err
+	}
+	return list, nil
+}
 
 //列出订单
 func (this *Order) GetOrderList(Page, PageNum, AdType, States, TokenId int, StartTime, EndTime string) (*[]Order, int, int, error) {
@@ -77,6 +107,6 @@ func (this *Order) GetOrderList(Page, PageNum, AdType, States, TokenId int, Star
 		return nil, 0, 0, err
 	}
 	page := int(total) / PageNum
-	return &list, page, page * PageNum, nil
+	return &list, page, int(total), nil
 
 }

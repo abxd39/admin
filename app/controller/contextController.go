@@ -20,9 +20,19 @@ func (this *ContextController) Router(r *gin.Engine) {
 		g.POST("/add_banner", this.AddBanner)
 		g.GET("/banner_list", this.GetBannerList)
 		g.POST("/add_article", this.AddArticle)
+		g.GET("/article_type", this.GetArticleType)
 	}
 }
 
+func (this *ContextController) GetArticleType(c *gin.Context) {
+	result, err := new(models.ArticleType).GetArticleType()
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"code": 0, "data": result, "msg": "成功"})
+	return
+}
 func (this *ContextController) AddFriendlyLink(c *gin.Context) {
 
 	req := struct {
@@ -117,9 +127,12 @@ func (this *ContextController) GetBannerList(c *gin.Context) {
 
 func (this *ContextController) GetArticleList(c *gin.Context) {
 	req := struct {
-		Page int `form:"page" json:"page" binding:"required"`
-		Rows int `form:"rows" json:"rows" `
-		Type int `form:"type" json:"type" binding:"required"`
+		Page    int    `form:"page" json:"page" binding:"required"`
+		Rows    int    `form:"rows" json:"rows" `
+		Type    int    `form:"type" json:"type" binding:"required"`
+		Start_t string `form:"start_t" json:"start_t" `
+		End_t   string `form:"end_t" json:"end_t" `
+		Status  int    `form:"status" json:"status" `
 	}{}
 	fmt.Println("获取文章列表")
 	err := c.ShouldBind(&req)
@@ -128,9 +141,9 @@ func (this *ContextController) GetArticleList(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"code": 2, "data": "", "msg": err.Error()})
 		return
 	}
-	reuslt, total, er := new(models.ArticleList).GetArticleList(req.Page, req.Rows, req.Type)
-	if er != nil {
-		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": er.Error()})
+	reuslt, total, err := new(models.ArticleList).GetArticleList(req.Page, req.Rows, req.Type)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
 	}
 	c.JSON(http.StatusOK, gin.H{"code": 0, "data": reuslt, "total": total, "msg": "成功"})
 }

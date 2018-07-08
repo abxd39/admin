@@ -16,7 +16,7 @@ type UserCurrency struct {
 	Version   int64  `xorm:"version"`
 }
 
-//获取法币账户资产
+//获取单个用户的所有法币资产
 func (this *UserCurrency) GetCurrencyList(page, rows, uid, tokenid int) ([]UserCurrency, int, int, error) {
 	engine := utils.Engine_currency
 	data := new(UserCurrency)
@@ -65,10 +65,23 @@ func (this *UserCurrency) GetCurrencyList(page, rows, uid, tokenid int) ([]UserC
 
 }
 
-// func (this *UserCurrency) GetBalance(uid , token_id int) (data UserCurrency, err error){
-// 	engine：=utils.Engine_currency
-// 	data := new(UserCurrency)
-// 	_, err = engine.Where("uid=? AND token_id=?", uid, token_id).Get(data)
-// 	return
+func (this *UserCurrency) GetAll(uid []uint64) ([]UserCurrency, error) {
+	engine := utils.Engine_currency
+	list := make([]UserCurrency, 0)
+	err := engine.In("uid", uid).Find(&list)
+	if err != nil {
+		return nil, err
+	}
+	return list, nil
+}
 
-// }
+func (this *UserCurrency) GetBalance(uid, token_id int) (*UserCurrency, error) {
+	engine := utils.Engine_currency
+	data := new(UserCurrency)
+	_, err := engine.Where("uid=? AND token_id=?", uid, token_id).Get(data)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
+
+}
