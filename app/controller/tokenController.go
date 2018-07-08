@@ -14,10 +14,28 @@ type TokenController struct{}
 func (this *TokenController) Router(r *gin.Engine) {
 	g := r.Group("/token")
 	{
-		g.GET("/list", this.GetTokenOderList)         //bibi 挂单信息
-		g.GET("/record_list", this.GetRecordList)     //bibi 成交记录
-		g.GET("/total_balance", this.GetTokenBalance) //bibi 所有用户 总资产（币币总资产）
+		g.GET("/list", this.GetTokenOderList)            //bibi 挂单信息
+		g.GET("/record_list", this.GetRecordList)        //bibi 成交记录
+		g.GET("/total_balance", this.GetTokenBalance)    //bibi 所有用户 总资产（币币总资产）
+		g.GET("/user_token_detail", this.GetTokenDetail) //bibi账户资产展示
 	}
+}
+
+func (this *TokenController) GetTokenDetail(c *gin.Context) {
+	req := struct {
+		Uid      int `form:"uid" json:"uid" binding:"required"`
+		Page     int `form:"page" json:"page" binding:"required"`
+		Rows     int `form:"rows" json:"rows" `
+		Token_id int `form:"token_id" json:"token_id"`
+	}{}
+	err := c.ShouldBind(&req)
+	if err != nil {
+		utils.AdminLog.Errorf(err.Error())
+		c.JSON(http.StatusOK, gin.H{"code": 2, "data": "", "msg": err.Error()})
+		return
+	}
+	//bibi账户余额
+
 }
 
 //bibi 账户统计表

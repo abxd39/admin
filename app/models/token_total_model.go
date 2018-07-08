@@ -26,15 +26,16 @@ type PersonalProperty struct {
 	token    []UserToken
 }
 
-var Total []map[int]PersonalProperty
+var Total []PersonalProperty
 
 func NewTotal() {
-	Total = make([]map[int]PersonalProperty, 0)
+	Total = make([]PersonalProperty, 0)
 }
 
+//func (u*UserToken)
 //所有用户 的全部币币资产
 //第一步get 所有用户
-func (t *PersonalProperty) TotalUserBalance(page, rows, status int) ([]map[int]PersonalProperty, int, int, error) {
+func (t *PersonalProperty) TotalUserBalance(page, rows, status int) ([]PersonalProperty, int, int, error) {
 	//查 用户表
 
 	list, page, total, err := new(WebUser).GetAllUser(page, rows, status)
@@ -64,9 +65,7 @@ func (t *PersonalProperty) TotalUserBalance(page, rows, status int) ([]map[int]P
 				pp.token = append(pp.token, result)
 			}
 		}
-		m := make(map[int]PersonalProperty, 0)
-		m[int(pp.Uid)] = *pp
-		Total = append(Total, m)
+		Total = append(Total, *pp)
 	}
 	return Total, page, total, nil
 }
