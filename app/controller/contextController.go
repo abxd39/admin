@@ -83,8 +83,6 @@ func (this *ContextController) AddBanner(c *gin.Context) {
 		PictureName string `form:"picture_n" json:"picture_n" binding:"required"`
 		PicturePath string `form:"picture_p" json:"picture_p" binding:"required"`
 		LinkAddr    string `form:"link_addr" json:"link_addr" binding:"required"`
-		Start_t     string `form:"start_t" json:"start_t" binding:"required"`
-		End_t       string `form:"end_t" json:"end_t" binding:"required"`
 		Status      int    `form:"status" json:"status" binding:"required"`
 	}{}
 
@@ -94,7 +92,7 @@ func (this *ContextController) AddBanner(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"code": 2, "data": "", "msg": err.Error()})
 		return
 	}
-	err = new(models.Banner).Add(req.Order, req.Status, req.PictureName, req.PicturePath, req.LinkAddr, req.Start_t, req.End_t)
+	err = new(models.Banner).Add(req.Order, req.Status, req.PictureName, req.PicturePath, req.LinkAddr)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
 	}

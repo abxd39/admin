@@ -17,7 +17,31 @@ func (w *WebUserManageController) Router(r *gin.Engine) {
 		group.GET("/list", w.GetWebUserList)
 		group.GET("/total_user", w.GetTotalUser)         //获取用户平台注册用户总数
 		group.GET("/total_property", w.GetTotalProperty) //总资产统计列表
+		group.GET("/login_log", w.GetLoginList)          //用户登录日志
 	}
+}
+
+func (w *WebUserManageController) GetLoginList(c *gin.Context) {
+	req := struct {
+		Page         int    `form:"page" json:"page" binding:"required"`
+		Rows         int    `form:"rows" json:"rows" `
+		LoginTime    string `form:"login_time" json:"login_time" `
+		TerminalType int    `form:"t_type" json:"t_type" `
+		Status       int    `form:"status" json:"status" `
+	}{}
+	err := c.ShouldBind(&req)
+	if err != nil {
+		utils.AdminLog.Errorln("param buind failed !!")
+		c.JSON(http.StatusOK, gin.H{"code": 2, "data": "", "msg": err.Error()})
+		return
+	}
+	list, page, total, err := new(models.UserLogInLogGroup).GetUserLoginLogList(req.Page, req.Rows, req.TerminalType, req.Status, req.LoginTime)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"code": 0, "page": page, "total": total, "data": list, "msg": "成功"})
+	return
 }
 
 func (w *WebUserManageController) GetTotalProperty(c *gin.Context) {
