@@ -15,7 +15,7 @@ type Order struct {
 	Price       int64  `xorm:"not null default 0 comment('价格') BIGINT(64)"   json:"price"`
 	Num         int64  `xorm:"not null default 0 comment('数量') BIGINT(64)"   json:"num"`
 	TokenId     uint64 `xorm:"not null default 0 comment('货币类型') INT(10)"       json:"token_id"`
-	PayId       uint64 `xorm:"not null default 0 comment('支付类型') INT(10)"       json:"pay_id"`
+	PayId       string `xorm:"not null default 0 comment('支付类型') VARCHAR(64)"       json:"pay_id"`
 	SellId      uint64 `xorm:"not null default 0 comment('卖家id') INT(10)"         json:"sell_id"`
 	SellName    string `xorm:"not null default '' comment('卖家昵称') VARCHAR(64)"  json:"sell_name"`
 	BuyId       uint64 `xorm:"not null default 0 comment('买家id') INT(10)"    json:"buy_id"`
@@ -35,6 +35,42 @@ type OrderGroup struct {
 
 func (o *Order) TableName() string {
 	return "order"
+}
+
+//分页查询
+func (this *Order) GetOrderListOfUid(page, rows, uid, token_id int) ([]OrderGroup, int, int, error) {
+	if page <= 1 {
+		page = 1
+	}
+	if rows < 1 {
+		rows = 50
+	}
+	begin := 0
+	if page > 1 {
+		begin = (page - 1) * rows
+	}
+	list := make([]OrderGroup, 0)
+	engine := utils.Engine_currency
+
+	query := engine.Desc("order.id")
+	query = query.Join("INNER", "ads", "order.ad_id=ads.id")
+	if token_id != 0 {
+		query.Where("token_id=? and pay_status=3", token_id)
+	}
+	query = query.Where("uid=?", uid)
+	query = query.Limit(rows, begin)
+	tempquery := query
+	err := query.Find(&list)
+	if err != nil {
+		return nil, 0, 0, err
+	}
+	count, err := tempquery.Count(&Order{})
+	if err != nil {
+		return nil, 0, 0, err
+	}
+	total := int(count) / rows
+	fmt.Println("000000000000000000")
+	return list, total, int(count), nil
 }
 
 //

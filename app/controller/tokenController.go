@@ -24,8 +24,6 @@ func (this *TokenController) Router(r *gin.Engine) {
 func (this *TokenController) GetTokenDetail(c *gin.Context) {
 	req := struct {
 		Uid      int `form:"uid" json:"uid" binding:"required"`
-		Page     int `form:"page" json:"page" binding:"required"`
-		Rows     int `form:"rows" json:"rows" `
 		Token_id int `form:"token_id" json:"token_id"`
 	}{}
 	err := c.ShouldBind(&req)
@@ -35,7 +33,13 @@ func (this *TokenController) GetTokenDetail(c *gin.Context) {
 		return
 	}
 	//bibi账户余额
-
+	list, err := new(models.UserToken).GetTokenDetailOfUid(req.Uid, req.Token_id)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"code": 0, "data": list, "msg": "成功"})
+	return
 }
 
 //bibi 账户统计表

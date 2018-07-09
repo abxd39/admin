@@ -26,6 +26,8 @@ func (cu *CurrencyController) GetBuySellList(c *gin.Context) {
 	//个人用户交易记录
 	req := struct {
 		Uid      int `form:"uid" json:"uid" binding:"required"`
+		Page     int `form:"page" json:"page" binding:"required"`
+		Rows     int `form:"rows" json:"rows" `
 		Token_id int `form:"token_id" json:"token_id"`
 	}{}
 	err := c.ShouldBind(&req)
@@ -37,13 +39,19 @@ func (cu *CurrencyController) GetBuySellList(c *gin.Context) {
 	uid := make([]int, 0)
 	uid = append(uid, req.Uid)
 	fmt.Printf("GetBuySellList%#v\n", uid)
-	list, err := new(models.Order).GetOrderId(uid, 0)
+	list, page, total, err := new(models.Order).GetOrderListOfUid(req.Page, req.Rows, req.Uid, req.Token_id)
+
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
 		return
 	}
+	fmt.Println("000000000000000000000000000000", len(list))
+	fmt.Println(list)
+	//c.JSON(http.StatusOK, gin.H{"code": 1, "data": list, "msg": err.Error()})
+	//return
 	type Rsp struct {
 		TokenId        uint64
+		TokenName      string
 		BuyQuantity    float32
 		BuyTotalPrice  float32
 		SellQuantity   float32
@@ -57,6 +65,7 @@ func (cu *CurrencyController) GetBuySellList(c *gin.Context) {
 
 		switch v.AdType {
 		case 1: //出售
+			fmt.Println("nnnnnnnnnnnnnnnnnnnnnnnnn", v.AdType)
 			if _, ok := mapToken[v.TokenId]; ok {
 				mapToken[v.TokenId].SellQuantity += float32(v.Num)
 				mapToken[v.TokenId].SellTotalPrice += float32(v.Price * v.Num)
@@ -64,8 +73,10 @@ func (cu *CurrencyController) GetBuySellList(c *gin.Context) {
 				mapToken[v.TokenId] = new(Rsp)
 				mapToken[v.TokenId].SellTotalPrice = float32(v.Price * v.Num)
 				mapToken[v.TokenId].SellQuantity = float32(v.Num)
+				mapToken[v.TokenId].TokenId = v.TokenId
 			}
 		case 2: //购买
+			fmt.Println("vvvvvvvvvvvvvvvvvvvvv", v.AdType)
 			if _, ok := mapToken[v.TokenId]; ok {
 				mapToken[v.TokenId].BuyQuantity += float32(v.Num)
 				mapToken[v.TokenId].BuyTotalPrice += float32(v.Price * v.Num)
@@ -73,13 +84,33 @@ func (cu *CurrencyController) GetBuySellList(c *gin.Context) {
 				mapToken[v.TokenId] = new(Rsp)
 				mapToken[v.TokenId].BuyQuantity = float32(v.Num)
 				mapToken[v.TokenId].BuyTotalPrice = float32(v.Price * v.Num)
+				mapToken[v.TokenId].TokenId = v.TokenId
 			}
 		default:
 			continue
 		}
 	}
+	tokenlist, err := new(models.Tokens).GetTokenList()
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+		return
+	}
+	for _, v := range mapToken {
+		for _, t := range tokenlist {
+			if v.TokenId == uint64(t.Id) {
+				v.TokenName = t.Name
+				break
+			}
+		}
+
+	}
 	//
-	c.JSON(http.StatusOK, gin.H{"code": 0, "total": len(mapToken), "data": mapToken, "msg": "成功"})
+	//if
+	returnlist := make([]Rsp, 0)
+	for _, value := range mapToken {
+		returnlist = append(returnlist, *value)
+	}
+	c.JSON(http.StatusOK, gin.H{"code": 0, "total": total, "page": page, "data": returnlist, "msg": "成功"})
 	return
 }
 
@@ -200,7 +231,7 @@ func (cu *CurrencyController) GetTradeList(c *gin.Context) {
 
 func (cu *CurrencyController) GetTokensList(c *gin.Context) {
 	fmt.Println("tttttttttttttttttttttttttttttttttttttttt")
-	list, err := new(models.Tokens).GetTokensList()
+	list, err := new(models.Tokens).GetTokenList()
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
 		return

@@ -2,6 +2,7 @@ package models
 
 import (
 	"admin/utils"
+	"errors"
 	"fmt"
 )
 
@@ -32,7 +33,19 @@ type PersonalProperty struct {
 // 	Total = make([]PersonalProperty, 0)
 // }
 
-//func (u*UserToken)
+func (u *UserToken) GetTokenDetailOfUid(uid, token_id int) ([]UserToken, error) {
+	if uid < 0 {
+		return nil, errors.New("uid is illegal")
+	}
+	engine := utils.Engine_token
+	list := make([]UserToken, 0)
+	err := engine.Where("uid=?", uid).Find(&list)
+	if err != nil {
+		return nil, err
+	}
+	return list, nil
+}
+
 //所有用户 的全部币币资产
 //第一步get 所有用户
 func (t *PersonalProperty) TotalUserBalance(page, rows, status int) ([]PersonalProperty, int, int, error) {
