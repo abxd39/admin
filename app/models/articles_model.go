@@ -57,7 +57,7 @@ func (a *ArticleType) GetArticleType() ([]ArticleType, error) {
 	return list, nil
 }
 
-func (a *ArticleList) GetArticleList(page, rows, tp int) ([]*ArticleList, int, error) {
+func (a *ArticleList) GetArticleList(page, rows, tp int) ([]*ArticleList, int, int, error) {
 
 	if page <= 0 {
 		page = 1
@@ -73,10 +73,13 @@ func (a *ArticleList) GetArticleList(page, rows, tp int) ([]*ArticleList, int, e
 	engine := utils.Engine_common
 	fmt.Println("type=", tp, "page=", page, "起始行star_row=", start_rows, "page_num=", rows)
 	u := make([]Article, 0)
-	err := engine.Where("type=?", tp).Limit(rows, start_rows).Find(&u)
+
+	query := engine.Where("type=?", tp)
+	TempQuery := query
+	err := query.Limit(rows, start_rows).Find(&u)
 	if err != nil {
 		utils.AdminLog.Errorln(err.Error())
-		return nil, 0, err
+		return nil, 0, 0, err
 	}
 	list := make([]*ArticleList, 0)
 	for _, v := range u {
@@ -92,17 +95,13 @@ func (a *ArticleList) GetArticleList(page, rows, tp int) ([]*ArticleList, int, e
 		}
 		list = append(list, &ret)
 	}
-	var total_page int64
-	total_page, err = engine.Count(&Article{
-		Type: tp,
-	})
+	count, err := TempQuery.Count(&Article{})
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, 0, err
 	}
 
-	total_page = total_page / int64(rows)
-	fmt.Println("total=", total_page)
-	return list, int(total_page), nil
+	total_page := int(count) / rows
+	return list, total_page, int(count), nil
 
 }
 

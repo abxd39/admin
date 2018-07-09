@@ -117,11 +117,11 @@ func (this *ContextController) GetBannerList(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"code": 2, "data": "", "msg": err.Error()})
 		return
 	}
-	list, total, err := new(models.Banner).GetBannerList(req.Page, req.Rows, req.Status, req.Start_t, req.End_t)
+	list, page, total, err := new(models.Banner).GetBannerList(req.Page, req.Rows, req.Status, req.Start_t, req.End_t)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
 	}
-	c.JSON(http.StatusOK, gin.H{"code": 0, "total": total, "data": list, "msg": "成功"})
+	c.JSON(http.StatusOK, gin.H{"code": 0, "page": page, "total": total, "data": list, "msg": "成功"})
 
 }
 
@@ -141,11 +141,11 @@ func (this *ContextController) GetArticleList(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"code": 2, "data": "", "msg": err.Error()})
 		return
 	}
-	reuslt, total, err := new(models.ArticleList).GetArticleList(req.Page, req.Rows, req.Type)
+	reuslt, page, total, err := new(models.ArticleList).GetArticleList(req.Page, req.Rows, req.Type)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
 	}
-	c.JSON(http.StatusOK, gin.H{"code": 0, "data": reuslt, "total": total, "msg": "成功"})
+	c.JSON(http.StatusOK, gin.H{"code": 0, "data": reuslt, "page": page, "total": total, "msg": "成功"})
 }
 
 func (this *ContextController) AddArticle(c *gin.Context) {
