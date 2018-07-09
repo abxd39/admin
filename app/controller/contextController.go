@@ -69,11 +69,11 @@ func (this *ContextController) GetFriendlyLink(c *gin.Context) {
 		return
 	}
 	//operator db         GetFriendlyLinkList
-	result, err := new(models.FriendlyLink).GetFriendlyLinkList(req.Page, req.Count)
+	result, page, total, err := new(models.FriendlyLink).GetFriendlyLinkList(req.Page, req.Count)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
 	}
-	c.JSON(http.StatusOK, gin.H{"code": 0, "data": result, "msg": "成功"})
+	c.JSON(http.StatusOK, gin.H{"code": 0, "page": page, "total": total, "data": result, "msg": "成功"})
 	return
 }
 

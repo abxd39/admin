@@ -36,7 +36,7 @@ func (f *FriendlyLink) Add(order, state int, wn, ln string) error {
 	return nil
 }
 
-func (f *FriendlyLink) GetFriendlyLinkList(page, count int) ([]*FriendlyLink, error) {
+func (f *FriendlyLink) GetFriendlyLinkList(page, count int) ([]*FriendlyLink, int, int, error) {
 	engine := utils.Engine_context
 	//page !=0
 	if 1 >= page {
@@ -54,20 +54,13 @@ func (f *FriendlyLink) GetFriendlyLinkList(page, count int) ([]*FriendlyLink, er
 		count = 100
 	}
 	u := &FriendlyLink{}
-	total, err := engine.Count(u)
-	if err != nil {
-		utils.AdminLog.Errorln("统计所有记录失败")
-		return nil, err
-	}
-
-	page = int(total) / count
 
 	friendlist := make([]FriendlyLink, 0)
 	fmt.Println("count=", count, "limit=", limit)
-	err = engine.Limit(count, limit).Find(&friendlist)
+	err := engine.Limit(count, limit).Find(&friendlist)
 	if err != nil {
 		utils.AdminLog.Errorln(err.Error())
-		return nil, err
+		return nil, 0, 0, err
 	}
 	fmt.Println("00000000000000000000000000")
 	link := make([]*FriendlyLink, 0)
@@ -82,5 +75,14 @@ func (f *FriendlyLink) GetFriendlyLinkList(page, count int) ([]*FriendlyLink, er
 		link = append(link, &ret)
 	}
 	fmt.Println("1111111111111111111111111111111", link)
-	return link, nil
+
+	total, err := engine.Count(u)
+	if err != nil {
+		utils.AdminLog.Errorln("统计所有记录失败")
+		return nil, 0, 0, err
+	}
+
+	page = int(total) / count
+
+	return link, page, int(total), nil
 }

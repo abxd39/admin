@@ -37,7 +37,7 @@ func (o *Order) TableName() string {
 	return "order"
 }
 
-//分页查询
+//查询个人的所有数据货币的交易记录
 func (this *Order) GetOrderListOfUid(page, rows, uid, token_id int) ([]OrderGroup, int, int, error) {
 	if page <= 1 {
 		page = 1
@@ -59,15 +59,19 @@ func (this *Order) GetOrderListOfUid(page, rows, uid, token_id int) ([]OrderGrou
 	}
 	query = query.Where("uid=?", uid)
 	query = query.Limit(rows, begin)
+	//query.GroupBy
 	tempquery := query
 	err := query.Find(&list)
 	if err != nil {
 		return nil, 0, 0, err
 	}
-	count, err := tempquery.Count(&Order{})
+	count, err := tempquery.Distinct("token_id").Count(&Order{})
+	//engine.Query("")
+	fmt.Printf("%#v\n", count)
 	if err != nil {
 		return nil, 0, 0, err
 	}
+
 	total := int(count) / rows
 	fmt.Println("000000000000000000")
 	return list, total, int(count), nil

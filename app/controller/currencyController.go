@@ -46,7 +46,7 @@ func (cu *CurrencyController) GetBuySellList(c *gin.Context) {
 		return
 	}
 	fmt.Println("000000000000000000000000000000", len(list))
-	fmt.Println(list)
+	//fmt.Printf("%#v\n", list)
 	//c.JSON(http.StatusOK, gin.H{"code": 1, "data": list, "msg": err.Error()})
 	//return
 	type Rsp struct {
@@ -65,7 +65,7 @@ func (cu *CurrencyController) GetBuySellList(c *gin.Context) {
 
 		switch v.AdType {
 		case 1: //出售
-			fmt.Println("nnnnnnnnnnnnnnnnnnnnnnnnn", v.AdType)
+			//fmt.Println("nnnnnnnnnnnnnnnnnnnnnnnnn", v.AdType)
 			if _, ok := mapToken[v.TokenId]; ok {
 				mapToken[v.TokenId].SellQuantity += float32(v.Num)
 				mapToken[v.TokenId].SellTotalPrice += float32(v.Price * v.Num)
@@ -76,7 +76,7 @@ func (cu *CurrencyController) GetBuySellList(c *gin.Context) {
 				mapToken[v.TokenId].TokenId = v.TokenId
 			}
 		case 2: //购买
-			fmt.Println("vvvvvvvvvvvvvvvvvvvvv", v.AdType)
+			//fmt.Println("vvvvvvvvvvvvvvvvvvvvv", v.AdType)
 			if _, ok := mapToken[v.TokenId]; ok {
 				mapToken[v.TokenId].BuyQuantity += float32(v.Num)
 				mapToken[v.TokenId].BuyTotalPrice += float32(v.Price * v.Num)
