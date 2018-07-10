@@ -73,9 +73,9 @@ func (a *ArticleList) GetArticleList(page, rows, tp int) ([]*ArticleList, int, i
 	engine := utils.Engine_common
 	fmt.Println("type=", tp, "page=", page, "起始行star_row=", start_rows, "page_num=", rows)
 	u := make([]Article, 0)
-
-	query := engine.Where("type=?", tp)
-	TempQuery := query
+	query := engine.Desc("id")
+	query = query.Where("type=?", tp)
+	TempQuery := *query
 	err := query.Limit(rows, start_rows).Find(&u)
 	if err != nil {
 		utils.AdminLog.Errorln(err.Error())
@@ -114,5 +114,20 @@ func (a *Article) AddArticle(u *Article) error {
 	if result == 0 {
 		utils.AdminLog.Errorln("article InsertOne failed ")
 	}
+	return nil
+}
+
+func (a *Article) LocalFileToAliCloud(object_key, filePath string) error {
+	client := utils.AliClient
+	bucket, err := client.Bucket("superchainsdun")
+	if err != nil {
+		return err
+	}
+
+	err = bucket.PutObjectFromFile(object_key, filePath)
+	if err != nil {
+		return err
+	}
+	fmt.Println("put success")
 	return nil
 }

@@ -21,7 +21,26 @@ func (this *ContextController) Router(r *gin.Engine) {
 		g.GET("/banner_list", this.GetBannerList)
 		g.POST("/add_article", this.AddArticle)
 		g.GET("/article_type", this.GetArticleType)
+		g.GET("/local_filetoali", this.LocalFileToAliCloud)
 	}
+}
+
+func (this *ContextController) LocalFileToAliCloud(c *gin.Context) {
+	req := struct {
+		FilePath  string `form:"file_path" json:"file_path" binding:"required"`
+		ObjectKey string `form:"okey" json:"okey" binding:"required"`
+	}{}
+	err := c.ShouldBind(&req)
+	if err != nil {
+		utils.AdminLog.Errorln("param buind failed !!")
+		c.JSON(http.StatusOK, gin.H{"code": 2, "data": "", "msg": err})
+		return
+	}
+	err = new(models.Article).LocalFileToAliCloud(req.ObjectKey, req.FilePath)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+	}
+	c.JSON(http.StatusOK, gin.H{"code": 0, "data": "", "msg": "成功"})
 }
 
 func (this *ContextController) GetArticleType(c *gin.Context) {

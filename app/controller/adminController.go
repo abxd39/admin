@@ -25,6 +25,7 @@ func (this *AdminController) Router(r *gin.Engine) {
 		group.GET("/list", this.List)
 		group.GET("/delete", this.Delete)
 		group.GET("/update", this.Update)
+
 	}
 }
 

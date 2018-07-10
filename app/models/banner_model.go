@@ -67,7 +67,7 @@ func (b *Banner) GetBannerList(page, rows, status int, start_t, end_t string) ([
 		query = query.Where("time_end<=?", start_t)
 
 	}
-	Tquery := query
+	Tquery := *query
 	err := query.Limit(rows, limit).Find(&list)
 	if err != nil {
 		return nil, 0, 0, err

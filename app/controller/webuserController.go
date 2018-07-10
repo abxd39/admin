@@ -15,10 +15,35 @@ func (w *WebUserManageController) Router(r *gin.Engine) {
 	group := r.Group("/webuser")
 	{
 		group.GET("/list", w.GetWebUserList)
-		group.GET("/total_user", w.GetTotalUser)         //获取用户平台注册用户总数
-		group.GET("/total_property", w.GetTotalProperty) //总资产统计列表
-		group.GET("/login_log", w.GetLoginList)          //用户登录日志
+		group.GET("/total_user", w.GetTotalUser)                          //获取用户平台注册用户总数
+		group.GET("/total_property", w.GetTotalProperty)                  //总资产统计列表
+		group.GET("/login_log", w.GetLoginList)                           //用户登录日志
+		group.GET("/seconde_certification", w.GetSecodeCertificationList) //获取二级认证列表
 	}
+}
+
+func (w *WebUserManageController) GetSecodeCertificationList(c *gin.Context) {
+	req := struct {
+		Page         int    `form:"page" json:"page" binding:"required"`
+		Rows         int    `form:"rows" json:"rows" `
+		VerifyStatus int    `form:"verify_status" json:"verify_status" `
+		Status       int    `form:"user_status" json:"user_status" `
+		VerifyTime   string `form:"verify_time" json:"verify_time" `
+	}{}
+	err := c.ShouldBind(&req)
+	if err != nil {
+		utils.AdminLog.Errorln("param buind failed !!")
+		c.JSON(http.StatusOK, gin.H{"code": 2, "data": "", "msg": err.Error()})
+		return
+	}
+	list, page, total, err := new(models.UserSecondaryCertificationGroup).GetSecondaryCertificationList(req.Page, req.Rows, req.VerifyStatus, req.Status, req.VerifyTime)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+		return
+
+	}
+	c.JSON(http.StatusOK, gin.H{"code": 0, "page": page, "total": total, "data": list, "msg": "成功"})
+	return
 }
 
 func (w *WebUserManageController) GetLoginList(c *gin.Context) {

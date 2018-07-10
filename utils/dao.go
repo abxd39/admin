@@ -1,7 +1,10 @@
 package utils
 
 import (
-	"github.com/garyburd/redigo/redis"
+	"fmt"
+
+	"github.com/aliyun/aliyun-oss-go-sdk/oss"
+	"github.com/go-redis/redis"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
 )
@@ -11,7 +14,8 @@ var Engine_token *xorm.Engine
 var Engine_common *xorm.Engine
 var Engine_context *xorm.Engine
 var Engine_backstage *xorm.Engine
-var Redis *redis.Conn
+var Redis *redis.Client
+var AliClient *oss.Client
 
 func init() {
 	var err error
@@ -73,6 +77,26 @@ func init() {
 		panic(err)
 	}
 	//redis初始化
-	Redis = nil
+	client := redis.NewClient(&redis.Options{
+		Addr:     "47.106.136.96:6379",
+		Password: "ailaiduokeji657@@@", // no password set
+		DB:       0,                    // use default DB
+	})
+
+	_, err = client.Ping().Result()
+	if err != nil {
+		fmt.Printf(err.Error())
+		panic(err)
+	}
+	Redis = client
+
+	//ali
+	AliClient, err = oss.New("http://oss-cn-hongkong.aliyuncs.com", "LTAIcJgRedhxruPq", "d7p6tWRfy0B2QaRXk7q4mb5seLROtb")
+	if err != nil {
+		// HandleError(err)
+		panic(err)
+	}
+
+	return
 
 }

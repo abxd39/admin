@@ -60,7 +60,7 @@ func (this *Order) GetOrderListOfUid(page, rows, uid, token_id int) ([]OrderGrou
 	query = query.Where("uid=?", uid)
 	query = query.Limit(rows, begin)
 	//query.GroupBy
-	tempquery := query
+	tempquery := *query
 	err := query.Find(&list)
 	if err != nil {
 		return nil, 0, 0, err

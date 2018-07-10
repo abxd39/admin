@@ -85,7 +85,7 @@ func (w *WebUser) GetAllUser(page, rows, status int) ([]UserGroup, int, int, err
 
 	query := engine.Desc("user.uid")
 	query = query.Join("INNER", "user_ex", "user_ex.uid=user.uid")
-	tempquery := query
+	tempquery := *query
 	fmt.Println("GetAllUser", rows, begin)
 	query.Limit(rows, begin)
 	err := query.Find(&users)
@@ -157,7 +157,7 @@ func (w *WebUser) UserList(page, rows, verify, status int, uname, phone, email s
 	//无条件刷选
 
 	fmt.Printf("无条件刷选%#v\n", rows)
-	tempQuery := query
+	tempQuery := *query
 	query = query.Limit(rows, begin)
 	err = query.Find(&users)
 	if err != nil {

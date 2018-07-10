@@ -18,7 +18,29 @@ func (this *TokenController) Router(r *gin.Engine) {
 		g.GET("/record_list", this.GetRecordList)        //bibi 成交记录
 		g.GET("/total_balance", this.GetTokenBalance)    //bibi 所有用户 总资产（币币总资产）
 		g.GET("/user_token_detail", this.GetTokenDetail) //bibi账户资产展示
+		g.GET("/token_cash", this.GetTokenCashList)      //币兑列表
 	}
+}
+
+func (this *TokenController) GetTokenCashList(c *gin.Context) {
+	req := struct {
+		Page    int `form:"page" json:"page" binding:"required"`
+		Rows    int `form:"rows" json:"rows" `
+		TokenId int `form:"token_id" json:"token_id" `
+	}{}
+	err := c.ShouldBind(&req)
+	if err != nil {
+		utils.AdminLog.Errorf(err.Error())
+		c.JSON(http.StatusOK, gin.H{"code": 2, "data": "", "msg": err.Error()})
+		return
+	}
+	list, page, total, err := new(models.QuenesConfig).GetTokenCashList(req.Page, req.Rows, req.TokenId)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"code": 0, "data": list, "page": page, "total": total, "msg": "成功"})
+	return
 }
 
 func (this *TokenController) GetTokenDetail(c *gin.Context) {
