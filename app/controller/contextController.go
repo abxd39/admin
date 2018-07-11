@@ -188,7 +188,7 @@ func (this *ContextController) GetArticleList(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"code": 2, "data": "", "msg": err.Error()})
 		return
 	}
-	reuslt, page, total, err := new(models.ArticleList).GetArticleList(req.Page, req.Rows, req.Type)
+	reuslt, page, total, err := new(models.ArticleList).GetArticleList(req.Page, req.Rows, req.Type, req.Status, req.Start_t, req.End_t)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
 	}

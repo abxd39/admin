@@ -65,7 +65,7 @@ func (a *ArticleType) GetArticleType() ([]ArticleType, error) {
 	return list, nil
 }
 
-func (a *ArticleList) GetArticleList(page, rows, tp int) ([]*ArticleList, int, int, error) {
+func (a *ArticleList) GetArticleList(page, rows, tp, status int, st, et string) ([]*ArticleList, int, int, error) {
 
 	if page <= 0 {
 		page = 1
