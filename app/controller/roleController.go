@@ -1,42 +1,46 @@
 package controller
 
 import (
-	"net/http"
-
-	"admin/utils"
-
 	"admin/app/models/backstage"
+	"admin/constant"
 	"github.com/gin-gonic/gin"
 )
 
 type RoleController struct {
+	BaseController
 }
 
 func (this *RoleController) Router(r *gin.Engine) {
 	group := r.Group("/role")
 	{
-		group.GET("/list", this.GetRoleList)
+		group.GET("/list", this.List)
 	}
 }
 
-// 获取用户组列表
-func (this *RoleController) GetRoleList(c *gin.Context) {
+// 用户组列表
+func (this *RoleController) List(c *gin.Context) {
 	// 获取参数
 	req := struct {
 		Page int `form:"page" json:"page" binding:"required"`
 		Rows int `form:"rows" json:"rows"`
 	}{}
-	err := c.ShouldBind(&req)
+	err := c.Bind(&req)
 	if err != nil {
-		utils.AdminLog.Errorf(err.Error())
-		c.JSON(http.StatusOK, gin.H{"code": 2, "data": "", "msg": err.Error()})
+		this.RespErr(c, constant.RESPONSE_CODE_ERROR, "参数错误")
+		return
 	}
 
 	// 调用model
-	list, totalPage, total, err := new(backstage.Role).GetRoleList(req.Page, req.Rows)
+	list, err := new(backstage.Role).List(req.Page, req.Rows)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+		this.RespErr(c, constant.RESPONSE_CODE_SYSTEM, "系统错误")
+		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"code": 0, "page": totalPage, "total": total, "data": list, "msg": "成功"})
+	// 设置返回数据
+	this.Put("list", list)
+
+	// 返回
+	this.RespOK(c, "成功")
+	return
 }

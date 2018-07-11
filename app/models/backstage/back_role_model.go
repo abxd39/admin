@@ -16,26 +16,27 @@ type Role struct {
 }
 
 // 用户组列表
-func (r *Role) GetRoleList(pageIndex, pageSize int) (list []Role, totalPage, total int, err error) {
+func (r *Role) List(pageIndex, pageSize int) (modelList *models.ModelList, err error) {
 	// 获取总数
 	engine := utils.Engine_backstage
 	query := engine.Desc("id")
 	tempQuery := *query
 	count, err := tempQuery.Count(&Role{})
 	if err != nil {
-		return nil, 0, 0, err
+		return nil, err
 	}
-	total = int(count)
 
 	// 获取分页
-	offset, totalPage := r.Paging(pageIndex, pageSize, total)
+	offset, modelList := r.Paging(pageIndex, pageSize, int(count))
 
 	// 获取列表数据
+	list := []Role{}
 	err = query.Limit(pageSize, offset).Find(&list)
 	if err != nil {
 		utils.AdminLog.Errorln(err.Error())
-		return nil, 0, 0, err
+		return nil, err
 	}
+	modelList.Items = list
 
-	return list, totalPage, total, nil
+	return
 }

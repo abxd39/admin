@@ -5,8 +5,17 @@ import "math"
 type BaseModel struct {
 }
 
+// 分页列表
+type ModelList struct {
+	PageIndex int         `json:"page_index"`
+	PageSize  int         `json:"page_size"`
+	PageCount int         `json:"page_count"`
+	Total     int         `json:"total"`
+	Items     interface{} `json:"items"`
+}
+
 // 计算分页
-func (b *BaseModel) Paging(pageIndex, pageSize, total int) (offset, totalPage int) {
+func (b *BaseModel) Paging(pageIndex, pageSize, total int) (offset int, modelList *ModelList) {
 	// 计算分页
 	if pageIndex <= 0 {
 		pageIndex = 1
@@ -16,7 +25,11 @@ func (b *BaseModel) Paging(pageIndex, pageSize, total int) (offset, totalPage in
 	}
 	offset = (pageIndex - 1) * pageSize
 
-	totalPage = int(math.Ceil(float64(total / pageSize)))
+	modelList = &ModelList{}
+	modelList.PageIndex = pageIndex
+	modelList.PageSize = pageSize
+	modelList.PageCount = int(math.Ceil(float64(total / pageSize)))
+	modelList.Total = total
 
 	return
 }
