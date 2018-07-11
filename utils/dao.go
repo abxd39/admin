@@ -91,7 +91,7 @@ func init() {
 	Redis = client
 
 	//ali
-	AliClient, err = oss.New("http://oss-cn-hongkong.aliyuncs.com", "LTAIcJgRedhxruPq", "d7p6tWRfy0B2QaRXk7q4mb5seLROtb")
+	AliClient, err = oss.New("http://oss-cn-shenzhen.aliyuncs.com", "LTAIcJgRedhxruPq", "d7p6tWRfy0B2QaRXk7q4mb5seLROtb")
 	if err != nil {
 		// HandleError(err)
 		panic(err)
