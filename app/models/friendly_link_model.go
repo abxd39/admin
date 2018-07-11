@@ -36,7 +36,7 @@ func (f *FriendlyLink) Add(order, state int, wn, ln string) error {
 	return nil
 }
 
-func (f *FriendlyLink) GetFriendlyLinkList(page, count int) ([]*FriendlyLink, int, int, error) {
+func (f *FriendlyLink) GetFriendlyLinkList(page, rows int, name, link_name string) ([]*FriendlyLink, int, int, error) {
 	engine := utils.Engine_context
 	//page !=0
 	if 1 >= page {
@@ -46,18 +46,24 @@ func (f *FriendlyLink) GetFriendlyLinkList(page, count int) ([]*FriendlyLink, in
 	if 1 >= page {
 		limit = 0
 	} else {
-		limit = (page - 1) * count
+		limit = (page - 1) * rows
 	}
 
-	defa := count
+	defa := rows
 	if 0 == defa {
-		count = 100
+		rows = 100
 	}
 	u := &FriendlyLink{}
-
+	query := engine.Desc("id")
 	friendlist := make([]FriendlyLink, 0)
-	fmt.Println("count=", count, "limit=", limit)
-	err := engine.Limit(count, limit).Find(&friendlist)
+	if len(name) > 0 {
+		query = query.Where("web_name=?", name)
+	}
+	if len(link_name) > 0 {
+		query = query.Where("link_name=?", link_name)
+	}
+	tempquery := *query
+	err := engine.Limit(rows, limit).Find(&friendlist)
 	if err != nil {
 		utils.AdminLog.Errorln(err.Error())
 		return nil, 0, 0, err
@@ -76,13 +82,13 @@ func (f *FriendlyLink) GetFriendlyLinkList(page, count int) ([]*FriendlyLink, in
 	}
 	fmt.Println("1111111111111111111111111111111", link)
 
-	total, err := engine.Count(u)
+	count, err := tempquery.Count(u)
 	if err != nil {
 		utils.AdminLog.Errorln("统计所有记录失败")
 		return nil, 0, 0, err
 	}
 
-	page = int(total) / count
+	total_page := int(count) / rows
 
-	return link, page, int(total), nil
+	return link, total_page, int(count), nil
 }

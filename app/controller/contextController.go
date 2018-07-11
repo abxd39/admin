@@ -21,11 +21,12 @@ func (this *ContextController) Router(r *gin.Engine) {
 		g.GET("/banner_list", this.GetBannerList)
 		g.POST("/add_article", this.AddArticle)
 		g.GET("/article_type", this.GetArticleType)
-		g.GET("/local_filetoali", this.LocalFileToAliCloud)
+		g.POST("/local_filetoali", this.LocalFileToAliCloud)
+		g.GET("/get_filetoali", this.GetLocalFileToAliCloud)
 	}
 }
 
-func (this *ContextController) LocalFileToAliCloud(c *gin.Context) {
+func (this *ContextController) GetLocalFileToAliCloud(c *gin.Context) {
 	req := struct {
 		FilePath  string `form:"file_path" json:"file_path" binding:"required"`
 		ObjectKey string `form:"okey" json:"okey" binding:"required"`
@@ -36,11 +37,38 @@ func (this *ContextController) LocalFileToAliCloud(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"code": 2, "data": "", "msg": err})
 		return
 	}
-	err = new(models.Article).LocalFileToAliCloud(req.ObjectKey, req.FilePath)
+	filepath, err := new(models.Article).GetLocalFileToAliCloud(req.ObjectKey, req.FilePath)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+		return
 	}
-	c.JSON(http.StatusOK, gin.H{"code": 0, "data": "", "msg": "成功"})
+
+	c.JSON(http.StatusOK, gin.H{"code": 0, "data": "", "path": filepath, "msg": "成功"})
+	return
+}
+
+func (this *ContextController) LocalFileToAliCloud(c *gin.Context) {
+	req := struct {
+		FilePath string `form:"file_path" json:"file_path" binding:"required"`
+		//ObjectKey string `form:"okey" json:"okey" binding:"required"`
+	}{}
+	err := c.ShouldBind(&req)
+	if err != nil {
+		utils.AdminLog.Errorln("param buind failed !!")
+		c.JSON(http.StatusOK, gin.H{"code": 2, "data": "", "msg": err})
+		return
+	}
+	_, err = new(models.Article).LocalFileToAliCloud(req.FilePath)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+		return
+	}
+	response := new(models.PolicyToken).Get_policy_token()
+	// c.Request.Header.Set("Access-Control-Allow-Methods", "POST")
+	// c.Request.Header.Set("Access-Control-Allow-Origin", "*")
+	//io.WriteString(c, response)
+	c.JSON(http.StatusOK, gin.H{"code": 0, "data": response, "msg": "成功"})
+	//c.JSON(http.StatusOK, gin.H{"code": 0, "data": "", "msg": "成功"})
 }
 
 func (this *ContextController) GetArticleType(c *gin.Context) {
@@ -79,8 +107,10 @@ func (this *ContextController) AddFriendlyLink(c *gin.Context) {
 func (this *ContextController) GetFriendlyLink(c *gin.Context) {
 
 	req := struct {
-		Page  int `form:"page" json:"page" binding:"required"`
-		Count int `form:"count" json:"count" `
+		Page     int    `form:"page" json:"page" binding:"required"`
+		Name     string `form:"name" json:"name" `
+		Linkname string `form:"link_name" json:"link_name" `
+		Count    int    `form:"count" json:"count" `
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
@@ -88,7 +118,7 @@ func (this *ContextController) GetFriendlyLink(c *gin.Context) {
 		return
 	}
 	//operator db         GetFriendlyLinkList
-	result, page, total, err := new(models.FriendlyLink).GetFriendlyLinkList(req.Page, req.Count)
+	result, page, total, err := new(models.FriendlyLink).GetFriendlyLinkList(req.Page, req.Count, req.Name, req.Linkname)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
 	}
@@ -158,7 +188,7 @@ func (this *ContextController) GetArticleList(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"code": 2, "data": "", "msg": err.Error()})
 		return
 	}
-	reuslt, page, total, err := new(models.ArticleList).GetArticleList(req.Page, req.Rows, req.Type)
+	reuslt, page, total, err := new(models.ArticleList).GetArticleList(req.Page, req.Rows, req.Type, req.Status, req.Start_t, req.End_t)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
 	}
@@ -170,8 +200,8 @@ func (this *ContextController) AddArticle(c *gin.Context) {
 		Title         string `form:"title" json:"title" binding:"required"`
 		Description   string `form:"desc" json:"desc" `
 		Content       string `form:"path" json:"path" binding:"required"` //path
-		Covers        string `form:"covers" json:"covers"`                //图片内容
-		ContentImages string `form:"content_Image" json:"content_Image" ` //缩略图
+		Covers        string `form:"covers" json:"covers"`                //图片路径
+		ContentImages string `form:"content_Image" json:"content_Image" ` //缩略图路径
 		Type          int    `form:"type" json:"type" binding:"required"` //文章类型
 		Weight        int    `form:"weight" json:"weight" `
 		Astatus       int    `form:"status" json:"status" binding:"required"`
@@ -183,10 +213,32 @@ func (this *ContextController) AddArticle(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
 		return
 	}
+
 	//获取作者 用户名
 	//获取管理员ID
 	//管理员 用户名
 	//获取Cooke 用户登录ID
+	//截取文件名作为objecetde 对象
+	if len(req.Content) > 0 {
+		path, err := new(models.Article).LocalFileToAliCloud(req.Covers)
+		if err != nil {
+			c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+			return
+		}
+		req.ContentImages = path
+	}
+
+	if len(req.ContentImages) > 0 {
+		path, err := new(models.Article).LocalFileToAliCloud(req.ContentImages)
+		if err != nil {
+			c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+			return
+		}
+		req.ContentImages = path
+	}
+
+	//
+	//
 	err = new(models.Article).AddArticle(&models.Article{
 		Title:         req.Title,
 		Description:   req.Description,

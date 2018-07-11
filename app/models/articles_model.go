@@ -2,8 +2,15 @@ package models
 
 import (
 	"admin/utils"
+	"crypto/md5"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"os"
+	"path"
 )
+
+var remoteurl string = "https://sdun.oss-cn-shenzhen.aliyuncs.com/"
 
 type Article struct {
 	Id            int    `xorm:"not null pk autoincr comment('自增ID') INT(10)"`
@@ -27,6 +34,7 @@ type Article struct {
 }
 
 type ArticleList struct {
+	Id         int    `xorm:"not null pk autoincr comment('自增ID') INT(10)"`
 	Weight     int    `xorm:"not null default 0 comment('权重，排序字段') TINYINT(4)"`
 	Title      string `xorm:"not null default '' comment('文章标题') VARCHAR(100)"`
 	Author     string `xorm:"not null default '' comment('作者名字') VARCHAR(150)"`
@@ -57,7 +65,7 @@ func (a *ArticleType) GetArticleType() ([]ArticleType, error) {
 	return list, nil
 }
 
-func (a *ArticleList) GetArticleList(page, rows, tp int) ([]*ArticleList, int, int, error) {
+func (a *ArticleList) GetArticleList(page, rows, tp, status int, st, et string) ([]*ArticleList, int, int, error) {
 
 	if page <= 0 {
 		page = 1
@@ -84,6 +92,7 @@ func (a *ArticleList) GetArticleList(page, rows, tp int) ([]*ArticleList, int, i
 	list := make([]*ArticleList, 0)
 	for _, v := range u {
 		ret := ArticleList{
+			Id:         v.Id,
 			Weight:     v.Weight,
 			Title:      v.Title,
 			Author:     v.Author,
@@ -117,17 +126,66 @@ func (a *Article) AddArticle(u *Article) error {
 	return nil
 }
 
-func (a *Article) LocalFileToAliCloud(object_key, filePath string) error {
+func (a *Article) LocalFileToAliCloud(filePath string) (string, error) {
 	client := utils.AliClient
-	bucket, err := client.Bucket("superchainsdun")
+	bucket, err := client.Bucket("sdun")
 	if err != nil {
-		return err
+		return "", err
 	}
-
-	err = bucket.PutObjectFromFile(object_key, filePath)
+	_ = bucket
+	//读取内容做has mde5
+	fd, err := os.OpenFile(filePath, os.O_RDONLY, 0660)
 	if err != nil {
-		return err
+		// HandleError(err)
+		return "", err
+	}
+	defer fd.Close()
+	body, err := ioutil.ReadAll(fd)
+	if err != nil {
+		fmt.Println("ReadAll", err)
+		return "", err
+	}
+	md := md5.Sum(body)
+	okey := string(md[:])
+	fmt.Println(okey)
+	fSuffix := path.Ext(filePath)
+	okey += fSuffix
+	fmt.Printf("%#v\n", okey)
+	err = bucket.PutObjectFromFile(okey, filePath)
+	if err != nil {
+		return "", err
 	}
 	fmt.Println("put success")
-	return nil
+	return remoteurl + okey, nil
+}
+
+func (a *Article) GetLocalFileToAliCloud(object_key, filepath string) (string, error) {
+	client := utils.AliClient
+	bucket, err := client.Bucket("sdun")
+	if err != nil {
+		return "", err
+	}
+	lsRes, err := bucket.ListObjects()
+	if err != nil {
+		// HandleError(err)
+		return "", nil
+	}
+
+	for _, object := range lsRes.Objects {
+		fmt.Println("Objects:", object.Key)
+	}
+	body, err := bucket.GetObject(object_key)
+	if err != nil {
+		// HandleError(err)
+		return "", err
+	}
+	fd, err := os.OpenFile(filepath, os.O_WRONLY|os.O_CREATE, 0660)
+	if err != nil {
+		// HandleError(err)
+		return "", nil
+	}
+	defer fd.Close()
+
+	io.Copy(fd, body)
+	return filepath, nil
 }
