@@ -20,18 +20,20 @@ func (this *RoleController) Router(r *gin.Engine) {
 // 用户组列表
 func (this *RoleController) List(c *gin.Context) {
 	// 获取参数
-	req := struct {
-		Page int `form:"page" json:"page" binding:"required"`
-		Rows int `form:"rows" json:"rows"`
-	}{}
-	err := c.Bind(&req)
+	page, err := this.GetInt(c, "page", 1)
 	if err != nil {
-		this.RespErr(c, constant.RESPONSE_CODE_ERROR, "参数错误")
+		this.RespErr(c, constant.RESPONSE_CODE_ERROR, "参数page格式错误")
+		return
+	}
+
+	rows, err := this.GetInt(c, "rows", 10)
+	if err != nil {
+		this.RespErr(c, constant.RESPONSE_CODE_ERROR, "参数rows格式错误")
 		return
 	}
 
 	// 调用model
-	list, err := new(backstage.Role).List(req.Page, req.Rows)
+	list, err := new(backstage.Role).List(page, rows)
 	if err != nil {
 		this.RespErr(c, constant.RESPONSE_CODE_ERROR, "查询失败")
 		return
