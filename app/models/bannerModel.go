@@ -17,6 +17,19 @@ type Banner struct {
 	Status      int    `xorm:"not null default 1 comment('上架状态 1 上架 0下架') TINYINT(4)"`
 }
 
+func (b *Banner) Operator(mark int) error {
+	//engine := utils.Engine_common
+
+	if mark == 1 { //下架
+		//engine.Update
+		return nil
+	}
+	if mark == 2 { //删除
+		return nil
+	}
+	return nil
+}
+
 func (b *Banner) Add(or, state int, picname, picp, linkaddr string) error {
 	engine := utils.Engine_common
 

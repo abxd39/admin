@@ -21,12 +21,26 @@ func (this *ContextController) Router(r *gin.Engine) {
 		g.GET("/link_list", this.GetFriendlyLink)
 		g.GET("/article_list", this.GetArticleList)
 		g.POST("/add_banner", this.AddBanner)
+		g.POST("/operator_banner", this.OperatorBanner)
 		g.GET("/banner_list", this.GetBannerList)
 		g.POST("/add_article", this.AddArticle)
 		g.GET("/article_type", this.GetArticleType)
 		g.POST("/local_filetoali", this.LocalFileToAliCloud)
 		g.GET("/get_filetoali", this.GetLocalFileToAliCloud)
 	}
+}
+
+func (this *ContextController) OperatorBanner(c *gin.Context) {
+	req := struct {
+		OperMark int `form:"op" json:"op" binding:"required"` //mark 1 下架 2 删除
+	}{}
+	err := c.ShouldBind(&req)
+	if err != nil {
+		utils.AdminLog.Errorln("param buind failed !!")
+		this.RespErr(c, constant.RESPONSE_CODE_ERROR, "参数错误")
+		return
+	}
+
 }
 
 func (this *ContextController) GetLocalFileToAliCloud(c *gin.Context) {
@@ -37,7 +51,7 @@ func (this *ContextController) GetLocalFileToAliCloud(c *gin.Context) {
 	err := c.ShouldBind(&req)
 	if err != nil {
 		utils.AdminLog.Errorln("param buind failed !!")
-		c.JSON(http.StatusOK, gin.H{"code": 2, "data": "", "msg": err})
+		this.RespErr(c, constant.RESPONSE_CODE_ERROR, "参数错误")
 		return
 	}
 	filepath, err := new(models.Article).GetLocalFileToAliCloud(req.ObjectKey, req.FilePath)
@@ -58,7 +72,7 @@ func (this *ContextController) LocalFileToAliCloud(c *gin.Context) {
 	err := c.ShouldBind(&req)
 	if err != nil {
 		utils.AdminLog.Errorln("param buind failed !!")
-		c.JSON(http.StatusOK, gin.H{"code": 2, "data": "", "msg": err})
+		this.RespErr(c, constant.RESPONSE_CODE_ERROR, "参数错误")
 		return
 	}
 	//fmt.Println("vvvvvvvvvvvvvvvvvvvvvvvvvvvvv", req.FilePath)
@@ -78,10 +92,11 @@ func (this *ContextController) LocalFileToAliCloud(c *gin.Context) {
 func (this *ContextController) GetArticleType(c *gin.Context) {
 	result, err := new(models.ArticleType).GetArticleType()
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+		this.RespErr(c, constant.RESPONSE_CODE_SYSTEM, "系统错误")
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"code": 0, "data": result, "msg": "成功"})
+	this.Put(c, "list", result)
+	this.RespOK(c, "成功")
 	return
 }
 func (this *ContextController) AddFriendlyLink(c *gin.Context) {
@@ -103,6 +118,7 @@ func (this *ContextController) AddFriendlyLink(c *gin.Context) {
 	if err != nil {
 		utils.AdminLog.Errorf(err.Error())
 		this.RespErr(c, constant.RESPONSE_CODE_SYSTEM, "系统错误")
+		return
 	}
 	//response := new(models.PolicyToken).Get_policy_token()
 	// c.Request.Header.Set("Access-Control-Allow-Methods", "POST")

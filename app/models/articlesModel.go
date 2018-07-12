@@ -2,14 +2,13 @@ package models
 
 import (
 	"admin/utils"
+	"bytes"
 	"crypto/md5"
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
-	"strings"
 )
 
 var remoteurl string = "https://sdun.oss-cn-shenzhen.aliyuncs.com/"
@@ -126,37 +125,18 @@ func (a *Article) LocalFileToAliCloud(filePath string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	fmt.Println("111111111111111", filePath)
-	//读取内容做has mde5
-	// fd, err := os.OpenFile(filePath, os.O_RDONLY, 0660)
-	// if err != nil {
-	// 	// HandleError(err)
-	// 	return "", err
-	// }
-
-	// body, err := ioutil.ReadAll(fd)
-	// if err != nil {
-	// 	fmt.Println("ReadAll", err)
-	// 	return "", err
-	// }
-	// fd.Close()
+	fSuffix := filePath[11:14]
+	value := filePath[22:]
 	h := md5.New()
-	h.Write([]byte(filePath)) // 需要加密的字符串为 123456
+	h.Write([]byte(value)) // 需要加密的字符串为 123456
 	cipherStr := h.Sum(nil)
 	okey := hex.EncodeToString(cipherStr)
 	fmt.Println(okey)
-	fSuffix := ".png" //path.Ext(filePath)
+	okey += "."
 	okey += fSuffix
 	fmt.Printf("%#v\n", okey)
-	ddd, _ := base64.StdEncoding.DecodeString(filePath) //成图片文件并把文件写入到buffer
-
-	fmt.Println("111111111111111", ddd)
-
-	err = ioutil.WriteFile("./output133.png", []byte(filePath), 0666)
-
-	err = bucket.PutObject(okey, strings.NewReader(filePath))
-
-	//err = bucket.PutObjectFromFile(okey, filePath)
+	ddd, _ := base64.StdEncoding.DecodeString(value)
+	err = bucket.PutObject(okey, bytes.NewReader(ddd))
 	if err != nil {
 		fmt.Println(filePath)
 		return "", err
