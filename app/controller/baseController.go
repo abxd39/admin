@@ -37,10 +37,11 @@ func (b *BaseController) RespOK(c *gin.Context, msg ...string) {
 	b.resp.Code = constant.RESPONSE_CODE_OK
 	b.resp.Msg = ""
 
+	// 没有数据时，让data字段的json值为[]而非null
 	if c.Keys[SAVE_DATA_KEY] != nil {
 		b.resp.Data = c.Keys[SAVE_DATA_KEY]
 	} else {
-		b.resp.Data = []int{} // 没有数据时，让data字段的json值为[]而非null
+		b.resp.Data = []int{}
 	}
 
 	c.JSON(http.StatusOK, b.resp)
@@ -51,12 +52,7 @@ func (b *BaseController) RespErr(c *gin.Context, options ...interface{}) {
 	b.resp.Code = constant.RESPONSE_CODE_ERROR
 	b.resp.Msg = ""
 
-	if c.Keys[SAVE_DATA_KEY] != nil {
-		b.resp.Data = c.Keys[SAVE_DATA_KEY]
-	} else {
-		b.resp.Data = []int{} // 没有数据时，让data字段的json值为[]而非null
-	}
-
+	// 继续确定code、msg
 	for _, v := range options {
 		switch opt := v.(type) {
 		case int:
@@ -74,6 +70,13 @@ func (b *BaseController) RespErr(c *gin.Context, options ...interface{}) {
 		case error: // go错误
 			b.resp.Msg = opt.Error()
 		}
+	}
+
+	// 没有数据时，让data字段的json值为[]而非null
+	if c.Keys[SAVE_DATA_KEY] != nil {
+		b.resp.Data = c.Keys[SAVE_DATA_KEY]
+	} else {
+		b.resp.Data = []int{}
 	}
 
 	c.JSON(http.StatusOK, b.resp)
