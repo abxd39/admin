@@ -14,3 +14,10 @@ func main() {
 	router.Run(fmt.Sprintf(":%d", 8001))
 
 }
+
+func ResetController() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		c.Next()
+	}
+}

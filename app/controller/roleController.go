@@ -40,7 +40,7 @@ func (this *RoleController) List(c *gin.Context) {
 	}
 
 	// 设置返回数据
-	this.Put("list", list)
+	this.Put(c, "list", list)
 
 	// 返回
 	this.RespOK(c, "成功")
