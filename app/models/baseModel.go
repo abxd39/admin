@@ -16,12 +16,11 @@ type ModelList struct {
 
 // 计算分页
 func (b *BaseModel) Paging(pageIndex, pageSize, total int) (offset int, modelList *ModelList) {
-	// 计算分页
 	if pageIndex <= 0 {
 		pageIndex = 1
 	}
 	if pageSize <= 0 {
-		pageSize = 100
+		pageSize = 10
 	}
 	offset = (pageIndex - 1) * pageSize
 
