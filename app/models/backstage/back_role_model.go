@@ -30,7 +30,7 @@ func (r *Role) List(pageIndex, pageSize int) (modelList *models.ModelList, err e
 	offset, modelList := r.Paging(pageIndex, pageSize, int(count))
 
 	// 获取列表数据
-	list := []Role{}
+	var list []Role
 	err = query.Limit(pageSize, offset).Find(&list)
 	if err != nil {
 		utils.AdminLog.Errorln(err.Error())

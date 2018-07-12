@@ -25,11 +25,12 @@ func (b *BaseModel) Paging(pageIndex, pageSize, total int) (offset int, modelLis
 	}
 	offset = (pageIndex - 1) * pageSize
 
-	modelList = &ModelList{}
-	modelList.PageIndex = pageIndex
-	modelList.PageSize = pageSize
-	modelList.PageCount = int(math.Ceil(float64(total / pageSize)))
-	modelList.Total = total
+	modelList = &ModelList{
+		PageIndex: pageIndex,
+		PageSize:  pageSize,
+		PageCount: int(math.Ceil(float64(total / pageSize))),
+		Total:     total,
+	}
 
 	return
 }
