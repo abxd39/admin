@@ -6,6 +6,7 @@ import (
 
 	"admin/constant"
 
+	"admin/errors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -32,9 +33,9 @@ func (b *BaseController) Put(c *gin.Context, key string, value interface{}) {
 }
 
 // 正确的响应
-func (b *BaseController) RespOK(c *gin.Context, msg string) {
+func (b *BaseController) RespOK(c *gin.Context, msg ...string) {
 	b.resp.Code = constant.RESPONSE_CODE_OK
-	b.resp.Msg = msg
+	b.resp.Msg = ""
 
 	if c.Keys[SAVE_DATA_KEY] != nil {
 		b.resp.Data = c.Keys[SAVE_DATA_KEY]
@@ -46,14 +47,33 @@ func (b *BaseController) RespOK(c *gin.Context, msg string) {
 }
 
 // 错误的响应
-func (b *BaseController) RespErr(c *gin.Context, code int, msg string) {
-	b.resp.Code = code
-	b.resp.Msg = msg
+func (b *BaseController) RespErr(c *gin.Context, options ...interface{}) {
+	b.resp.Code = constant.RESPONSE_CODE_ERROR
+	b.resp.Msg = ""
 
 	if c.Keys[SAVE_DATA_KEY] != nil {
 		b.resp.Data = c.Keys[SAVE_DATA_KEY]
 	} else {
 		b.resp.Data = []int{} // 没有数据时，让data字段的json值为[]而非null
+	}
+
+	for _, v := range options {
+		switch opt := v.(type) {
+		case int:
+			b.resp.Code = opt
+		case string:
+			b.resp.Msg = opt
+		case errors.SysErrorInterface: // 系统错误
+			b.resp.Code = constant.RESPONSE_CODE_SYSTEM
+			b.resp.Msg = opt.String() // todo opt.Error()
+		case errors.NormalErrorInterface: // 常规错误
+			if opt.Status() != 0 {
+				b.resp.Code = opt.Status()
+			}
+			b.resp.Msg = opt.Error()
+		case error: // go错误
+			b.resp.Msg = opt.Error()
+		}
 	}
 
 	c.JSON(http.StatusOK, b.resp)
