@@ -170,3 +170,41 @@ func (r *Role) Update(id int, name, desc, nodeIds string) error {
 
 	return nil
 }
+
+// 删除用户组
+func (r *Role) Delete(id int) error {
+	// 验证用户组是否存在
+	engine := utils.Engine_backstage
+	has, err := engine.Id(id).Get(new(Role))
+	if err != nil {
+		return errors.NewSys(err)
+	}
+	if !has {
+		return errors.NewNormal("用户组不存在或已删除")
+	}
+
+	// 开始删除，事务
+	session := engine.NewSession()
+	defer session.Close()
+
+	// 1. 删除用户组
+	_, err = session.ID(id).Delete(new(Role))
+	if err != nil {
+		session.Rollback()
+		return errors.NewSys(err)
+	}
+
+	// 2. 删除用户组、节点关联
+	_, err = session.Where("role_id=?", id).Delete(new(RoleNode))
+	if err != nil {
+		session.Rollback()
+		return errors.NewSys(err)
+	}
+
+	err = session.Commit()
+	if err != nil {
+		return errors.NewSys(err)
+	}
+
+	return nil
+}

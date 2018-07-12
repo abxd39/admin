@@ -17,6 +17,7 @@ func (r *RoleController) Router(e *gin.Engine) {
 		group.GET("/list", r.List)
 		group.POST("/add", r.Add)
 		group.POST("/update", r.Update)
+		group.POST("/delete", r.Delete)
 	}
 }
 
@@ -97,6 +98,27 @@ func (r *RoleController) Update(c *gin.Context) {
 
 	// 调用model
 	err = new(backstage.Role).Update(id, name, desc, nodeIds)
+	if err != nil {
+		r.RespErr(c, err)
+		return
+	}
+
+	// 返回
+	r.RespOK(c)
+	return
+}
+
+// 删除用户组
+func (r *RoleController) Delete(c *gin.Context) {
+	// 获取参数
+	id, err := r.GetInt(c, "id")
+	if err != nil || id < 1 {
+		r.RespErr(c, "参数id格式错误")
+		return
+	}
+
+	// 调用model
+	err = new(backstage.Role).Delete(id)
 	if err != nil {
 		r.RespErr(c, err)
 		return
