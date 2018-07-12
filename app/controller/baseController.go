@@ -1,10 +1,12 @@
 package controller
 
 import (
-	"admin/constant"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"strconv"
+
+	"admin/constant"
+
+	"github.com/gin-gonic/gin"
 )
 
 const (
@@ -57,14 +59,67 @@ func (b *BaseController) RespErr(c *gin.Context, code int, msg string) {
 	c.JSON(http.StatusOK, b.resp)
 }
 
-// 获取get提交的int类型的参数
-// 如果类型不是int，err不为nil
+// 获取get、post提交的参数
+func (b *BaseController) GetParam(c *gin.Context, key string) string {
+	param := c.Query(key)
+	if len(param) == 0 { // get获取不到时，尝试post获取
+		param = c.PostForm(key)
+	}
+
+	return param
+}
+
+// 获取get、post提交的string类型的参数
+// def表示默认值，取第一个，多余的丢弃
+func (b *BaseController) GetString(c *gin.Context, key string, def ...string) string {
+	param := b.GetParam(c, key)
+	if len(param) == 0 && len(def) > 0 {
+		return def[0]
+	}
+
+	return param
+}
+
+// 获取get、post提交的int类型的参数
 // def表示默认值，取第一个，多余的丢弃
 func (b *BaseController) GetInt(c *gin.Context, key string, def ...int) (int, error) {
-	param := c.Query(key)
+	param := b.GetParam(c, key)
 	if len(param) == 0 && len(def) > 0 {
 		return def[0], nil
 	}
 
 	return strconv.Atoi(param)
+}
+
+// 获取get、post提交的int64类型的参数
+// def表示默认值，取第一个，多余的丢弃
+func (b *BaseController) GetInt64(c *gin.Context, key string, def ...int64) (int64, error) {
+	param := b.GetParam(c, key)
+	if len(param) == 0 && len(def) > 0 {
+		return def[0], nil
+	}
+
+	return strconv.ParseInt(param, 10, 64)
+}
+
+// 获取get、post提交的float64类型的参数
+// def表示默认值，取第一个，多余的丢弃
+func (b *BaseController) GetFloat64(c *gin.Context, key string, def ...float64) (float64, error) {
+	param := b.GetParam(c, key)
+	if len(param) == 0 && len(def) > 0 {
+		return def[0], nil
+	}
+
+	return strconv.ParseFloat(param, 64)
+}
+
+// 获取get、post提交的float64类型的参数
+// def表示默认值，取第一个，多余的丢弃
+func (b *BaseController) GetBool(c *gin.Context, key string, def ...bool) (bool, error) {
+	param := b.GetParam(c, key)
+	if len(param) == 0 && len(def) > 0 {
+		return def[0], nil
+	}
+
+	return strconv.ParseBool(param)
 }
