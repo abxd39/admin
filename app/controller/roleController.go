@@ -16,6 +16,7 @@ func (r *RoleController) Router(e *gin.Engine) {
 	{
 		group.GET("/list", r.List)
 		group.POST("/add", r.Add)
+		group.POST("/update", r.Update)
 	}
 }
 
@@ -70,6 +71,36 @@ func (r *RoleController) Add(c *gin.Context) {
 
 	// 设置返回数据
 	r.Put(c, "id", id)
+
+	// 返回
+	r.RespOK(c)
+	return
+}
+
+// 更新用户组
+func (r *RoleController) Update(c *gin.Context) {
+	// 获取参数
+	id, err := r.GetInt(c, "id")
+	if err != nil || id < 1 {
+		r.RespErr(c, "参数id格式错误")
+		return
+	}
+
+	name := r.GetString(c, "name")
+	if strLen := utf8.RuneCountInString(name); strLen == 0 || strLen > 10 {
+		r.RespErr(c, "参数name格式错误")
+		return
+	}
+
+	desc := r.GetString(c, "desc", "")
+	nodeIds := r.GetString(c, "node_ids", "")
+
+	// 调用model
+	err = new(backstage.Role).Update(id, name, desc, nodeIds)
+	if err != nil {
+		r.RespErr(c, err)
+		return
+	}
 
 	// 返回
 	r.RespOK(c)
