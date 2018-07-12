@@ -2,6 +2,7 @@ package controller
 
 import (
 	"admin/app/models"
+	"admin/constant"
 	"admin/utils"
 	"fmt"
 	"net/http"
@@ -9,7 +10,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type ContextController struct{}
+type ContextController struct {
+	BaseController
+}
 
 func (this *ContextController) Router(r *gin.Engine) {
 	g := r.Group("/content")
@@ -58,6 +61,7 @@ func (this *ContextController) LocalFileToAliCloud(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"code": 2, "data": "", "msg": err})
 		return
 	}
+	//fmt.Println("vvvvvvvvvvvvvvvvvvvvvvvvvvvvv", req.FilePath)
 	_, err = new(models.Article).LocalFileToAliCloud(req.FilePath)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
@@ -91,16 +95,19 @@ func (this *ContextController) AddFriendlyLink(c *gin.Context) {
 	err := c.ShouldBind(&req)
 	if err != nil {
 		utils.AdminLog.Errorf(err.Error())
-		c.JSON(http.StatusOK, gin.H{"code": 2, "data": "", "msg": err.Error()})
+		this.RespErr(c, constant.RESPONSE_CODE_ERROR, "参数错误")
 		return
 	}
 	fmt.Println("..........................................")
 	err = new(models.FriendlyLink).Add(1, req.LinkState, req.WebName, req.LinkName)
 	if err != nil {
 		utils.AdminLog.Errorf(err.Error())
-		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+		this.RespErr(c, constant.RESPONSE_CODE_SYSTEM, "系统错误")
 	}
-	c.JSON(http.StatusOK, gin.H{"code": 0, "data": "", "msg": "成功"})
+	//response := new(models.PolicyToken).Get_policy_token()
+	// c.Request.Header.Set("Access-Control-Allow-Methods", "POST")
+	// c.Request.Header.Set("Access-Control-Allow-Origin", "*")
+	this.RespOK(c, "成功")
 	return
 }
 
@@ -108,21 +115,28 @@ func (this *ContextController) GetFriendlyLink(c *gin.Context) {
 
 	req := struct {
 		Page     int    `form:"page" json:"page" binding:"required"`
+		Rows     int    `form:"rows" json:"rows" `
 		Name     string `form:"name" json:"name" `
 		Linkname string `form:"link_name" json:"link_name" `
-		Count    int    `form:"count" json:"count" `
+		Status   int    `form:"status" json:"status" `
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
 		utils.AdminLog.Errorf(err.Error())
+		this.RespErr(c, constant.RESPONSE_CODE_ERROR, "参数错误")
 		return
 	}
 	//operator db         GetFriendlyLinkList
-	result, page, total, err := new(models.FriendlyLink).GetFriendlyLinkList(req.Page, req.Count, req.Name, req.Linkname)
+	list, err := new(models.FriendlyLink).GetFriendlyLinkList(req.Page, req.Rows, req.Status, req.Name, req.Linkname)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+		this.RespErr(c, constant.RESPONSE_CODE_SYSTEM, "系统错误")
+		return
 	}
-	c.JSON(http.StatusOK, gin.H{"code": 0, "page": page, "total": total, "data": result, "msg": "成功"})
+	// 设置返回数据
+	this.Put(c, "list", list)
+
+	// 返回
+	this.RespOK(c, "成功")
 	return
 }
 
@@ -138,14 +152,20 @@ func (this *ContextController) AddBanner(c *gin.Context) {
 	err := c.ShouldBind(&req)
 	if err != nil {
 		utils.AdminLog.Errorf(err.Error())
-		c.JSON(http.StatusOK, gin.H{"code": 2, "data": "", "msg": err.Error()})
+		this.RespErr(c, constant.RESPONSE_CODE_ERROR, "参数错误")
 		return
 	}
-	err = new(models.Banner).Add(req.Order, req.Status, req.PictureName, req.PicturePath, req.LinkAddr)
+	path, err := new(models.Article).LocalFileToAliCloud(req.PicturePath)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+		this.RespErr(c, constant.RESPONSE_CODE_SYSTEM, "系统错误")
+		return
 	}
-	c.JSON(http.StatusOK, gin.H{"code": 0, "data": "", "msg": "成功"})
+	err = new(models.Banner).Add(req.Order, req.Status, req.PictureName, path, req.LinkAddr)
+	if err != nil {
+		this.RespErr(c, constant.RESPONSE_CODE_SYSTEM, "系统错误")
+		return
+	}
+	this.RespOK(c, "成功")
 	return
 }
 
@@ -161,15 +181,21 @@ func (this *ContextController) GetBannerList(c *gin.Context) {
 	err := c.ShouldBind(&req)
 	if err != nil {
 		utils.AdminLog.Errorf(err.Error())
-		c.JSON(http.StatusOK, gin.H{"code": 2, "data": "", "msg": err.Error()})
+		this.RespErr(c, constant.RESPONSE_CODE_ERROR, "参数错误")
 		return
 	}
-	list, page, total, err := new(models.Banner).GetBannerList(req.Page, req.Rows, req.Status, req.Start_t, req.End_t)
+	list, err := new(models.Banner).GetBannerList(req.Page, req.Rows, req.Status, req.Start_t, req.End_t)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+		this.RespErr(c, constant.RESPONSE_CODE_SYSTEM, "系统错误")
+		return
 	}
-	c.JSON(http.StatusOK, gin.H{"code": 0, "page": page, "total": total, "data": list, "msg": "成功"})
 
+	// 设置返回数据
+	this.Put(c, "list", list)
+
+	// 返回
+	this.RespOK(c, "成功")
+	return
 }
 
 func (this *ContextController) GetArticleList(c *gin.Context) {
@@ -185,14 +211,21 @@ func (this *ContextController) GetArticleList(c *gin.Context) {
 	err := c.ShouldBind(&req)
 	if err != nil {
 		utils.AdminLog.Errorf(err.Error())
-		c.JSON(http.StatusOK, gin.H{"code": 2, "data": "", "msg": err.Error()})
+		this.RespErr(c, constant.RESPONSE_CODE_ERROR, "参数错误")
 		return
 	}
-	reuslt, page, total, err := new(models.ArticleList).GetArticleList(req.Page, req.Rows, req.Type, req.Status, req.Start_t, req.End_t)
+	list, err := new(models.ArticleList).GetArticleList(req.Page, req.Rows, req.Type, req.Status, req.Start_t, req.End_t)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+		this.RespErr(c, constant.RESPONSE_CODE_SYSTEM, "系统错误")
+		return
 	}
-	c.JSON(http.StatusOK, gin.H{"code": 0, "data": reuslt, "page": page, "total": total, "msg": "成功"})
+
+	// 设置返回数据
+	this.Put(c, "list", list)
+
+	// 返回
+	this.RespOK(c, "成功")
+	return
 }
 
 func (this *ContextController) AddArticle(c *gin.Context) {
@@ -210,7 +243,7 @@ func (this *ContextController) AddArticle(c *gin.Context) {
 	err := c.ShouldBind(&req)
 	if err != nil {
 		utils.AdminLog.Errorf(err.Error())
-		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+		this.RespErr(c, constant.RESPONSE_CODE_ERROR, "参数错误")
 		return
 	}
 
@@ -222,7 +255,7 @@ func (this *ContextController) AddArticle(c *gin.Context) {
 	if len(req.Content) > 0 {
 		path, err := new(models.Article).LocalFileToAliCloud(req.Covers)
 		if err != nil {
-			c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+			this.RespErr(c, constant.RESPONSE_CODE_SYSTEM, "系统错误")
 			return
 		}
 		req.ContentImages = path
@@ -231,7 +264,7 @@ func (this *ContextController) AddArticle(c *gin.Context) {
 	if len(req.ContentImages) > 0 {
 		path, err := new(models.Article).LocalFileToAliCloud(req.ContentImages)
 		if err != nil {
-			c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+			this.RespErr(c, constant.RESPONSE_CODE_SYSTEM, "系统错误")
 			return
 		}
 		req.ContentImages = path
@@ -250,8 +283,9 @@ func (this *ContextController) AddArticle(c *gin.Context) {
 		Astatus:       req.Astatus,
 	})
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+		this.RespErr(c, constant.RESPONSE_CODE_SYSTEM, "系统错误")
+		return
 	}
-	c.JSON(http.StatusOK, gin.H{"code": 0, "data": "", "msg": "成功"})
+	this.RespOK(c, "成功")
 	return
 }

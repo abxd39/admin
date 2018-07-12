@@ -3,11 +3,11 @@ package models
 import (
 	"admin/utils"
 	"errors"
-	"fmt"
 	"time"
 )
 
 type Banner struct {
+	BaseModel   `xorm:"-"`
 	Id          int    `xorm:"not null pk INT(11)"`
 	Order       int    `xorm:"not null default 1 comment('排序') TINYINT(4)"`
 	PictureName string `xorm:"not null default '' comment('图片名称') VARCHAR(255)"`
@@ -19,6 +19,7 @@ type Banner struct {
 
 func (b *Banner) Add(or, state int, picname, picp, linkaddr string) error {
 	engine := utils.Engine_common
+
 	current := time.Now().Format("2006-01-02 15:04:05")
 	ban := &Banner{
 		Order:       or,
@@ -41,20 +42,8 @@ func (b *Banner) Add(or, state int, picname, picp, linkaddr string) error {
 	return nil
 }
 
-func (b *Banner) GetBannerList(page, rows, status int, start_t, end_t string) ([]Banner, int, int, error) {
+func (b *Banner) GetBannerList(page, rows, status int, start_t, end_t string) (*ModelList, error) {
 	engine := utils.Engine_common
-	limit := 0
-	if rows <= 0 {
-		rows = 100
-	}
-	if page <= 1 {
-		page = 1
-	} else {
-		limit = (page - 1) * rows
-	}
-
-	list := make([]Banner, 0)
-	fmt.Println("///////////////////////////////", rows, limit)
 	query := engine.Desc("id")
 	if status != 0 {
 		query = query.Where("status=?", status)
@@ -68,12 +57,22 @@ func (b *Banner) GetBannerList(page, rows, status int, start_t, end_t string) ([
 
 	}
 	Tquery := *query
-	err := query.Limit(rows, limit).Find(&list)
-	if err != nil {
-		return nil, 0, 0, err
-	}
 	count, err := Tquery.Count(&Banner{})
-	total_page := int(count) / rows
-	return list, total_page, int(count), nil
+	if err != nil {
+		return nil, err
+	}
+	//获取分页
+	offset, modelList := b.Paging(page, rows, int(count))
+
+	list := make([]Banner, 0)
+	//断言
+	//if _,ok:= modelist.Items.()
+	err = query.Limit(modelList.PageSize, offset).Find(&list)
+	if err != nil {
+		return nil, err
+	}
+
+	modelList.Items = list
+	return modelList, nil
 
 }

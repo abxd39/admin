@@ -6,6 +6,7 @@ import (
 )
 
 type EntrustDetail struct {
+	BaseModel   `xorm:"-"`
 	EntrustId   string `xorm:"not null pk comment('委托记录表（委托管理）') VARCHAR(64)"`
 	Uid         uint64 `xorm:"not null comment('用户id') INT(32)"`
 	TokenId     int    `xorm:"not null comment('货币id') INT(32)"`

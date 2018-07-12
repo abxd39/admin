@@ -7,6 +7,7 @@ import (
 )
 
 type UserEx struct {
+	BaseModel     `xorm:"-"`
 	Uid           int64  `xorm:"not null pk comment(' 用户ID') BIGINT(11)"`
 	NickName      string `xorm:"not null default '' comment('用户昵称') VARCHAR(64)"`
 	HeadSculpture string `xorm:"not null default '' comment('头像图片路径') VARCHAR(100)"`
@@ -19,6 +20,7 @@ type UserEx struct {
 }
 
 type WebUser struct {
+	BaseModel        `xorm:"-"`
 	Uid              uint64 `xorm:"not null pk autoincr comment('用户ID') BIGINT(11)"`
 	Account          string `xorm:"comment('账号') unique VARCHAR(64)"`
 	Pwd              string `xorm:"comment('密码') VARCHAR(255)"`
@@ -65,61 +67,34 @@ func (w *WebUser) GetTotalUser() (int, error) {
 	return int(count), nil
 }
 
-func (w *WebUser) GetAllUser(page, rows, status int) ([]UserGroup, int, int, error) {
+func (w *WebUser) GetAllUser(page, rows, status int) (*ModelList, error) {
 	engine := utils.Engine_common
-	if page <= 1 {
-		page = 1
-	}
-	var begin int
-
-	if rows <= 1 {
-		rows = 100
-	}
-
-	if page > 1 {
-		begin = (page - 1) * rows
-	} else {
-		begin = 0
-	}
-	users := make([]UserGroup, 0)
 
 	query := engine.Desc("user.uid")
 	query = query.Join("INNER", "user_ex", "user_ex.uid=user.uid")
 	tempquery := *query
-	fmt.Println("GetAllUser", rows, begin)
-	query.Limit(rows, begin)
-	err := query.Find(&users)
+	count, err := tempquery.Count(&WebUser{})
 	if err != nil {
-		return nil, 0, 0, err
+		return nil, err
 	}
-	fmt.Println(len(users))
-	u := new(WebUser)
-	count, err := tempquery.Count(u)
+	offset, modelList := w.Paging(page, rows, int(count))
+	users := make([]UserGroup, 0)
+	err = query.Limit(modelList.PageSize, offset).Find(&users)
 	if err != nil {
-		return nil, 0, 0, err
+		return nil, err
 	}
-	total := int(count) / rows
-	return users, total, int(count), nil
+
+	modelList.Items = users
+	return modelList, nil
 }
 
-func (w *WebUser) UserList(page, rows, verify, status int, uname, phone, email string, date, uid int64) ([]*UserGroup, int, int, error) {
-	if rows == 0 {
-		rows = 50
-	}
+func (w *WebUser) UserList(page, rows, verify, status int, uname, phone, email string, date, uid int64) (*ModelList, error) {
+
 	engine := utils.Engine_common
-	var begin int
-	var total int
-	var count int64
-	var err error
-	if page <= 1 {
-		begin = 0
-	} else {
-		begin = rows * (page - 1)
-	}
 
 	//数据查询
 	users := make([]*UserGroup, 0)
-	fmt.Println("vvvvvvvvvvvvvvvvvvv")
+
 	query := engine.Desc("user.uid")
 	query = query.Join("INNER", "user_ex", "user.uid=user_ex.uid")
 	//筛选条件为 uid
@@ -156,18 +131,18 @@ func (w *WebUser) UserList(page, rows, verify, status int, uname, phone, email s
 	}
 	//无条件刷选
 
-	fmt.Printf("无条件刷选%#v\n", rows)
 	tempQuery := *query
-	query = query.Limit(rows, begin)
+	count, err := tempQuery.Count(&WebUser{})
+	if err != nil {
+		return nil, err
+	}
+	offset, modelList := w.Paging(page, rows, int(count))
+	query = query.Limit(offset, modelList.PageSize)
 	err = query.Find(&users)
 	if err != nil {
 		utils.AdminLog.Errorln(err.Error())
-		return nil, 0, 0, err
+		return nil, err
 	}
-	count, err = tempQuery.Count(&WebUser{})
-	if err != nil {
-		return nil, 0, 0, err
-	}
-	total = int(count) / rows
-	return users, total, total * rows, nil
+
+	return modelList, nil
 }

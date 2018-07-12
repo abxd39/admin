@@ -5,6 +5,7 @@ import (
 )
 
 type QuenesConfig struct {
+	BaseModel    `xorm:"-"`
 	Id           int64  `xorm:"pk autoincr BIGINT(20)"`
 	TokenId      int    `xorm:"comment('交易币') unique(union_quene_id) INT(11)"`
 	TokenTradeId int    `xorm:"comment('实际交易币') unique(union_quene_id) INT(11)"`
@@ -14,33 +15,26 @@ type QuenesConfig struct {
 	Scope        string `xorm:"comment('振幅') DECIMAL(6,2)"`
 }
 
-func (q *QuenesConfig) GetTokenCashList(page, rows, token_id int) ([]QuenesConfig, int, int, error) {
+func (q *QuenesConfig) GetTokenCashList(page, rows, token_id int) (*ModelList, error) {
 	engine := utils.Engine_token
-	limit := 0
-	if rows <= 1 {
-		rows = 50
-	}
-	if page <= 1 {
-		page = 1
-	} else {
-		limit = (page - 1) * rows
-	}
+
 	query := engine.Desc("id")
 	if token_id != 0 {
 		query = query.Where("token_id=?", token_id)
 	}
-
-	query.Limit(rows, limit)
 	tquery := *query
-	list := make([]QuenesConfig, 0)
-	err := query.Find(&list)
-	if err != nil {
-		return nil, 0, 0, err
-	}
 	count, err := tquery.Count(&QuenesConfig{})
 	if err != nil {
-		return nil, 0, 0, err
+		return nil, err
 	}
-	total_page := int(count) / rows
-	return list, total_page, int(count), nil
+	offset, modelList := q.Paging(page, rows, int(count))
+	query.Limit(modelList.PageSize, offset)
+
+	list := make([]QuenesConfig, 0)
+	err = query.Find(&list)
+	if err != nil {
+		return nil, err
+	}
+	modelList.Items = list
+	return modelList, nil
 }

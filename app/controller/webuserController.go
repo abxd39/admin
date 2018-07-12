@@ -2,6 +2,7 @@ package controller
 
 import (
 	"admin/app/models"
+	"admin/constant"
 	"admin/utils"
 	"fmt"
 	"net/http"
@@ -9,7 +10,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type WebUserManageController struct{}
+type WebUserManageController struct {
+	BaseController
+}
 
 func (w *WebUserManageController) Router(r *gin.Engine) {
 	group := r.Group("/webuser")
@@ -33,12 +36,12 @@ func (w *WebUserManageController) GetSecodeCertificationList(c *gin.Context) {
 	err := c.ShouldBind(&req)
 	if err != nil {
 		utils.AdminLog.Errorln("param buind failed !!")
-		c.JSON(http.StatusOK, gin.H{"code": 2, "data": "", "msg": err.Error()})
+		w.RespErr(c, constant.RESPONSE_CODE_ERROR, "参数错误")
 		return
 	}
 	list, page, total, err := new(models.UserSecondaryCertificationGroup).GetSecondaryCertificationList(req.Page, req.Rows, req.VerifyStatus, req.Status, req.VerifyTime)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+		w.RespErr(c, constant.RESPONSE_CODE_SYSTEM, "系统错误")
 		return
 
 	}
@@ -57,12 +60,12 @@ func (w *WebUserManageController) GetLoginList(c *gin.Context) {
 	err := c.ShouldBind(&req)
 	if err != nil {
 		utils.AdminLog.Errorln("param buind failed !!")
-		c.JSON(http.StatusOK, gin.H{"code": 2, "data": "", "msg": err.Error()})
+		w.RespErr(c, constant.RESPONSE_CODE_ERROR, "参数错误")
 		return
 	}
 	list, page, total, err := new(models.UserLogInLogGroup).GetUserLoginLogList(req.Page, req.Rows, req.TerminalType, req.Status, req.LoginTime)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+		w.RespErr(c, constant.RESPONSE_CODE_SYSTEM, "系统错误")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"code": 0, "page": page, "total": total, "data": list, "msg": "成功"})
@@ -78,17 +81,22 @@ func (w *WebUserManageController) GetTotalProperty(c *gin.Context) {
 	err := c.ShouldBind(&req)
 	if err != nil {
 		utils.AdminLog.Errorln("param buind failed !!")
-		c.JSON(http.StatusOK, gin.H{"code": 2, "data": "", "msg": err.Error()})
+		w.RespErr(c, constant.RESPONSE_CODE_ERROR, "参数错误")
 		return
 	}
 	//1所有用户数量
-	result, page, total, err := new(models.WebUser).GetAllUser(req.Page, req.Rows, req.Status)
+	result, err := new(models.WebUser).GetAllUser(req.Page, req.Rows, req.Status)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+		w.RespErr(c, constant.RESPONSE_CODE_SYSTEM, "系统错误")
 		return
 	}
 	userlist := make([]int, 0)
-	for _, v := range result {
+	list, Ok := result.Items.([]models.WebUser)
+	if !Ok {
+		w.RespErr(c, constant.RESPONSE_CODE_SYSTEM, "系统错误")
+		return
+	}
+	for _, v := range list {
 		userlist = append(userlist, int(v.Uid))
 	}
 	// //根据UID 获取广告id
@@ -99,7 +107,7 @@ func (w *WebUserManageController) GetTotalProperty(c *gin.Context) {
 	// }
 	orderlist, err := new(models.Order).GetOrderId(userlist, req.Status)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+		w.RespErr(c, constant.RESPONSE_CODE_SYSTEM, "系统错误")
 		return
 	}
 	type Rsp struct {
@@ -136,7 +144,9 @@ func (w *WebUserManageController) GetTotalProperty(c *gin.Context) {
 	//再此需要传递一个交易的状态作为参数 付状态: 1待支付 2待放行(已支付) 3确认支付(已完成)
 	//new(cur.Order).GetOrderId(orderId, 3)
 	//3币币总资产
-	c.JSON(http.StatusOK, gin.H{"code": 0, "page": page, "total": total, "data": result, "msg": "成功"})
+	//result.Items =
+	w.Put(c, "list", list)
+	w.RespOK(c, "成功")
 	return
 }
 
@@ -144,7 +154,7 @@ func (w *WebUserManageController) GetTotalUser(c *gin.Context) {
 	//fmt.Printf("list param %#v\n", req)
 	total, err := new(models.WebUser).GetTotalUser()
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+		w.RespErr(c, constant.RESPONSE_CODE_SYSTEM, "系统错误")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"code": 0, "data": "", "total": total, "msg": "成功"})
@@ -166,12 +176,17 @@ func (w *WebUserManageController) GetWebUserList(c *gin.Context) {
 	err := c.ShouldBind(&req)
 	if err != nil {
 		utils.AdminLog.Errorln("param buind failed !!")
-		c.JSON(http.StatusOK, gin.H{"code": 2, "data": "", "msg": err.Error()})
+		w.RespErr(c, constant.RESPONSE_CODE_ERROR, "参数错误")
 		return
 	}
 	fmt.Printf("list param %#v\n", req)
-	reuslt, page, total, err := new(models.WebUser).UserList(req.Page, req.Rows, req.Verify, req.Status, req.Uname, req.Phone, req.Email, req.Date, req.Uid)
-	for _, v := range reuslt {
+	reuslt, err := new(models.WebUser).UserList(req.Page, req.Rows, req.Verify, req.Status, req.Uname, req.Phone, req.Email, req.Date, req.Uid)
+	list, Ok := reuslt.Items.([]models.UserGroup)
+	if !Ok {
+		w.RespErr(c, constant.RESPONSE_CODE_SYSTEM, "系统错误")
+		return
+	}
+	for _, v := range list {
 
 		if v.SecurityAuth == 7 {
 			v.GoogleVerifyMark = 1
@@ -197,9 +212,14 @@ func (w *WebUserManageController) GetWebUserList(c *gin.Context) {
 
 	}
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+		w.RespErr(c, constant.RESPONSE_CODE_SYSTEM, "系统错误")
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"code": 0, "page": page, "data": reuslt, "total": total, "msg": "成功"})
+	// 设置返回数据
+	w.Put(c, "list", reuslt)
+
+	// 返回
+	w.RespOK(c, "成功")
+	//c.JSON(http.StatusOK, gin.H{"code": 0, "page": page, "data": reuslt, "total": total, "msg": "成功"})
 	return
 }

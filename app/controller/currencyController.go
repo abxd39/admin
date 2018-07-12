@@ -2,6 +2,7 @@ package controller
 
 import (
 	"admin/app/models"
+	"admin/constant"
 	"admin/utils"
 	"fmt"
 	"net/http"
@@ -9,7 +10,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type CurrencyController struct{}
+type CurrencyController struct {
+	BaseController
+}
 
 func (this *CurrencyController) Router(r *gin.Engine) {
 	g := r.Group("/currency")
@@ -33,7 +36,7 @@ func (cu *CurrencyController) GetBuySellList(c *gin.Context) {
 	err := c.ShouldBind(&req)
 	if err != nil {
 		utils.AdminLog.Errorf(err.Error())
-		c.JSON(http.StatusOK, gin.H{"code": 2, "data": "", "msg": err.Error()})
+		cu.RespErr(c, constant.RESPONSE_CODE_ERROR, "参数错误")
 		return
 	}
 	uid := make([]int, 0)
@@ -42,7 +45,7 @@ func (cu *CurrencyController) GetBuySellList(c *gin.Context) {
 	list, page, total, err := new(models.Order).GetOrderListOfUid(req.Page, req.Rows, req.Uid, req.Token_id)
 
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+		cu.RespErr(c, constant.RESPONSE_CODE_SYSTEM, "系统错误")
 		return
 	}
 	fmt.Println("000000000000000000000000000000", len(list))
@@ -92,7 +95,7 @@ func (cu *CurrencyController) GetBuySellList(c *gin.Context) {
 	}
 	tokenlist, err := new(models.Tokens).GetTokenList()
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+		cu.RespErr(c, constant.RESPONSE_CODE_SYSTEM, "系统错误")
 		return
 	}
 	for _, v := range mapToken {
@@ -124,13 +127,13 @@ func (cu *CurrencyController) GetUserDetailList(c *gin.Context) {
 	err := c.ShouldBind(&req)
 	if err != nil {
 		utils.AdminLog.Errorf(err.Error())
-		c.JSON(http.StatusOK, gin.H{"code": 2, "data": "", "msg": err.Error()})
+		cu.RespErr(c, constant.RESPONSE_CODE_ERROR, "参数错误")
 		return
 	}
 
 	result, page, total, err := new(models.UserCurrency).GetCurrencyList(req.Page, req.Rows, req.Uid, req.Token_id)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+		cu.RespErr(c, constant.RESPONSE_CODE_SYSTEM, "系统错误")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"code": 0, "page": page, "total": total, "data": result, "msg": "成功"})
@@ -148,7 +151,7 @@ func (cu *CurrencyController) GetTotalCurrencyBalance(c *gin.Context) {
 	err := c.ShouldBind(&req)
 	if err != nil {
 		utils.AdminLog.Errorf(err.Error())
-		c.JSON(http.StatusOK, gin.H{"code": 2, "data": "", "msg": err.Error()})
+		cu.RespErr(c, constant.RESPONSE_CODE_ERROR, "参数错误")
 		return
 	}
 	type listCurrency struct {
@@ -163,12 +166,16 @@ func (cu *CurrencyController) GetTotalCurrencyBalance(c *gin.Context) {
 	list := make([]listCurrency, 0)
 	uid := make([]uint64, 0)
 	//第一步 调用获取 用户资料
-	result, page, total, err := new(models.UserGroup).GetAllUser(req.Page, req.Page_num, req.Status)
+	result, err := new(models.UserGroup).GetAllUser(req.Page, req.Page_num, req.Status)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+		cu.RespErr(c, constant.RESPONSE_CODE_SYSTEM, "系统错误")
 	}
-	fmt.Printf("GetTotalCurrencyBalance%#v\n", result)
-	for _, v := range result {
+	userList, Ok := result.Items.([]models.UserGroup)
+	if !Ok {
+		cu.RespErr(c, constant.RESPONSE_CODE_SYSTEM, "系统错误")
+		return
+	}
+	for _, v := range userList {
 
 		rsp := listCurrency{
 			Uid:             v.Uid,
@@ -185,7 +192,7 @@ func (cu *CurrencyController) GetTotalCurrencyBalance(c *gin.Context) {
 	}
 	currlist, err := new(models.UserCurrency).GetAll(uid)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+		cu.RespErr(c, constant.RESPONSE_CODE_SYSTEM, "系统错误")
 		return
 	}
 	//找出所有相同的uid 的资产
@@ -204,7 +211,12 @@ func (cu *CurrencyController) GetTotalCurrencyBalance(c *gin.Context) {
 	// 	c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
 	// 	return
 	// }
-	c.JSON(http.StatusOK, gin.H{"code": 0, "page": page, "total": total, "data": list, "msg": "成功"})
+	// 设置返回数据
+	result.Items = list
+	cu.Put(c, "list", result)
+
+	// 返回
+	cu.RespOK(c, "成功")
 	return
 }
 
@@ -214,14 +226,14 @@ func (cu *CurrencyController) GetTradeList(c *gin.Context) {
 	err := c.ShouldBind(&req)
 	if err != nil {
 		utils.AdminLog.Errorf(err.Error())
-		c.JSON(http.StatusOK, gin.H{"code": 2, "data": "", "msg": err.Error()})
+		cu.RespErr(c, constant.RESPONSE_CODE_ERROR, "参数错误")
 		return
 	}
 	fmt.Println(".0.0.0.0.0.0.0.0.0.00.0.0.0.00.0.0....0.0.0.0.0.0")
 	fmt.Println(req)
 	result, page, total, err := new(models.Ads).GetAdsList(req)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+		cu.RespErr(c, constant.RESPONSE_CODE_SYSTEM, "系统错误")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"code": 0, "page": page, "total": total, "data": result, "msg": "成功"})
@@ -233,7 +245,7 @@ func (cu *CurrencyController) GetTokensList(c *gin.Context) {
 	fmt.Println("tttttttttttttttttttttttttttttttttttttttt")
 	list, err := new(models.Tokens).GetTokenList()
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+		cu.RespErr(c, constant.RESPONSE_CODE_SYSTEM, "系统错误")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"code": 0, "data": list, "msg": "成功"})
@@ -254,12 +266,12 @@ func (cu *CurrencyController) GetOderList(c *gin.Context) {
 	err := c.ShouldBind(&req)
 	if err != nil {
 		utils.AdminLog.Errorf(err.Error())
-		c.JSON(http.StatusOK, gin.H{"code": 2, "data": "", "msg": err.Error()})
+		cu.RespErr(c, constant.RESPONSE_CODE_ERROR, "参数错误")
 		return
 	}
 	list, page, toal, err := new(models.Order).GetOrderList(req.Page, req.Page_num, req.Ad_type, req.Status, req.Token_id, req.Start_t, req.End_t)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+		cu.RespErr(c, constant.RESPONSE_CODE_SYSTEM, "系统错误")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"code": 0, "page": page, "total": toal, "data": list, "msg": "成功"})

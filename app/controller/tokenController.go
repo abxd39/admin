@@ -2,6 +2,7 @@ package controller
 
 import (
 	"admin/app/models"
+	"admin/constant"
 	"admin/utils"
 	"fmt"
 	"net/http"
@@ -9,7 +10,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type TokenController struct{}
+type TokenController struct {
+	BaseController
+}
 
 func (this *TokenController) Router(r *gin.Engine) {
 	g := r.Group("/token")
@@ -31,15 +34,16 @@ func (this *TokenController) GetTokenCashList(c *gin.Context) {
 	err := c.ShouldBind(&req)
 	if err != nil {
 		utils.AdminLog.Errorf(err.Error())
-		c.JSON(http.StatusOK, gin.H{"code": 2, "data": "", "msg": err.Error()})
+		this.RespErr(c, constant.RESPONSE_CODE_ERROR, "参数错误")
 		return
 	}
-	list, page, total, err := new(models.QuenesConfig).GetTokenCashList(req.Page, req.Rows, req.TokenId)
+	list, err := new(models.QuenesConfig).GetTokenCashList(req.Page, req.Rows, req.TokenId)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+		this.RespErr(c, constant.RESPONSE_CODE_SYSTEM, "系统错误")
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"code": 0, "data": list, "page": page, "total": total, "msg": "成功"})
+	this.Put(c, "list", list)
+	this.RespOK(c, "成功")
 	return
 }
 
@@ -51,13 +55,13 @@ func (this *TokenController) GetTokenDetail(c *gin.Context) {
 	err := c.ShouldBind(&req)
 	if err != nil {
 		utils.AdminLog.Errorf(err.Error())
-		c.JSON(http.StatusOK, gin.H{"code": 2, "data": "", "msg": err.Error()})
+		this.RespErr(c, constant.RESPONSE_CODE_ERROR, "参数错误")
 		return
 	}
 	//bibi账户余额
 	list, err := new(models.UserToken).GetTokenDetailOfUid(req.Uid, req.Token_id)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+		this.RespErr(c, constant.RESPONSE_CODE_SYSTEM, "系统错误")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"code": 0, "data": list, "msg": "成功"})
@@ -74,16 +78,18 @@ func (this *TokenController) GetTokenBalance(c *gin.Context) {
 	err := c.ShouldBind(&req)
 	if err != nil {
 		utils.AdminLog.Errorf(err.Error())
-		c.JSON(http.StatusOK, gin.H{"code": 2, "data": "", "msg": err.Error()})
+		this.RespErr(c, constant.RESPONSE_CODE_ERROR, "参数错误")
 		return
 	}
 	fmt.Printf("GetTokenBalance%#v\n", req)
-	list, page, toal, err := new(models.PersonalProperty).TotalUserBalance(req.Page, req.Page_num, req.Status)
+	list, err := new(models.PersonalProperty).TotalUserBalance(req.Page, req.Page_num, req.Status)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+		this.RespErr(c, constant.RESPONSE_CODE_SYSTEM, "系统错误")
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"code": 0, "page": page, "total": toal, "data": list, "msg": "成功"})
+
+	this.Put(c, "list", list)
+	this.RespOK(c, "成功")
 	return
 }
 
@@ -101,12 +107,12 @@ func (this *TokenController) GetRecordList(c *gin.Context) {
 	err := c.ShouldBind(&req)
 	if err != nil {
 		utils.AdminLog.Errorf(err.Error())
-		c.JSON(http.StatusOK, gin.H{"code": 2, "data": "", "msg": err.Error()})
+		this.RespErr(c, constant.RESPONSE_CODE_ERROR, "参数错误")
 		return
 	}
 	list, page, toal, err := new(models.EntrustDetail).GetTokenRecordList(req.Page, req.Page_num, req.Trade_id, req.Trade_duad, req.Ad_id, req.Start_t, req.End_t)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+		this.RespErr(c, constant.RESPONSE_CODE_SYSTEM, "系统错误")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"code": 0, "page": page, "total": toal, "data": list, "msg": "成功"})
@@ -129,12 +135,12 @@ func (this *TokenController) GetTokenOderList(c *gin.Context) {
 	err := c.ShouldBind(&req)
 	if err != nil {
 		utils.AdminLog.Errorf(err.Error())
-		c.JSON(http.StatusOK, gin.H{"code": 2, "data": "", "msg": err.Error()})
+		this.RespErr(c, constant.RESPONSE_CODE_ERROR, "参数错误")
 		return
 	}
 	list, page, toal, err := new(models.EntrustDetail).GetTokenOrderList(req.Page, req.Page_num, req.Trade_id, req.Trade_duad, req.Ad_id, req.Status, req.Start_t, req.End_t)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+		this.RespErr(c, constant.RESPONSE_CODE_SYSTEM, "系统错误")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"code": 0, "page": page, "total": toal, "data": list, "msg": "成功"})

@@ -1,1 +1,5 @@
 /admin
+build.sh
+admin.ini
+admin.exe
+.gitignore

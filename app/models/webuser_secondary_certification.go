@@ -6,6 +6,7 @@ import (
 
 //二级认证结构
 type UserSecondaryCertification struct {
+	BaseModel             `xorm:"-"`
 	Id                    int    `xorm:"not null pk autoincr comment('自增id') INT(10)"`
 	Uid                   int    `xorm:"not null comment('用户uid') INT(64)"`
 	VerifyCount           int    `xorm:"not null comment('认证次数') TINYINT(4)"`

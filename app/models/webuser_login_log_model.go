@@ -5,6 +5,7 @@ import (
 )
 
 type UserLoginLog struct {
+	BaseModel    `xorm:"-"`
 	Id           int    `xorm:"not null pk autoincr INT(10)"`
 	Uid          int    `xorm:"not null comment('用户uid') INT(64)"`
 	TerminalType int    `xorm:"comment('终端类型') TINYINT(4)"`

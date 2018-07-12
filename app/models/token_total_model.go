@@ -7,12 +7,13 @@ import (
 )
 
 type UserToken struct {
-	Id      int64
-	Uid     uint64 `xorm:"unique(currency_uid) INT(11)"`
-	TokenId int    `xorm:"comment('币种') unique(currency_uid) INT(11)"`
-	Balance int64  `xorm:"comment('余额') BIGINT(20)"`
-	Frozen  int64  `xorm:"comment('冻结余额') BIGINT(20)"`
-	Version int    `xorm:"version"`
+	BaseModel `xorm:"-"`
+	Id        int64
+	Uid       uint64 `xorm:"unique(currency_uid) INT(11)"`
+	TokenId   int    `xorm:"comment('币种') unique(currency_uid) INT(11)"`
+	Balance   int64  `xorm:"comment('余额') BIGINT(20)"`
+	Frozen    int64  `xorm:"comment('冻结余额') BIGINT(20)"`
+	Version   int    `xorm:"version"`
 }
 
 //资产
@@ -48,15 +49,19 @@ func (u *UserToken) GetTokenDetailOfUid(uid, token_id int) ([]UserToken, error) 
 
 //所有用户 的全部币币资产
 //第一步get 所有用户
-func (t *PersonalProperty) TotalUserBalance(page, rows, status int) ([]PersonalProperty, int, int, error) {
+func (t *PersonalProperty) TotalUserBalance(page, rows, status int) (*ModelList, error) {
 	//查 用户表
 
-	list, page, total, err := new(WebUser).GetAllUser(page, rows, status)
+	list, err := new(WebUser).GetAllUser(page, rows, status)
 	if err != nil {
-		return nil, 0, 0, err
+		return nil, err
 	}
 	var uid []uint64
-	for _, v := range list {
+	userlist, Ok := list.Items.([]UserGroup)
+	if !Ok {
+		return nil, errors.New("assert failed!!")
+	}
+	for _, v := range userlist {
 		uid = append(uid, v.Uid)
 	}
 	fmt.Printf("TotalUserBalance%#v\n", uid)
@@ -64,10 +69,10 @@ func (t *PersonalProperty) TotalUserBalance(page, rows, status int) ([]PersonalP
 	token := make([]UserToken, 0)
 	err = engine.In("uid", uid).Find(&token)
 	if err != nil {
-		return nil, 0, 0, nil
+		return nil, err
 	}
 	Total := make([]PersonalProperty, 0)
-	for _, ob := range list {
+	for _, ob := range userlist {
 		pp := &PersonalProperty{}
 		pp.Uid = int(ob.Uid)
 		pp.NickName = ob.NickName
@@ -82,5 +87,6 @@ func (t *PersonalProperty) TotalUserBalance(page, rows, status int) ([]PersonalP
 
 		Total = append(Total, *pp)
 	}
-	return Total, page, total, nil
+	list.Items = Total
+	return list, nil
 }

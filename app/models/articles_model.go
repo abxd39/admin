@@ -3,16 +3,19 @@ package models
 import (
 	"admin/utils"
 	"crypto/md5"
+	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
-	"path"
+	"strings"
 )
 
 var remoteurl string = "https://sdun.oss-cn-shenzhen.aliyuncs.com/"
 
 type Article struct {
+	BaseModel     `xorm:"-"`
 	Id            int    `xorm:"not null pk autoincr comment('自增ID') INT(10)"`
 	Title         string `xorm:"not null default '' comment('文章标题') VARCHAR(100)"`
 	Description   string `xorm:"not null default '' comment('描述') VARCHAR(1000)"`
@@ -34,6 +37,7 @@ type Article struct {
 }
 
 type ArticleList struct {
+	BaseModel  `xorm:"-"`
 	Id         int    `xorm:"not null pk autoincr comment('自增ID') INT(10)"`
 	Weight     int    `xorm:"not null default 0 comment('权重，排序字段') TINYINT(4)"`
 	Title      string `xorm:"not null default '' comment('文章标题') VARCHAR(100)"`
@@ -46,9 +50,10 @@ type ArticleList struct {
 }
 
 type ArticleType struct {
-	Id       int    `xorm:"not null pk autoincr MEDIUMINT(6)"`
-	TypeId   int    `xorm:"not null default 0 TINYINT(10)"`
-	TypeName string `xorm:"not null default '' comment('类型名称 1关于我们，2媒体报道，3联系我们，4团队介绍，5数据资产介绍，6服务条款，7免责声明，8隐私保护9 业界新闻 10 公告 11 帮助手册 12 币种介绍') VARCHAR(100)"`
+	BaseModel `xorm:"-"`
+	Id        int    `xorm:"not null pk autoincr MEDIUMINT(6)"`
+	TypeId    int    `xorm:"not null default 0 TINYINT(10)"`
+	TypeName  string `xorm:"not null default '' comment('类型名称 1关于我们，2媒体报道，3联系我们，4团队介绍，5数据资产介绍，6服务条款，7免责声明，8隐私保护9 业界新闻 10 公告 11 帮助手册 12 币种介绍') VARCHAR(100)"`
 }
 
 func (a *ArticleList) TableName() string {
@@ -65,29 +70,22 @@ func (a *ArticleType) GetArticleType() ([]ArticleType, error) {
 	return list, nil
 }
 
-func (a *ArticleList) GetArticleList(page, rows, tp, status int, st, et string) ([]*ArticleList, int, int, error) {
-
-	if page <= 0 {
-		page = 1
-	}
-
-	if rows <= 0 {
-		rows = 100
-	}
-	var start_rows int
-	if page > 1 {
-		start_rows = (page - 1) * rows
-	}
+func (a *ArticleList) GetArticleList(page, rows, tp, status int, st, et string) (*ModelList, error) {
 	engine := utils.Engine_common
-	fmt.Println("type=", tp, "page=", page, "起始行star_row=", start_rows, "page_num=", rows)
-	u := make([]Article, 0)
 	query := engine.Desc("id")
 	query = query.Where("type=?", tp)
 	TempQuery := *query
-	err := query.Limit(rows, start_rows).Find(&u)
+	count, err := TempQuery.Count(&Article{})
+	if err != nil {
+		return nil, err
+	}
+	offset, modelList := a.Paging(page, rows, int(count))
+
+	u := make([]Article, 0)
+	err = query.Limit(modelList.PageSize, offset).Find(&u)
 	if err != nil {
 		utils.AdminLog.Errorln(err.Error())
-		return nil, 0, 0, err
+		return nil, err
 	}
 	list := make([]*ArticleList, 0)
 	for _, v := range u {
@@ -104,13 +102,9 @@ func (a *ArticleList) GetArticleList(page, rows, tp, status int, st, et string) 
 		}
 		list = append(list, &ret)
 	}
-	count, err := TempQuery.Count(&Article{})
-	if err != nil {
-		return nil, 0, 0, err
-	}
 
-	total_page := int(count) / rows
-	return list, total_page, int(count), nil
+	modelList.Items = list
+	return modelList, nil
 
 }
 
@@ -132,30 +126,42 @@ func (a *Article) LocalFileToAliCloud(filePath string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	_ = bucket
+	fmt.Println("111111111111111", filePath)
 	//读取内容做has mde5
-	fd, err := os.OpenFile(filePath, os.O_RDONLY, 0660)
-	if err != nil {
-		// HandleError(err)
-		return "", err
-	}
-	defer fd.Close()
-	body, err := ioutil.ReadAll(fd)
-	if err != nil {
-		fmt.Println("ReadAll", err)
-		return "", err
-	}
-	md := md5.Sum(body)
-	okey := string(md[:])
+	// fd, err := os.OpenFile(filePath, os.O_RDONLY, 0660)
+	// if err != nil {
+	// 	// HandleError(err)
+	// 	return "", err
+	// }
+
+	// body, err := ioutil.ReadAll(fd)
+	// if err != nil {
+	// 	fmt.Println("ReadAll", err)
+	// 	return "", err
+	// }
+	// fd.Close()
+	h := md5.New()
+	h.Write([]byte(filePath)) // 需要加密的字符串为 123456
+	cipherStr := h.Sum(nil)
+	okey := hex.EncodeToString(cipherStr)
 	fmt.Println(okey)
-	fSuffix := path.Ext(filePath)
+	fSuffix := ".png" //path.Ext(filePath)
 	okey += fSuffix
 	fmt.Printf("%#v\n", okey)
-	err = bucket.PutObjectFromFile(okey, filePath)
+	ddd, _ := base64.StdEncoding.DecodeString(filePath) //成图片文件并把文件写入到buffer
+
+	fmt.Println("111111111111111", ddd)
+
+	err = ioutil.WriteFile("./output133.png", []byte(filePath), 0666)
+
+	err = bucket.PutObject(okey, strings.NewReader(filePath))
+
+	//err = bucket.PutObjectFromFile(okey, filePath)
 	if err != nil {
+		fmt.Println(filePath)
 		return "", err
 	}
-	fmt.Println("put success")
+	fmt.Println(remoteurl + okey)
 	return remoteurl + okey, nil
 }
 
