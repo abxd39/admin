@@ -1,9 +1,11 @@
 package backstage
 
 import (
-	"admin/utils"
+	"strconv"
+	"strings"
 
 	"admin/app/models"
+	"admin/utils"
 )
 
 type Role struct {
@@ -39,4 +41,55 @@ func (r *Role) List(pageIndex, pageSize int) (modelList *models.ModelList, err e
 	modelList.Items = list
 
 	return
+}
+
+// 新增用户组
+func (r *Role) Add(name, desc, nodeIds string) (id int, err error) {
+	// 用户组
+	role := new(Role)
+	role.Name = name
+	role.Desc = desc
+
+	// 关联的节点
+	nodeIdArr := strings.Split(nodeIds, ",")
+
+	// 开始写入，事务
+	engine := utils.Engine_backstage
+	session := engine.NewSession()
+	defer session.Close()
+	err = session.Begin()
+	if err != nil {
+		return
+	}
+
+	// 1. 用户组
+	_, err = session.Insert(role)
+	if err != nil {
+		session.Rollback()
+		return
+	}
+	roleId := role.Id // 刚刚生成的id
+
+	// 2. 用户组、节点关联
+	for _, v := range nodeIdArr {
+		nodeId, _ := strconv.Atoi(v)
+
+		roleNode := &RoleNode{
+			RoleId: roleId,
+			NodeId: nodeId,
+		}
+
+		_, err = session.Insert(roleNode)
+		if err != nil {
+			session.Rollback()
+			return
+		}
+	}
+
+	err = session.Commit()
+	if err != nil {
+		return
+	}
+
+	return roleId, nil
 }
