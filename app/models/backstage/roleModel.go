@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"admin/app/models"
+	"admin/errors"
 	"admin/utils"
 )
 
@@ -25,7 +26,7 @@ func (r *Role) List(pageIndex, pageSize int) (modelList *models.ModelList, err e
 	tempQuery := *query
 	count, err := tempQuery.Count(&Role{})
 	if err != nil {
-		return nil, err
+		return nil, errors.NewSys(err)
 	}
 
 	// 获取分页
@@ -35,8 +36,7 @@ func (r *Role) List(pageIndex, pageSize int) (modelList *models.ModelList, err e
 	var list []Role
 	err = query.Limit(modelList.PageSize, offset).Find(&list)
 	if err != nil {
-		utils.AdminLog.Errorln(err.Error())
-		return nil, err
+		return nil, errors.NewSys(err)
 	}
 	modelList.Items = list
 
@@ -53,20 +53,30 @@ func (r *Role) Add(name, desc, nodeIds string) (id int, err error) {
 	// 关联的节点
 	nodeIdArr := strings.Split(nodeIds, ",")
 
-	// 开始写入，事务
+	// 判断用户组名称是否已存在
 	engine := utils.Engine_backstage
+	checkRole := new(Role)
+	has, err := engine.Where("name=?", name).Get(checkRole)
+	if err != nil {
+		return 0, errors.NewSys(err)
+	}
+	if has && checkRole.Name == name {
+		return 0, errors.NewNormal("名称已存在")
+	}
+
+	// 开始写入，事务
 	session := engine.NewSession()
 	defer session.Close()
 	err = session.Begin()
 	if err != nil {
-		return
+		return 0, errors.NewSys(err)
 	}
 
 	// 1. 用户组
 	_, err = session.Insert(role)
 	if err != nil {
 		session.Rollback()
-		return
+		return 0, errors.NewSys(err)
 	}
 	roleId := role.Id // 刚刚生成的id
 
@@ -82,13 +92,13 @@ func (r *Role) Add(name, desc, nodeIds string) (id int, err error) {
 		_, err = session.Insert(roleNode)
 		if err != nil {
 			session.Rollback()
-			return
+			return 0, errors.NewSys(err)
 		}
 	}
 
 	err = session.Commit()
 	if err != nil {
-		return
+		return 0, errors.NewSys(err)
 	}
 
 	return roleId, nil
