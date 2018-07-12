@@ -49,7 +49,7 @@ func (b *BaseController) RespOK(c *gin.Context, msg ...string) {
 
 // 错误的响应
 func (b *BaseController) RespErr(c *gin.Context, options ...interface{}) {
-	b.resp.Code = constant.RESPONSE_CODE_ERROR
+	b.resp.Code = constant.RESPONSE_CODE_ERROR // 默认是常规错误
 	b.resp.Msg = ""
 
 	// 继续确定code、msg
