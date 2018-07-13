@@ -159,3 +159,84 @@ func (u *User) Add(user *User, roleIds string) (uid int, err error) {
 
 	return
 }
+
+// 更新管理员
+func (u *User) Update(user *User, roleIds string) error {
+	// 整理数据
+	if user.Pwd != "" {
+		salt := utils.NewRandomString(5)
+
+		user.Pwd = utils.Md5(utils.Md5(user.Pwd) + salt) // md5两次，第二次带上salt
+		user.Salt = salt
+	}
+
+	user.UpdateTime = time.Now().Unix()
+
+	// 验证管理员是否存在
+	engine := utils.Engine_backstage
+	has, err := engine.Id(user.Uid).Get(new(User))
+	if err != nil {
+		return errors.NewSys(err)
+	}
+	if !has {
+		return errors.NewNormal("管理员不存在或已删除")
+	}
+
+	// 判断管理员用户名是否已存在
+	has, err = engine.Where("name=?", user.Name).And("uid!=?", user.Uid).Get(new(User))
+	if err != nil {
+		return errors.NewSys(err)
+	}
+	if has {
+		return errors.NewNormal("管理员名称已存在")
+	}
+
+	// 开始更新，事务
+	session := engine.NewSession()
+	defer session.Close()
+	err = session.Begin()
+	if err != nil {
+		return errors.NewSys(err)
+	}
+
+	// 1. 更新管理员
+	_, err = session.ID(user.Uid).Update(user)
+	if err != nil {
+		session.Rollback()
+		return errors.NewSys(err)
+	}
+
+	// 2. 更新管理员、用户组关联
+	// 2.1 删除之前的关联
+	_, err = session.Where("uid=?", user.Uid).Delete(new(RoleUser))
+	if err != nil {
+		session.Rollback()
+		return errors.NewSys(err)
+	}
+
+	// 2.2 新增关联
+	if roleIds != "" { // 重要！！！split空字符串会返回一个包含空字符元素的数组
+		roleIdArr := strings.Split(roleIds, ",") // 逗号分隔
+		for _, v := range roleIdArr {
+			roleId, _ := strconv.Atoi(v)
+
+			roleUserMD := &RoleUser{
+				RoleId: roleId,
+				Uid:    user.Uid,
+			}
+
+			_, err = session.Insert(roleUserMD)
+			if err != nil {
+				session.Rollback()
+				return errors.NewSys(err)
+			}
+		}
+	}
+
+	err = session.Commit()
+	if err != nil {
+		return errors.NewSys(err)
+	}
+
+	return nil
+}

@@ -202,7 +202,6 @@ func (a *AdminController) Get(ctx *gin.Context) {
 func (a *AdminController) Add(ctx *gin.Context) {
 	// 获取参数
 	name := a.GetString(ctx, "name")
-
 	if matched, err := regexp.MatchString(`^[a-z0-9_\-]{3,15}$`, name); err != nil || !matched {
 		a.RespErr(ctx, "参数name格式错误，只能为3-15位小写字母a-z、数字0-9、中划线-或下划线_")
 		return
@@ -251,7 +250,59 @@ func (a *AdminController) Add(ctx *gin.Context) {
 
 // 更新管理员
 func (a *AdminController) Update(ctx *gin.Context) {
+	// 获取参数
+	uid, err := a.GetInt(ctx, "uid")
+	if err != nil || uid < 1 {
+		a.RespErr(ctx, "参数uid格式错误")
+		return
+	}
 
+	name := a.GetString(ctx, "name")
+	if matched, err := regexp.MatchString(`^[a-z0-9_\-]{3,15}$`, name); err != nil || !matched {
+		a.RespErr(ctx, "参数name格式错误，3-15个字符")
+		return
+	}
+
+	nickname := a.GetString(ctx, "nickname")
+	if strLen := utf8.RuneCountInString(nickname); strLen < 2 || strLen > 15 {
+		a.RespErr(ctx, "参数nickname格式错误，2-15个字符")
+		return
+	}
+
+	pwd := a.GetString(ctx, "pwd")
+	if pwd != "" { // 前端提交了密码，没提交不判断
+		if matched, err := regexp.MatchString(`^[a-zA-Z0-9~!@#$%^&*_\-=+:;|,.?]{6,20}$`, pwd); err != nil || !matched {
+			a.RespErr(ctx, "密码格式错误，6-20个字符")
+			return
+		}
+
+		rePwd := a.GetString(ctx, "re_pwd")
+		if rePwd != pwd {
+			a.RespErr(ctx, "两次输入的密码不一致")
+			return
+		}
+	}
+
+	roleIds := a.GetString(ctx, "role_ids") // 逗号分隔
+
+	// 调用model
+	user := &bk.User{
+		Uid:      uid,
+		Name:     name,
+		NickName: nickname,
+	}
+	if pwd != "" { // 前端提交了密码参数
+		user.Pwd = pwd
+	}
+
+	err = (new(bk.User)).Update(user, roleIds)
+	if err != nil {
+		a.RespErr(ctx, err)
+		return
+	}
+
+	// 返回
+	a.RespOK(ctx)
 	return
 }
 
