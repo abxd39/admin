@@ -39,7 +39,7 @@ func (r *RoleController) List(c *gin.Context) {
 	// 调用model
 	list, err := new(backstage.Role).List(page, rows)
 	if err != nil {
-		r.RespErr(c, "查询失败")
+		r.RespErr(c, err)
 		return
 	}
 
