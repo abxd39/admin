@@ -27,26 +27,26 @@ type User struct {
 }
 
 // 登录
-func (u *User) Login(pwd, phone string) (string, int, error) {
+func (u *User) Login(name, pwd string) (string, int, error) {
 	engine := utils.Engine_backstage
 	fmt.Println("login")
-	use := &User{}
-	_, err := engine.Where("phone=?", phone).Get(use)
+	user := &User{}
+	_, err := engine.Where("name=?", name).Get(user)
 	if err != nil {
 		utils.AdminLog.Errorln(err.Error())
 		fmt.Println("login", err.Error())
 		return "", 0, err
 	}
 	//find 如果不存在 数据库是否会返回 一个错误给我
-	if use.States == 0 {
+	if user.States == 0 {
 		return "", 0, errors.New("该用户已锁定")
 	}
-	fmt.Printf("数据库中的has值为%s", use.Pwd)
-	if pwd != use.Pwd {
+	fmt.Printf("数据库中的has值为%s", user.Pwd)
+	if utils.Md5(utils.Md5(pwd)+user.Salt) != user.Pwd {
 		return "", 0, errors.New("密码不对！！")
 	}
 	//
-	return use.NickName, use.Uid, nil
+	return user.NickName, user.Uid, nil
 }
 
 // 管理员列表

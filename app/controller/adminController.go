@@ -3,8 +3,6 @@ package controller
 import (
 	bk "admin/app/models/backstage"
 	"admin/utils"
-	"crypto/md5"
-	"encoding/hex"
 	"fmt"
 	"net/http"
 
@@ -109,14 +107,10 @@ func (a *AdminController) Login(ctx *gin.Context) {
 	//md5加密
 	//var hanlen int
 	//fmt.Println("vvvvvvvvvvvvvvvvvvvvv", req.LoginPwd)
-	has := md5.New()
-	has.Write([]byte(req.LoginPwd))
-	hasvalue := has.Sum(nil)
 	//查数据库 验证用户名和密码
-	fmt.Println("hasvalue=", hex.EncodeToString(hasvalue))
 	var uid int
 	var name string
-	name, uid, err = new(bk.User).Login(hex.EncodeToString(hasvalue), req.Phone)
+	name, uid, err = new(bk.User).Login(req.Phone, req.LoginPwd)
 	if err != nil {
 		ctx.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": "登录失败"})
 		return
