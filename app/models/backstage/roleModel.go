@@ -9,6 +9,7 @@ import (
 	"admin/utils"
 )
 
+// 用户组
 type Role struct {
 	models.BaseModel `xorm:"-"`
 	Id               int    `xorm:"not null pk autoincr INT(11)" json:"id"`

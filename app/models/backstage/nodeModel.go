@@ -6,6 +6,7 @@ import (
 	"admin/utils"
 )
 
+// 权限节点
 type Node struct {
 	models.BaseModel `xorm:"-"`
 	Id               int    `xorm:"not null pk autoincr INT(11)" json:"id"`
