@@ -105,7 +105,7 @@ func (r *Role) Add(name, desc, nodeIds string) (id int, err error) {
 	roleId := roleMD.Id // 刚刚生成的id
 
 	// 2. 新增用户组、节点关联
-	if nodeIds != "" { // 重要！！！split空字符串
+	if nodeIds != "" { // 重要！！！split空字符串会返回一个包含空字符元素的数组
 		nodeIdArr := strings.Split(nodeIds, ",") // 逗号分隔
 		for _, v := range nodeIdArr {
 			nodeId, _ := strconv.Atoi(v)
@@ -176,7 +176,7 @@ func (r *Role) Update(id int, name, desc, nodeIds string) error {
 	}
 
 	// 2.2 新增关联
-	if nodeIds != "" { // 重要！！！split空字符串
+	if nodeIds != "" { // 重要！！！split空字符串会返回一个包含空字符元素的数组
 		nodeIdArr := strings.Split(nodeIds, ",") // 逗号分隔
 		for _, v := range nodeIdArr {
 			nodeId, _ := strconv.Atoi(v)
