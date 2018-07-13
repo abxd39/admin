@@ -155,6 +155,10 @@ func (r *Role) Update(id int, name, desc, nodeIds string) error {
 	// 开始更新，事务
 	session := engine.NewSession()
 	defer session.Close()
+	err = session.Begin()
+	if err != nil {
+		return errors.NewSys(err)
+	}
 
 	// 1. 更新用户组
 	roleMD := &Role{
