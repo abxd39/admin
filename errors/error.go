@@ -1,6 +1,9 @@
 package errors
 
-import "fmt"
+import (
+	goErrors "errors"
+	"fmt"
+)
 
 // 系统错误接口
 type SysErrorInterface interface {
@@ -13,6 +16,11 @@ type SysErrorInterface interface {
 type NormalErrorInterface interface {
 	Error() string
 	Status() int
+}
+
+// 兼容golang errors对象
+func New(text string) error {
+	return goErrors.New(text)
 }
 
 // 创建系统错误
