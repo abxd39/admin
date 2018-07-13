@@ -15,6 +15,7 @@ func (r *RoleController) Router(e *gin.Engine) {
 	group := e.Group("/role")
 	{
 		group.GET("/list", r.List)
+		group.GET("/get", r.Get)
 		group.POST("/add", r.Add)
 		group.POST("/update", r.Update)
 		group.POST("/delete", r.Delete)
@@ -47,6 +48,38 @@ func (r *RoleController) List(c *gin.Context) {
 	r.Put(c, "list", list)
 
 	// 返回
+	r.RespOK(c)
+	return
+}
+
+// 用户组详情
+func (r *RoleController) Get(c *gin.Context) {
+	// 获取参数
+	id, err := r.GetInt(c, "id")
+	if err != nil || id < 1 {
+		r.RespErr(c, "参数id格式错误")
+		return
+	}
+
+	// 调用model
+	roleMD := new(backstage.Role)
+	role, err := roleMD.Get(id)
+	if err != nil {
+		r.RespErr(c, err)
+		return
+	}
+
+	// 获取绑定的节点ID
+	nodeIds, err := roleMD.GetBindNodeIds(id)
+	if err != nil {
+		r.RespErr(c, err)
+		return
+	}
+
+	// 设置返回数据
+	r.Put(c, "role", role)
+	r.Put(c, "bind_node_ids", nodeIds)
+
 	r.RespOK(c)
 	return
 }

@@ -43,6 +43,32 @@ func (r *Role) List(pageIndex, pageSize int) (modelList *models.ModelList, err e
 	return
 }
 
+// 用户组详情
+func (r *Role) Get(id int) (role *Role, err error) {
+	engine := utils.Engine_backstage
+	role = new(Role)
+	has, err := engine.ID(id).Get(role)
+	if err != nil {
+		return nil, errors.NewSys(err)
+	}
+	if !has {
+		return nil, errors.NewNormal("用户组不存在或已被删除")
+	}
+
+	return
+}
+
+// 用户组绑定的节点ID
+func (r *Role) GetBindNodeIds(roleId int) (nodeIds []int, err error) {
+	engine := utils.Engine_backstage
+	err = engine.Table(new(RoleNode)).Where("role_id=?", roleId).Cols("node_id").Find(&nodeIds)
+	if err != nil {
+		return nil, errors.NewSys(err)
+	}
+
+	return
+}
+
 // 新增用户组
 func (r *Role) Add(name, desc, nodeIds string) (id int, err error) {
 	// 判断用户组名称是否已存在
