@@ -28,20 +28,25 @@ type BaseController struct {
 }
 
 // 设置返回的数据，key-value
+// 使用gin context的Keys保存
+// gin context每个请求都会先reset
 func (b *BaseController) Put(c *gin.Context, key string, value interface{}) {
-	// 使用gin context的Keys保存临时数据，保证每个请求之前都能reset
-	c.Keys[SAVE_DATA_KEY] = map[string]interface{}{key: value}
+	// lazy init
+	if c.Keys[SAVE_DATA_KEY] == nil {
+		c.Keys[SAVE_DATA_KEY] = make(map[string]interface{})
+	}
+
+	c.Keys[SAVE_DATA_KEY].(map[string]interface{})[key] = value
 }
 
 // 正确的响应
 func (b *BaseController) RespOK(c *gin.Context, msg ...string) {
 	b.resp.Code = constant.RESPONSE_CODE_OK
 	b.resp.Msg = "成功"
+	b.resp.Data = c.Keys[SAVE_DATA_KEY]
 
 	// 没有数据时，让data字段的json值为[]而非null
-	if c.Keys[SAVE_DATA_KEY] != nil {
-		b.resp.Data = c.Keys[SAVE_DATA_KEY]
-	} else {
+	if b.resp.Data == nil {
 		b.resp.Data = []int{}
 	}
 
@@ -52,6 +57,7 @@ func (b *BaseController) RespOK(c *gin.Context, msg ...string) {
 func (b *BaseController) RespErr(c *gin.Context, options ...interface{}) {
 	b.resp.Code = constant.RESPONSE_CODE_ERROR // 默认是常规错误
 	b.resp.Msg = ""
+	b.resp.Data = c.Keys[SAVE_DATA_KEY]
 
 	// 继续确定code、msg
 	for _, v := range options {
@@ -74,9 +80,7 @@ func (b *BaseController) RespErr(c *gin.Context, options ...interface{}) {
 	}
 
 	// 没有数据时，让data字段的json值为[]而非null
-	if c.Keys[SAVE_DATA_KEY] != nil {
-		b.resp.Data = c.Keys[SAVE_DATA_KEY]
-	} else {
+	if b.resp.Data == nil {
 		b.resp.Data = []int{}
 	}
 
