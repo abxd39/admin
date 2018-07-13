@@ -63,14 +63,14 @@ func (b *BaseController) RespErr(ctx *gin.Context, options ...interface{}) {
 	for _, v := range options {
 		switch opt := v.(type) {
 		case int:
-			b.resp.Code = opt
+			b.resp.Code = opt // 当前指定code
 		case string:
 			b.resp.Msg = opt
 		case errors.SysErrorInterface: // 系统错误
-			b.resp.Code = constant.RESPONSE_CODE_SYSTEM
-			b.resp.Msg = opt.String() // todo opt.Error()
+			b.resp.Code = constant.RESPONSE_CODE_SYSTEM // 设为系统错误code
+			b.resp.Msg = opt.String()                   // todo 根据环境使用生产用opt.Error()，本地用opt.String()
 		case errors.NormalErrorInterface: // 常规错误
-			if opt.Status() != 0 {
+			if opt.Status() != 0 { // 常规错误指定了code并且不为0
 				b.resp.Code = opt.Status()
 			}
 			b.resp.Msg = opt.Error()
