@@ -6,9 +6,12 @@ import (
 	"crypto/md5"
 	"encoding/base64"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"os"
+	"strings"
+	"time"
 )
 
 var remoteurl string = "https://sdun.oss-cn-shenzhen.aliyuncs.com/"
@@ -70,9 +73,21 @@ func (a *ArticleType) GetArticleType() ([]ArticleType, error) {
 }
 
 func (a *ArticleList) GetArticleList(page, rows, tp, status int, st, et string) (*ModelList, error) {
+	fmt.Println("GetArticleList")
 	engine := utils.Engine_common
 	query := engine.Desc("id")
-	query = query.Where("type=?", tp)
+	if tp != 0 {
+		query = query.Where("type=?", tp)
+	}
+	if status != 0 {
+		query = query.Where("astatus=?", status)
+	}
+	if len(st) != 0 {
+		query = query.Where("create_time<=?", st)
+	}
+	if len(et) != 0 {
+		query = query.Where("update_time>=?", et)
+	}
 	TempQuery := *query
 	count, err := TempQuery.Count(&Article{})
 	if err != nil {
@@ -107,8 +122,59 @@ func (a *ArticleList) GetArticleList(page, rows, tp, status int, st, et string) 
 
 }
 
+//上下架 文章
+func (a *Article) UpArticle(id, status int) error {
+	engine := utils.Engine_common
+	art := new(Article)
+	has, _ := engine.Exist(art)
+	if !has {
+		return errors.New("文章不存在！！")
+	}
+	current := time.Now().Format("2006-01-02 15:04:05")
+	_, err := engine.Id(id).Update(&Article{
+		Astatus:    status,
+		UpdateTime: current,
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+//获取文章
+func (a *Article) GetArticle(id int) (*Article, error) {
+	engine := utils.Engine_common
+	art := new(Article)
+	_, err := engine.Id(id).Get(art)
+	if err != nil {
+		return nil, err
+	}
+	return art, nil
+}
+
+//删除文章
+func (a *Article) DeleteArticle(id int) error {
+	engine := utils.Engine_common
+	has, _ := engine.Id(id).Exist(&Article{})
+	if !has {
+		return errors.New("文章不存在")
+	}
+	_, err := engine.Id(id).Delete(&Article{})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (a *Article) AddArticle(u *Article) error {
 	engine := utils.Engine_common
+	if u.Id != 0 {
+		_, err := engine.Id(u.Id).Update(u)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
 	result, err := engine.InsertOne(u)
 	if err != nil {
 		return err
@@ -119,14 +185,59 @@ func (a *Article) AddArticle(u *Article) error {
 	return nil
 }
 
+//删除oss对象
+func (a *Article) DeletFileToAliCloud(filepath string) error {
+	client := utils.AliClient
+	bucket, err := client.Bucket("sdun")
+	if err != nil {
+		return err
+	}
+	index := strings.LastIndex(filepath, "//")
+	if index < 0 {
+		return errors.New("oss object delete failed!!")
+	}
+	substr := filepath[index+1:]
+	err = bucket.DeleteObject(substr)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+//上传Ali coud
 func (a *Article) LocalFileToAliCloud(filePath string) (string, error) {
 	client := utils.AliClient
 	bucket, err := client.Bucket("sdun")
 	if err != nil {
 		return "", err
 	}
-	fSuffix := filePath[11:14]
-	value := filePath[22:]
+	// if len(remotePath) != 0 {
+	// 	index := strings.LastIndex(remotePath, "//")
+	// 	if index <= 0 {
+	// 		return "", errors.New("oss okject no exits!!")
+	// 	}
+	// 	substr := remotePath[index+1:]
+	// 	isExist, err := bucket.IsObjectExist(substr)
+	// 	if err != nil {
+	// 		return "", err
+	// 	}
+	// 	if isExist {
+
+	// 	}
+	// }
+	subm := strings.IndexByte(filePath, ',')
+	if subm < 0 {
+		return "", errors.New("find fail!!")
+	}
+	substr := filePath[:subm]
+	subb := strings.IndexByte(substr, '/')
+	sube := strings.IndexByte(substr, ';')
+	if subb < 0 || sube < 0 {
+		return "", errors.New("find fail!!")
+	}
+	fmt.Println(subb, sube, subm)
+	fSuffix := substr[subb+1 : sube]
+	value := filePath[subm+1:]
 	h := md5.New()
 	h.Write([]byte(value)) // 需要加密的字符串为 123456
 	cipherStr := h.Sum(nil)
@@ -135,6 +246,7 @@ func (a *Article) LocalFileToAliCloud(filePath string) (string, error) {
 	okey += "."
 	okey += fSuffix
 	fmt.Printf("%#v\n", okey)
+	fmt.Println(value)
 	ddd, _ := base64.StdEncoding.DecodeString(value)
 	err = bucket.PutObject(okey, bytes.NewReader(ddd))
 	if err != nil {

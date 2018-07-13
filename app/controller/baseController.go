@@ -7,6 +7,7 @@ import (
 	"admin/constant"
 
 	"admin/errors"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -35,7 +36,7 @@ func (b *BaseController) Put(c *gin.Context, key string, value interface{}) {
 // 正确的响应
 func (b *BaseController) RespOK(c *gin.Context, msg ...string) {
 	b.resp.Code = constant.RESPONSE_CODE_OK
-	b.resp.Msg = ""
+	b.resp.Msg = "成功"
 
 	// 没有数据时，让data字段的json值为[]而非null
 	if c.Keys[SAVE_DATA_KEY] != nil {

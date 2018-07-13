@@ -2,10 +2,8 @@ package controller
 
 import (
 	"admin/app/models"
-	"admin/constant"
 	"admin/utils"
 	"fmt"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -19,80 +17,171 @@ func (this *ContextController) Router(r *gin.Engine) {
 	{
 		g.POST("/add_link", this.AddFriendlyLink)
 		g.GET("/link_list", this.GetFriendlyLink)
-		g.GET("/article_list", this.GetArticleList)
-		g.POST("/add_banner", this.AddBanner)
-		g.POST("/operator_banner", this.OperatorBanner)
-		g.GET("/banner_list", this.GetBannerList)
-		g.POST("/add_article", this.AddArticle)
-		g.GET("/article_type", this.GetArticleType)
-		g.POST("/local_filetoali", this.LocalFileToAliCloud)
-		g.GET("/get_filetoali", this.GetLocalFileToAliCloud)
+		g.GET("/article_list", this.GetArticleList)          //获取文章列表
+		g.POST("/add_banner", this.AddBanner)                //添加banner
+		g.POST("/upordown_banner", this.UpBanner)            //修改banner的上下架状态
+		g.GET("/get_banner", this.GetBanner)                 //获取bannner
+		g.POST("/delete_banner", this.DeleteBanner)          //上传banner  同时删除 oss 上的图片对象
+		g.GET("/banner_list", this.GetBannerList)            //获取 banner 列表
+		g.POST("/add_article", this.AddArticle)              // 添加文章
+		g.GET("/article_type", this.GetArticleType)          //获取文章类型
+		g.POST("/local_filetoali", this.LocalFileToAliCloud) //上传图片到 oss
+		g.POST("/delete_article", this.DeleteArticle)        //删除文章
+		g.GET("/get_article", this.GetArticle)               //获取文章
+		g.POST("/upordown_article", this.UpArticle)          //上下架文章
 	}
 }
 
-func (this *ContextController) OperatorBanner(c *gin.Context) {
+func (this *ContextController) UpArticle(c *gin.Context) {
 	req := struct {
-		OperMark int `form:"op" json:"op" binding:"required"` //mark 1 下架 2 删除
+		Id   int `form:"id" json:"id" binding:"required"` //文章Id
+		Mark int `form:"op" json:"op" binding:"required"` //mark 1 下架 2 删除
+
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
 		utils.AdminLog.Errorln("param buind failed !!")
-		this.RespErr(c, constant.RESPONSE_CODE_ERROR, "参数错误")
+		this.RespErr(c, err)
 		return
 	}
-
+	err = new(models.Article).UpArticle(req.Id, req.Mark)
+	if err != nil {
+		this.RespErr(c, err)
+		return
+	}
+	this.RespOK(c)
+	return
 }
 
-func (this *ContextController) GetLocalFileToAliCloud(c *gin.Context) {
+func (this *ContextController) GetArticle(c *gin.Context) {
 	req := struct {
-		FilePath  string `form:"file_path" json:"file_path" binding:"required"`
-		ObjectKey string `form:"okey" json:"okey" binding:"required"`
+		Id int `form:"id" json:"id" binding:"required"` //文章Id
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
 		utils.AdminLog.Errorln("param buind failed !!")
-		this.RespErr(c, constant.RESPONSE_CODE_ERROR, "参数错误")
+		this.RespErr(c, err)
 		return
 	}
-	filepath, err := new(models.Article).GetLocalFileToAliCloud(req.ObjectKey, req.FilePath)
+	result, err := new(models.Article).GetArticle(req.Id)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+		this.RespErr(c, err)
 		return
 	}
+	this.Put(c, "data", result)
+	this.RespOK(c)
+	return
+}
 
-	c.JSON(http.StatusOK, gin.H{"code": 0, "data": "", "path": filepath, "msg": "成功"})
+func (this *ContextController) DeleteArticle(c *gin.Context) {
+	req := struct {
+		Id int `form:"id" json:"id" binding:"required"` //文章Id
+	}{}
+	err := c.ShouldBind(&req)
+	if err != nil {
+		utils.AdminLog.Errorln("param buind failed !!")
+		this.RespErr(c, err)
+		return
+	}
+	err = new(models.Article).DeleteArticle(req.Id)
+	if err != nil {
+		this.RespErr(c, err)
+		return
+	}
+	this.RespOK(c)
+	return
+}
+
+func (this *ContextController) DeleteBanner(c *gin.Context) {
+	req := struct {
+		Id int `form:"id" json:"id" binding:"required"` //文章Id
+	}{}
+	err := c.ShouldBind(&req)
+	if err != nil {
+		utils.AdminLog.Errorln("param buind failed !!")
+		this.RespErr(c, err)
+		return
+	}
+	err = new(models.Banner).DeleteBanner(req.Id)
+	if err != nil {
+		this.RespErr(c, err)
+		return
+	}
+	this.RespOK(c, "成功")
+	return
+}
+
+func (this *ContextController) GetBanner(c *gin.Context) {
+	req := struct {
+		Id int `form:"id" json:"id" binding:"required"` //文章Id
+	}{}
+	err := c.ShouldBind(&req)
+	if err != nil {
+		utils.AdminLog.Errorln("param buind failed !!")
+		this.RespErr(c, err)
+		return
+	}
+	result, err := new(models.Banner).GetBanner(req.Id)
+	if err != nil {
+		this.RespErr(c, err)
+		return
+	}
+	this.Put(c, "data", result)
+	this.RespOK(c, "成功")
+	return
+}
+
+func (this *ContextController) UpBanner(c *gin.Context) {
+	req := struct {
+		Id   int `form:"id" json:"id" binding:"required"` //文章Id
+		Mark int `form:"op" json:"op" binding:"required"` //mark 1 下架 2 删除
+
+	}{}
+	err := c.ShouldBind(&req)
+	if err != nil {
+		utils.AdminLog.Errorln("param buind failed !!")
+		this.RespErr(c, err)
+		return
+	}
+	err = new(models.Banner).OperatorUp(req.Id, req.Mark)
+	if err != nil {
+		utils.AdminLog.Errorln("param buind failed !!")
+		this.RespErr(c, err)
+		return
+	}
+	this.RespOK(c, "成功")
 	return
 }
 
 func (this *ContextController) LocalFileToAliCloud(c *gin.Context) {
 	req := struct {
 		FilePath string `form:"file_path" json:"file_path" binding:"required"`
-		//ObjectKey string `form:"okey" json:"okey" binding:"required"`
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
 		utils.AdminLog.Errorln("param buind failed !!")
-		this.RespErr(c, constant.RESPONSE_CODE_ERROR, "参数错误")
+		this.RespErr(c, err)
 		return
 	}
-	//fmt.Println("vvvvvvvvvvvvvvvvvvvvvvvvvvvvv", req.FilePath)
 	_, err = new(models.Article).LocalFileToAliCloud(req.FilePath)
 	if err != nil {
-		c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
+		this.RespErr(c, err)
 		return
 	}
 	response := new(models.PolicyToken).Get_policy_token()
 	// c.Request.Header.Set("Access-Control-Allow-Methods", "POST")
 	// c.Request.Header.Set("Access-Control-Allow-Origin", "*")
 	//io.WriteString(c, response)
-	c.JSON(http.StatusOK, gin.H{"code": 0, "data": response, "msg": "成功"})
-	//c.JSON(http.StatusOK, gin.H{"code": 0, "data": "", "msg": "成功"})
+	this.Put(c, "data", response)
+	this.RespOK(c, "成功")
+	return
 }
 
+//
 func (this *ContextController) GetArticleType(c *gin.Context) {
 	result, err := new(models.ArticleType).GetArticleType()
 	if err != nil {
-		this.RespErr(c, constant.RESPONSE_CODE_SYSTEM, "系统错误")
+		this.RespErr(c, err)
 		return
 	}
 	this.Put(c, "list", result)
@@ -110,14 +199,14 @@ func (this *ContextController) AddFriendlyLink(c *gin.Context) {
 	err := c.ShouldBind(&req)
 	if err != nil {
 		utils.AdminLog.Errorf(err.Error())
-		this.RespErr(c, constant.RESPONSE_CODE_ERROR, "参数错误")
+		this.RespErr(c, err)
 		return
 	}
 	fmt.Println("..........................................")
 	err = new(models.FriendlyLink).Add(1, req.LinkState, req.WebName, req.LinkName)
 	if err != nil {
 		utils.AdminLog.Errorf(err.Error())
-		this.RespErr(c, constant.RESPONSE_CODE_SYSTEM, "系统错误")
+		this.RespErr(c, err)
 		return
 	}
 	//response := new(models.PolicyToken).Get_policy_token()
@@ -139,13 +228,13 @@ func (this *ContextController) GetFriendlyLink(c *gin.Context) {
 	err := c.ShouldBind(&req)
 	if err != nil {
 		utils.AdminLog.Errorf(err.Error())
-		this.RespErr(c, constant.RESPONSE_CODE_ERROR, "参数错误")
+		this.RespErr(c, err)
 		return
 	}
 	//operator db         GetFriendlyLinkList
 	list, err := new(models.FriendlyLink).GetFriendlyLinkList(req.Page, req.Rows, req.Status, req.Name, req.Linkname)
 	if err != nil {
-		this.RespErr(c, constant.RESPONSE_CODE_SYSTEM, "系统错误")
+		this.RespErr(c, err)
 		return
 	}
 	// 设置返回数据
@@ -158,6 +247,7 @@ func (this *ContextController) GetFriendlyLink(c *gin.Context) {
 
 func (this *ContextController) AddBanner(c *gin.Context) {
 	req := struct {
+		Id          int    `form:"id" json:"id"`
 		Order       int    `form:"order" json:"order" binding:"required"`
 		PictureName string `form:"picture_n" json:"picture_n" binding:"required"`
 		PicturePath string `form:"picture_p" json:"picture_p" binding:"required"`
@@ -168,17 +258,17 @@ func (this *ContextController) AddBanner(c *gin.Context) {
 	err := c.ShouldBind(&req)
 	if err != nil {
 		utils.AdminLog.Errorf(err.Error())
-		this.RespErr(c, constant.RESPONSE_CODE_ERROR, "参数错误")
+		this.RespErr(c, err)
 		return
 	}
 	path, err := new(models.Article).LocalFileToAliCloud(req.PicturePath)
 	if err != nil {
-		this.RespErr(c, constant.RESPONSE_CODE_SYSTEM, "系统错误")
+		this.RespErr(c, err)
 		return
 	}
-	err = new(models.Banner).Add(req.Order, req.Status, req.PictureName, path, req.LinkAddr)
+	err = new(models.Banner).Add(req.Id, req.Order, req.Status, req.PictureName, path, req.LinkAddr)
 	if err != nil {
-		this.RespErr(c, constant.RESPONSE_CODE_SYSTEM, "系统错误")
+		this.RespErr(c, err)
 		return
 	}
 	this.RespOK(c, "成功")
@@ -197,12 +287,12 @@ func (this *ContextController) GetBannerList(c *gin.Context) {
 	err := c.ShouldBind(&req)
 	if err != nil {
 		utils.AdminLog.Errorf(err.Error())
-		this.RespErr(c, constant.RESPONSE_CODE_ERROR, "参数错误")
+		this.RespErr(c, err)
 		return
 	}
 	list, err := new(models.Banner).GetBannerList(req.Page, req.Rows, req.Status, req.Start_t, req.End_t)
 	if err != nil {
-		this.RespErr(c, constant.RESPONSE_CODE_SYSTEM, "系统错误")
+		this.RespErr(c, err)
 		return
 	}
 
@@ -227,12 +317,12 @@ func (this *ContextController) GetArticleList(c *gin.Context) {
 	err := c.ShouldBind(&req)
 	if err != nil {
 		utils.AdminLog.Errorf(err.Error())
-		this.RespErr(c, constant.RESPONSE_CODE_ERROR, "参数错误")
+		this.RespErr(c, err)
 		return
 	}
 	list, err := new(models.ArticleList).GetArticleList(req.Page, req.Rows, req.Type, req.Status, req.Start_t, req.End_t)
 	if err != nil {
-		this.RespErr(c, constant.RESPONSE_CODE_SYSTEM, "系统错误")
+		this.RespErr(c, err)
 		return
 	}
 
@@ -246,9 +336,11 @@ func (this *ContextController) GetArticleList(c *gin.Context) {
 
 func (this *ContextController) AddArticle(c *gin.Context) {
 	req := struct {
+		Id            int    `form:"id" json:"id" `
 		Title         string `form:"title" json:"title" binding:"required"`
 		Description   string `form:"desc" json:"desc" `
-		Content       string `form:"path" json:"path" binding:"required"` //path
+		ContentText   string `form:"text" json:"text" `                   //文本内容
+		Content       string `form:"path" json:"path" `                   //path
 		Covers        string `form:"covers" json:"covers"`                //图片路径
 		ContentImages string `form:"content_Image" json:"content_Image" ` //缩略图路径
 		Type          int    `form:"type" json:"type" binding:"required"` //文章类型
@@ -259,7 +351,7 @@ func (this *ContextController) AddArticle(c *gin.Context) {
 	err := c.ShouldBind(&req)
 	if err != nil {
 		utils.AdminLog.Errorf(err.Error())
-		this.RespErr(c, constant.RESPONSE_CODE_ERROR, "参数错误")
+		this.RespErr(c, err)
 		return
 	}
 
@@ -271,7 +363,7 @@ func (this *ContextController) AddArticle(c *gin.Context) {
 	if len(req.Content) > 0 {
 		path, err := new(models.Article).LocalFileToAliCloud(req.Covers)
 		if err != nil {
-			this.RespErr(c, constant.RESPONSE_CODE_SYSTEM, "系统错误")
+			this.RespErr(c, err)
 			return
 		}
 		req.ContentImages = path
@@ -280,7 +372,7 @@ func (this *ContextController) AddArticle(c *gin.Context) {
 	if len(req.ContentImages) > 0 {
 		path, err := new(models.Article).LocalFileToAliCloud(req.ContentImages)
 		if err != nil {
-			this.RespErr(c, constant.RESPONSE_CODE_SYSTEM, "系统错误")
+			this.RespErr(c, err)
 			return
 		}
 		req.ContentImages = path
@@ -288,7 +380,11 @@ func (this *ContextController) AddArticle(c *gin.Context) {
 
 	//
 	//
+	if len(req.ContentText) > 0 {
+		req.Content = req.ContentText
+	}
 	err = new(models.Article).AddArticle(&models.Article{
+		Id:            req.Id,
 		Title:         req.Title,
 		Description:   req.Description,
 		Content:       req.Content,
@@ -299,7 +395,7 @@ func (this *ContextController) AddArticle(c *gin.Context) {
 		Astatus:       req.Astatus,
 	})
 	if err != nil {
-		this.RespErr(c, constant.RESPONSE_CODE_SYSTEM, "系统错误")
+		this.RespErr(c, err)
 		return
 	}
 	this.RespOK(c, "成功")
