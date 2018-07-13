@@ -1,23 +1,32 @@
 package backstage
 
 import (
-	"admin/utils"
-	"errors"
+	"admin/errors"
 	"fmt"
+
+	"admin/app/models"
+	"admin/utils"
+	"strconv"
+	"strings"
+	"time"
 )
 
+// 管理员s
 type User struct {
-	Id          int    `xorm:"not null pk autoincr INT(11)"`
-	Uid         int    `xorm:"not null INT(11)"`
-	Phone       string `xorm:"not null default '' comment('电话') VARCHAR(20)"`
-	NickName    string `xorm:"not null default '' comment('昵称') VARCHAR(60)"`
-	Pwd         string `xorm:"not null default '' comment('用户登录密码') VARCHAR(255)"`
-	States      int    `xorm:"not null default 1 comment('1正常  0 锁定') TINYINT(4)"`
-	Remark      string `xorm:"not null default '' comment('备注') VARCHAR(36)"`
-	CreatedTime string `xorm:"not null comment('创建时间') DATETIME"`
-	UpdatedTime string `xorm:"not null comment('修改时间') DATETIME"`
+	models.BaseModel `xorm:"-"`
+	Uid              int    `xorm:"not null pk autoincr INT(11)" json:"uid"`
+	Name             string `xorm:"not null comment('用户名') VARCHAR(20)" json:"name"`
+	NickName         string `xorm:"not null default '' comment('昵称') VARCHAR(60)" json:"nick_name"`
+	Pwd              string `xorm:"not null comment('用户登录密码') CHAR(32)" json:"-"`
+	Salt             string `xorm:"not null comment('密码加密') CHAR(5)" json:"-"`
+	States           int    `xorm:"not null default 1 comment('1正常  0 锁定') TINYINT(4)" json:"states"`
+	Remark           string `xorm:"not null default '' comment('备注') VARCHAR(36)" json:"remark"`
+	CreateTime       int64  `xorm:"not null comment('创建时间') INT(11)" json:"create_time"`
+	UpdateTime       int64  `xorm:"not null comment('修改时间') INT(11)" json:"update_time"`
+	LastLoginTime    int64  `xorm:"not null default 0 comment('上次登录时间') INT(11)" json:"last_login_time"`
 }
 
+// 登录
 func (u *User) Login(pwd, phone string) (string, int, error) {
 	engine := utils.Engine_backstage
 	fmt.Println("login")
@@ -38,4 +47,115 @@ func (u *User) Login(pwd, phone string) (string, int, error) {
 	}
 	//
 	return use.NickName, use.Uid, nil
+}
+
+// 管理员列表
+func (u *User) List(pageIndex, pageSize int, filter map[string]string) (modelList *models.ModelList, err error) {
+	// 获取总数
+	engine := utils.Engine_backstage
+	query := engine.Desc("uid")
+
+	// 筛选
+	query.Where("1=1")
+	if v, ok := filter["phone"]; ok {
+		query.And("phone like '%?%'", v)
+	}
+
+	tempQuery := *query
+	count, err := tempQuery.Count(&User{})
+	if err != nil {
+		return nil, errors.NewSys(err)
+	}
+
+	// 获取分页
+	offset, modelList := u.Paging(pageIndex, pageSize, int(count))
+
+	// 获取列表数据
+	var list []User
+	err = query.Limit(modelList.PageSize, offset).Find(&list)
+	if err != nil {
+		return nil, errors.NewSys(err)
+	}
+	modelList.Items = list
+
+	return
+}
+
+// 管理员详情
+func (u *User) Get(uid int) (user *User, err error) {
+	engine := utils.Engine_backstage
+	user = new(User)
+	has, err := engine.ID(uid).Get(user)
+	if err != nil {
+		return nil, errors.NewSys(err)
+	}
+	if !has {
+		return nil, errors.NewNormal("管理员不存在或已被删除")
+	}
+
+	return
+}
+
+// 新增管理员
+func (u *User) Add(user *User, roleIds string) (uid int, err error) {
+	// 整理数据
+	salt := utils.NewRandomString(5)
+	now := time.Now().Unix()
+
+	user.Pwd = utils.Md5(utils.Md5(user.Pwd) + salt) // md5两次，第二次带上salt
+	user.Salt = salt
+	user.CreateTime = now
+	user.UpdateTime = now
+
+	// 判断管理员名称是否已存在
+	engine := utils.Engine_backstage
+	has, err := engine.Where("name=?", user.Name).Get(new(User))
+	if err != nil {
+		return 0, errors.NewSys(err)
+	}
+	if has {
+		return 0, errors.NewNormal("管理员名称已存在")
+	}
+
+	// 开始写入，事务
+	session := engine.NewSession()
+	defer session.Close()
+	err = session.Begin()
+	if err != nil {
+		return 0, errors.NewSys(err)
+	}
+
+	// 1. 新增管理员
+	_, err = session.Insert(user)
+	if err != nil {
+		session.Rollback()
+		return 0, errors.NewSys(err)
+	}
+	uid = user.Uid // 刚刚生成的管理员ID
+
+	// 2. 新增管理员、用户组关联
+	if roleIds != "" { // 重要！！！split空字符串
+		roleIdArr := strings.Split(roleIds, ",") // 逗号分隔
+		for _, v := range roleIdArr {
+			roleId, _ := strconv.Atoi(v)
+
+			roleUserMD := &RoleUser{
+				RoleId: roleId,
+				Uid:    uid,
+			}
+
+			_, err = session.Insert(roleUserMD)
+			if err != nil {
+				session.Rollback()
+				return 0, errors.NewSys(err)
+			}
+		}
+	}
+
+	err = session.Commit()
+	if err != nil {
+		return 0, errors.NewSys(err)
+	}
+
+	return
 }

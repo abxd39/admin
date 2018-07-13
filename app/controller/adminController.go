@@ -11,25 +11,32 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	google "github.com/mojocn/base64Captcha"
+	"regexp"
+	"unicode/utf8"
 )
 
+// 管理员
 type AdminController struct {
+	BaseController
 }
 
-func (this *AdminController) Router(r *gin.Engine) {
-	group := r.Group("/admin")
+func (a *AdminController) Router(e *gin.Engine) {
+	group := e.Group("/admin")
 	{
-		group.GET("/code", this.Code)
-		group.POST("/login", this.Login)
-		group.GET("/logout", this.Logout)
-		group.GET("/list", this.List)
-		group.GET("/delete", this.Delete)
-		group.GET("/update", this.Update)
+		group.GET("/code", a.Code)
+		group.POST("/login", a.Login)
+		group.GET("/logout", a.Logout)
+		group.GET("/list", a.List)
+		group.GET("/get", a.Get)
+		group.POST("/add", a.Add)
+		group.POST("/update", a.Update)
+		group.POST("/delete", a.Delete)
 
 	}
 }
 
-func (this *AdminController) Code(ctx *gin.Context) {
+// 登录验证码
+func (a *AdminController) Code(ctx *gin.Context) {
 	fmt.Println("...............................................")
 	var configD = google.ConfigDigit{
 		Height:     40,
@@ -66,7 +73,8 @@ func verifyCaptcha(idkey, verifyValue string) bool {
 	return false
 }
 
-func (this *AdminController) Login(ctx *gin.Context) {
+// 登录
+func (a *AdminController) Login(ctx *gin.Context) {
 	req := struct {
 		Phone    string `form:"phone" json:"phone" binding:"required"`
 		LoginPwd string `form:"pwd" json:"pwd" binding:"required"`
@@ -125,21 +133,130 @@ func (this *AdminController) Login(ctx *gin.Context) {
 	return
 }
 
-func (this *AdminController) Logout(ctx *gin.Context) {
+// 登出
+func (a *AdminController) Logout(ctx *gin.Context) {
 	session := sessions.Default(ctx)
 	session.Clear()
 	ctx.JSON(http.StatusOK, gin.H{"code": 0, "data": "", "msg": "成功"})
 	return
 }
-func (this *AdminController) List(ctx *gin.Context) {
+
+// 管理员列表
+func (a *AdminController) List(ctx *gin.Context) {
+	// 获取参数
+	page, err := a.GetInt(ctx, "page", 1)
+	if err != nil {
+		a.RespErr(ctx, "参数page格式错误")
+		return
+	}
+
+	rows, err := a.GetInt(ctx, "rows", 10)
+	if err != nil {
+		a.RespErr(ctx, "参数rows格式错误")
+		return
+	}
+
+	// 调用model
+	list, err := new(bk.User).List(page, rows, nil)
+	if err != nil {
+		a.RespErr(ctx, err)
+		return
+	}
+
+	// 设置返回数据
+	a.Put(ctx, "list", list)
+
+	// 返回
+	a.RespOK(ctx)
+	return
 
 	return
 }
-func (this *AdminController) Delete(ctx *gin.Context) {
+
+// 管理员详情
+func (a *AdminController) Get(ctx *gin.Context) {
+	// 获取参数
+	uid, err := a.GetInt(ctx, "uid")
+	if err != nil || uid < 1 {
+		a.RespErr(ctx, "参数uid格式错误")
+		return
+	}
+
+	// 调用model
+	userMD := new(bk.User)
+	user, err := userMD.Get(uid)
+	if err != nil {
+		a.RespErr(ctx, err)
+		return
+	}
+
+	// 设置返回数据
+	a.Put(ctx, "user", user)
+
+	// 返回
+	a.RespOK(ctx)
+	return
+}
+
+// 新增管理员
+func (a *AdminController) Add(ctx *gin.Context) {
+	// 获取参数
+	name := a.GetString(ctx, "name")
+
+	if matched, err := regexp.MatchString(`^[a-z0-9_\-]{3,15}$`, name); err != nil || !matched {
+		a.RespErr(ctx, "参数name格式错误，只能为3-15位小写字母a-z、数字0-9、中划线-或下划线_")
+		return
+	}
+
+	nickname := a.GetString(ctx, "nickname")
+	if strLen := utf8.RuneCountInString(nickname); strLen < 2 || strLen > 15 {
+		a.RespErr(ctx, "参数nickname格式错误，2-15个字符")
+		return
+	}
+
+	pwd := a.GetString(ctx, "pwd")
+	if matched, err := regexp.MatchString(`^[a-zA-Z0-9~!@#$%^&*_\-=+:;|,.?]{6,20}$`, pwd); err != nil || !matched {
+		a.RespErr(ctx, "密码格式错误，6-20个字符")
+		return
+	}
+
+	rePwd := a.GetString(ctx, "re_pwd")
+	if rePwd != pwd {
+		a.RespErr(ctx, "两次输入的密码不一致")
+		return
+	}
+
+	roleIds := a.GetString(ctx, "role_ids") // 逗号分隔
+
+	// 调用model
+	user := &bk.User{
+		Name:     name,
+		NickName: nickname,
+		Pwd:      pwd,
+	}
+
+	uid, err := (new(bk.User)).Add(user, roleIds)
+	if err != nil {
+		a.RespErr(ctx, err)
+		return
+	}
+
+	// 设置返回数据
+	a.Put(ctx, "uid", uid)
+
+	// 返回
+	a.RespOK(ctx)
+	return
+}
+
+// 更新管理员
+func (a *AdminController) Update(ctx *gin.Context) {
 
 	return
 }
-func (this *AdminController) Update(ctx *gin.Context) {
+
+// 删除管理员
+func (a *AdminController) Delete(ctx *gin.Context) {
 
 	return
 }

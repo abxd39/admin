@@ -105,19 +105,21 @@ func (r *Role) Add(name, desc, nodeIds string) (id int, err error) {
 	roleId := roleMD.Id // 刚刚生成的id
 
 	// 2. 新增用户组、节点关联
-	nodeIdArr := strings.Split(nodeIds, ",") // 逗号分隔
-	for _, v := range nodeIdArr {
-		nodeId, _ := strconv.Atoi(v)
+	if nodeIds != "" { // 重要！！！split空字符串
+		nodeIdArr := strings.Split(nodeIds, ",") // 逗号分隔
+		for _, v := range nodeIdArr {
+			nodeId, _ := strconv.Atoi(v)
 
-		roleNodeMD := &RoleNode{
-			RoleId: roleId,
-			NodeId: nodeId,
-		}
+			roleNodeMD := &RoleNode{
+				RoleId: roleId,
+				NodeId: nodeId,
+			}
 
-		_, err = session.Insert(roleNodeMD)
-		if err != nil {
-			session.Rollback()
-			return 0, errors.NewSys(err)
+			_, err = session.Insert(roleNodeMD)
+			if err != nil {
+				session.Rollback()
+				return 0, errors.NewSys(err)
+			}
 		}
 	}
 
@@ -174,19 +176,21 @@ func (r *Role) Update(id int, name, desc, nodeIds string) error {
 	}
 
 	// 2.2 新增关联
-	nodeIdArr := strings.Split(nodeIds, ",") // 逗号分隔
-	for _, v := range nodeIdArr {
-		nodeId, _ := strconv.Atoi(v)
+	if nodeIds != "" { // 重要！！！split空字符串
+		nodeIdArr := strings.Split(nodeIds, ",") // 逗号分隔
+		for _, v := range nodeIdArr {
+			nodeId, _ := strconv.Atoi(v)
 
-		roleNodeMD := &RoleNode{
-			RoleId: id,
-			NodeId: nodeId,
-		}
+			roleNodeMD := &RoleNode{
+				RoleId: id,
+				NodeId: nodeId,
+			}
 
-		_, err = session.Insert(roleNodeMD)
-		if err != nil {
-			session.Rollback()
-			return errors.NewSys(err)
+			_, err = session.Insert(roleNodeMD)
+			if err != nil {
+				session.Rollback()
+				return errors.NewSys(err)
+			}
 		}
 	}
 
