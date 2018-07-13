@@ -17,17 +17,66 @@ type Banner struct {
 	Status      int    `xorm:"not null default 1 comment('上架状态 1 上架 0下架') TINYINT(4)"`
 }
 
-func (b *Banner) Add(or, state int, picname, picp, linkaddr string) error {
+func (b *Banner) DeleteBanner(id int) error {
+	engine := utils.Engine_common
+	has, _ := engine.Id(id).Exist(&Banner{})
+	if !has {
+		return errors.New("banner is not exist!!")
+	}
+	ba := new(Banner)
+	engine.Id(id).Get(ba)
+	new(Article).DeletFileToAliCloud(ba.PicturePath)
+
+	_, err := engine.Id(id).Delete(&Banner{})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (b *Banner) GetBanner(id int) (*Banner, error) {
+	engine := utils.Engine_common
+	ba := new(Banner)
+	_, err := engine.Id(id).Get(ba)
+	if err != nil {
+		return nil, err
+	}
+	new(Article).DeletFileToAliCloud(ba.PicturePath)
+
+	return ba, nil
+}
+
+func (b *Banner) OperatorUp(id, mark int) error {
+	engine := utils.Engine_common
+	current := time.Now().Format("2006-01-02 15:04:05")
+	_, err := engine.Id(id).Update(&Banner{
+		Status:     mark,
+		UploadTime: current,
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (b *Banner) Add(id, or, state int, picname, picp, linkaddr string) error {
 	engine := utils.Engine_common
 
 	current := time.Now().Format("2006-01-02 15:04:05")
 	ban := &Banner{
+		Id:          id,
 		Order:       or,
 		PictureName: picname,
 		PicturePath: picp,
 		UploadTime:  current,
 		LinkPath:    linkaddr,
 		Status:      state,
+	}
+	if id != 0 {
+		_, err := engine.Id(id).Update(ban)
+		if err != nil {
+			return err
+		}
 	}
 	result, err := engine.InsertOne(ban)
 	if err != nil {
