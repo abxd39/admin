@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// 权限节点
 type NodeController struct {
 	BaseController
 }

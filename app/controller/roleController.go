@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// 用户组
 type RoleController struct {
 	BaseController
 }
@@ -80,6 +81,7 @@ func (r *RoleController) Get(c *gin.Context) {
 	r.Put(c, "role", role)
 	r.Put(c, "bind_node_ids", nodeIds)
 
+	// 返回
 	r.RespOK(c)
 	return
 }
