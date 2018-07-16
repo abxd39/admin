@@ -119,6 +119,8 @@ func (r *RoleController) Add(ctx *gin.Context) {
 
 // 更新用户组
 func (r *RoleController) Update(ctx *gin.Context) {
+	params := make(map[string]interface{})
+
 	// 获取参数
 	id, err := r.GetInt(ctx, "id")
 	if err != nil || id < 1 {
@@ -126,17 +128,28 @@ func (r *RoleController) Update(ctx *gin.Context) {
 		return
 	}
 
-	name := r.GetString(ctx, "name")
-	if strLen := utf8.RuneCountInString(name); strLen == 0 || strLen > 10 {
-		r.RespErr(ctx, "参数name格式错误")
-		return
+	name, nameOK := r.GetParam(ctx, "name")
+	if nameOK {
+		if strLen := utf8.RuneCountInString(name); strLen == 0 || strLen > 10 {
+			r.RespErr(ctx, "参数name格式错误")
+			return
+		}
+
+		params["name"] = name
 	}
 
-	desc := r.GetString(ctx, "desc", "")
-	nodeIds := r.GetString(ctx, "node_ids", "")
+	desc, descOK := r.GetParam(ctx, "desc")
+	if descOK {
+		params["desc"] = desc
+	}
+
+	nodeIds, nodeIdsOk := r.GetParam(ctx, "node_ids")
+	if nodeIdsOk {
+		params["node_ids"] = nodeIds
+	}
 
 	// 调用model
-	err = new(backstage.Role).Update(id, name, desc, nodeIds)
+	err = new(backstage.Role).Update(id, params)
 	if err != nil {
 		r.RespErr(ctx, err)
 		return

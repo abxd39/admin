@@ -134,23 +134,25 @@ func (u *User) Add(user *User, roleIds string) (uid int, err error) {
 	uid = user.Uid // 刚刚生成的管理员ID
 
 	// 2. 新增管理员、用户组关联
-	roleIdArr := strings.Split(roleIds, ",") // 逗号分隔
-	for _, v := range roleIdArr {
-		roleId, err := strconv.Atoi(v)
-		if err != nil || roleId <= 0 {
-			session.Rollback()
-			return 0, errors.NewNormal("参数role_ids格式错误")
-		}
+	if roleIds != "" {
+		roleIdArr := strings.Split(roleIds, ",") // 逗号分隔
+		for _, v := range roleIdArr {
+			roleId, err := strconv.Atoi(v)
+			if err != nil || roleId <= 0 {
+				session.Rollback()
+				return 0, errors.NewNormal("参数role_ids格式错误")
+			}
 
-		roleUserMD := &RoleUser{
-			RoleId: roleId,
-			Uid:    uid,
-		}
+			roleUserMD := &RoleUser{
+				RoleId: roleId,
+				Uid:    uid,
+			}
 
-		_, err = session.Insert(roleUserMD)
-		if err != nil {
-			session.Rollback()
-			return 0, errors.NewSys(err)
+			_, err = session.Insert(roleUserMD)
+			if err != nil {
+				session.Rollback()
+				return 0, errors.NewSys(err)
+			}
 		}
 	}
 
@@ -163,20 +165,10 @@ func (u *User) Add(user *User, roleIds string) (uid int, err error) {
 }
 
 // 更新管理员
-func (u *User) Update(user *User, roleIds string) error {
-	// 整理数据
-	if user.Pwd != "" {
-		salt := utils.NewRandomString(5)
-
-		user.Pwd = utils.Md5(utils.Md5(user.Pwd) + salt) // md5两次，第二次带上salt
-		user.Salt = salt
-	}
-
-	user.UpdateTime = time.Now().Unix()
-
+func (u *User) Update(uid int, params map[string]interface{}) error {
 	// 验证管理员是否存在
 	engine := utils.Engine_backstage
-	has, err := engine.Id(user.Uid).Get(new(User))
+	has, err := engine.Id(uid).Get(new(User))
 	if err != nil {
 		return errors.NewSys(err)
 	}
@@ -184,14 +176,33 @@ func (u *User) Update(user *User, roleIds string) error {
 		return errors.NewNormal("管理员不存在或已删除")
 	}
 
-	// 判断管理员用户名是否已存在
-	has, err = engine.Where("name=?", user.Name).And("uid!=?", user.Uid).Get(new(User))
-	if err != nil {
-		return errors.NewSys(err)
+	// 整理数据
+	userData := make(map[string]interface{})
+	if v, ok := params["name"]; ok {
+		// 判断管理员用户名是否已存在
+		has, err = engine.Where("name=?", v).And("uid!=?", uid).Get(new(User))
+		if err != nil {
+			return errors.NewSys(err)
+		}
+		if has {
+			return errors.NewNormal("管理员名称已存在")
+		}
+
+		userData["name"] = v
 	}
-	if has {
-		return errors.NewNormal("管理员名称已存在")
+
+	if v, ok := params["nick_name"]; ok {
+		userData["nick_name"] = v
 	}
+
+	if v, ok := params["pwd"]; ok {
+		salt := utils.NewRandomString(5)
+
+		userData["pwd"] = utils.Md5(utils.Md5(v.(string)) + salt) // md5两次，第二次带上salt
+		userData["salt"] = salt
+	}
+
+	userData["update_time"] = time.Now().Unix()
 
 	// 开始更新，事务
 	session := engine.NewSession()
@@ -202,38 +213,44 @@ func (u *User) Update(user *User, roleIds string) error {
 	}
 
 	// 1. 更新管理员
-	_, err = session.ID(user.Uid).Update(user)
+	_, err = session.Table(u).ID(uid).Update(userData)
 	if err != nil {
 		session.Rollback()
 		return errors.NewSys(err)
 	}
 
 	// 2. 更新管理员、用户组关联
-	// 2.1 删除之前的关联
-	_, err = session.Where("uid=?", user.Uid).Delete(new(RoleUser))
-	if err != nil {
-		session.Rollback()
-		return errors.NewSys(err)
-	}
+	if v, ok := params["role_ids"]; ok {
+		roleIds := v.(string)
 
-	// 2.2 新增关联
-	roleIdArr := strings.Split(roleIds, ",") // 逗号分隔
-	for _, v := range roleIdArr {
-		roleId, err := strconv.Atoi(v)
-		if err != nil || roleId <= 0 {
-			session.Rollback()
-			return errors.NewNormal("参数role_ids格式错误")
-		}
-
-		roleUserMD := &RoleUser{
-			RoleId: roleId,
-			Uid:    user.Uid,
-		}
-
-		_, err = session.Insert(roleUserMD)
+		// 2.1 删除之前的关联
+		_, err = session.Where("uid=?", uid).Delete(new(RoleUser))
 		if err != nil {
 			session.Rollback()
 			return errors.NewSys(err)
+		}
+
+		// 2.2 新增关联
+		if roleIds != "" {
+			roleIdArr := strings.Split(roleIds, ",") // 逗号分隔
+			for _, v := range roleIdArr {
+				roleId, err := strconv.Atoi(v)
+				if err != nil || roleId <= 0 {
+					session.Rollback()
+					return errors.NewNormal("参数role_ids格式错误")
+				}
+
+				roleUserMD := &RoleUser{
+					RoleId: roleId,
+					Uid:    uid,
+				}
+
+				_, err = session.Insert(roleUserMD)
+				if err != nil {
+					session.Rollback()
+					return errors.NewSys(err)
+				}
+			}
 		}
 	}
 

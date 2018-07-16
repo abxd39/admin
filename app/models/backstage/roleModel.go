@@ -100,23 +100,25 @@ func (r *Role) Add(role *Role, nodeIds string) (id int, err error) {
 	roleId := role.Id // 刚刚生成的id
 
 	// 2. 新增用户组、节点关联
-	nodeIdArr := strings.Split(nodeIds, ",") // 逗号分隔
-	for _, v := range nodeIdArr {
-		nodeId, err := strconv.Atoi(v)
-		if err != nil || nodeId <= 0 {
-			session.Rollback()
-			return 0, errors.NewNormal("参数node_ids格式错误")
-		}
+	if nodeIds != "" {
+		nodeIdArr := strings.Split(nodeIds, ",") // 逗号分隔
+		for _, v := range nodeIdArr {
+			nodeId, err := strconv.Atoi(v)
+			if err != nil || nodeId <= 0 {
+				session.Rollback()
+				return 0, errors.NewNormal("参数node_ids格式错误")
+			}
 
-		roleNodeMD := &RoleNode{
-			RoleId: roleId,
-			NodeId: nodeId,
-		}
+			roleNodeMD := &RoleNode{
+				RoleId: roleId,
+				NodeId: nodeId,
+			}
 
-		_, err = session.Insert(roleNodeMD)
-		if err != nil {
-			session.Rollback()
-			return 0, errors.NewSys(err)
+			_, err = session.Insert(roleNodeMD)
+			if err != nil {
+				session.Rollback()
+				return 0, errors.NewSys(err)
+			}
 		}
 	}
 
@@ -129,7 +131,7 @@ func (r *Role) Add(role *Role, nodeIds string) (id int, err error) {
 }
 
 // 更新用户组
-func (r *Role) Update(id int, name, desc, nodeIds string) error {
+func (r *Role) Update(id int, params map[string]interface{}) error {
 	// 验证用户组是否存在
 	engine := utils.Engine_backstage
 	has, err := engine.Id(id).Get(new(Role))
@@ -140,13 +142,22 @@ func (r *Role) Update(id int, name, desc, nodeIds string) error {
 		return errors.NewNormal("用户组不存在或已删除")
 	}
 
-	// 判断用户组名称是否已存在
-	has, err = engine.Where("name=?", name).And("id!=?", id).Get(new(Role))
-	if err != nil {
-		return errors.NewSys(err)
+	// 验证参数、设置更新的字段
+	roleData := make(map[string]interface{})
+	if v, ok := params["name"]; ok {
+		// 判断用户组名称是否已存在
+		has, err = engine.Where("name=?", v).And("id!=?", id).Get(new(Role))
+		if err != nil {
+			return errors.NewSys(err)
+		}
+		if has {
+			return errors.NewNormal("名称已存在")
+		}
+
+		roleData["name"] = v
 	}
-	if has {
-		return errors.NewNormal("名称已存在")
+	if v, ok := params["desc"]; ok {
+		roleData["desc"] = v
 	}
 
 	// 开始更新，事务
@@ -158,42 +169,43 @@ func (r *Role) Update(id int, name, desc, nodeIds string) error {
 	}
 
 	// 1. 更新用户组
-	roleMD := &Role{
-		Name: name,
-		Desc: desc,
-	}
-	_, err = session.ID(id).Update(roleMD)
+	_, err = session.Table(r).ID(id).Update(roleData)
 	if err != nil {
 		session.Rollback()
 		return errors.NewSys(err)
 	}
 
 	// 2. 更新用户组、节点关联
-	// 2.1 删除之前的关联
-	_, err = session.Where("role_id=?", id).Delete(new(RoleNode))
-	if err != nil {
-		session.Rollback()
-		return errors.NewSys(err)
-	}
+	if v, ok := params["node_ids"]; ok {
+		nodeIds := v.(string)
+		if nodeIds != "" {
+			// 2.1 删除之前的关联
+			_, err = session.Where("role_id=?", id).Delete(new(RoleNode))
+			if err != nil {
+				session.Rollback()
+				return errors.NewSys(err)
+			}
 
-	// 2.2 新增关联
-	nodeIdArr := strings.Split(nodeIds, ",") // 逗号分隔
-	for _, v := range nodeIdArr {
-		nodeId, err := strconv.Atoi(v)
-		if err != nil || nodeId <= 0 {
-			session.Rollback()
-			return errors.NewNormal("参数node_ids格式错误")
-		}
+			// 2.2 更新关联
+			nodeIdArr := strings.Split(nodeIds, ",") // 逗号分隔
+			for _, v := range nodeIdArr {
+				nodeId, err := strconv.Atoi(v)
+				if err != nil || nodeId <= 0 {
+					session.Rollback()
+					return errors.NewNormal("参数node_ids格式错误")
+				}
 
-		roleNodeMD := &RoleNode{
-			RoleId: id,
-			NodeId: nodeId,
-		}
+				roleNodeMD := &RoleNode{
+					RoleId: id,
+					NodeId: nodeId,
+				}
 
-		_, err = session.Insert(roleNodeMD)
-		if err != nil {
-			session.Rollback()
-			return errors.NewSys(err)
+				_, err = session.Insert(roleNodeMD)
+				if err != nil {
+					session.Rollback()
+					return errors.NewSys(err)
+				}
+			}
 		}
 	}
 

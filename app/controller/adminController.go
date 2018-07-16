@@ -244,6 +244,8 @@ func (a *AdminController) Add(ctx *gin.Context) {
 
 // 更新管理员
 func (a *AdminController) Update(ctx *gin.Context) {
+	params := make(map[string]interface{})
+
 	// 获取参数
 	uid, err := a.GetInt(ctx, "uid")
 	if err != nil || uid < 1 {
@@ -251,45 +253,49 @@ func (a *AdminController) Update(ctx *gin.Context) {
 		return
 	}
 
-	name := a.GetString(ctx, "name")
-	if matched, err := regexp.MatchString(`^[a-z0-9_\-]{3,15}$`, name); err != nil || !matched {
-		a.RespErr(ctx, "参数name格式错误，3-15个字符")
-		return
+	name, nameOK := a.GetParam(ctx, "name")
+	if nameOK {
+		if matched, err := regexp.MatchString(`^[a-z0-9_\-]{3,15}$`, name); err != nil || !matched {
+			a.RespErr(ctx, "参数name格式错误，3-15个字符")
+			return
+		}
+
+		params["name"] = name
 	}
 
-	nickname := a.GetString(ctx, "nickname")
-	if strLen := utf8.RuneCountInString(nickname); strLen < 2 || strLen > 15 {
-		a.RespErr(ctx, "参数nickname格式错误，2-15个字符")
-		return
+	nickname, nicknameOK := a.GetParam(ctx, "nickname")
+	if nicknameOK {
+		if strLen := utf8.RuneCountInString(nickname); strLen < 2 || strLen > 15 {
+			a.RespErr(ctx, "参数nickname格式错误，2-15个字符")
+			return
+		}
+
+		params["nick_name"] = nickname
 	}
 
-	pwd := a.GetString(ctx, "pwd")
-	if pwd != "" { // 前端提交了密码，没提交不判断
+	pwd, pwdOK := a.GetParam(ctx, "pwd")
+	if pwdOK {
 		if matched, err := regexp.MatchString(`^[a-zA-Z0-9~!@#$%^&*_\-=+:;|,.?]{6,20}$`, pwd); err != nil || !matched {
 			a.RespErr(ctx, "密码格式错误，6-20个字符")
 			return
 		}
 
-		rePwd := a.GetString(ctx, "re_pwd")
+		rePwd, _ := a.GetParam(ctx, "re_pwd")
 		if rePwd != pwd {
 			a.RespErr(ctx, "两次输入的密码不一致")
 			return
 		}
+
+		params["pwd"] = pwd
 	}
 
-	roleIds := a.GetString(ctx, "role_ids") // 逗号分隔
+	roleIds, roleIdsOK := a.GetParam(ctx, "role_ids") // 逗号分隔
+	if roleIdsOK {
+		params["role_ids"] = roleIds
+	}
 
 	// 调用model
-	user := &bk.User{
-		Uid:      uid,
-		Name:     name,
-		NickName: nickname,
-	}
-	if pwd != "" { // 前端提交了密码参数
-		user.Pwd = pwd
-	}
-
-	err = (new(bk.User)).Update(user, roleIds)
+	err = (new(bk.User)).Update(uid, params)
 	if err != nil {
 		a.RespErr(ctx, err)
 		return
