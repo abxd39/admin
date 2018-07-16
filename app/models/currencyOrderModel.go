@@ -163,39 +163,25 @@ func (this *Order) GetOrderId(uid []int, status int) ([]OrderGroup, error) {
 }
 
 //列出订单
-func (this *Order) GetOrderList(Page, PageNum, AdType, States, TokenId int, StartTime, EndTime string) (*ModelList, error) {
-
+func (this *Order) GetOrderList(Page, PageNum, AdType, States, TokenId int, StartTime, search string) (*ModelList, error) {
 	engine := utils.Engine_currency
-	if Page <= 1 {
-		Page = 1
-	}
-	if PageNum <= 0 {
-		PageNum = 100
-	}
-
 	query := engine.Desc("id")
-
-	// if States != 0 { // 状态为0，表示已经删除
-	// 	query = query.Where("states = 0")
-	// } else {
-	// 	query = query.Where("states = ?", States)
-	// }
-
-	// if Id != 0 {
-	// 	query = query.Where("id = ?", Id)
-	// }
-	// if AdType != 0 {
-	// 	query = query.Where("ad_type = ?", AdType)
-	// }
-	// if TokenId != 0 {
-	// 	query = query.Where("token_id = ?", TokenId)
-	// }
-	//fmt.Println(StartTime, EndTime)
-	if StartTime != `` {
-		query = query.Where("created_time >= ?", StartTime)
+	if AdType != 0 {
+		query = query.Where("ad_type=?", AdType)
 	}
-	if EndTime != `` {
-		query = query.Where("created_time <= ?", EndTime)
+	if States != 0 {
+		query = query.Where("states=?", States)
+	}
+	if TokenId != 0 {
+		query = query.Where("token_id=?", TokenId)
+	}
+	if StartTime != `` {
+		substr := StartTime[:11] + "23:59:59"
+		query = query.Where("created_time BETWEEN ? AND ? ", StartTime, substr)
+	}
+	if search != `` {
+		temp := fmt.Sprintf(" concat(IFNULL(sell_name,''),IFNULL(buy_name,'')) LIKE '%%%s%%'  ", search)
+		query = query.Where(temp)
 	}
 
 	tmpQuery := *query

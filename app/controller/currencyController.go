@@ -17,14 +17,34 @@ type CurrencyController struct {
 func (this *CurrencyController) Router(r *gin.Engine) {
 	g := r.Group("/currency")
 	{
-		g.GET("/list", this.GetTradeList) //法币挂单管理
-		//g.POST
+		g.GET("/list", this.GetTradeList)                     //法币挂单管理
+		g.POST("/down_trade_order", this.DownTradeAds)        //下架交易单
 		g.GET("/tokens", this.GetTokensList)                  //获取 所有数据货币的名称及货币Id
-		g.GET("/order", this.GetOderList)                     //法币成交列表
-		g.GET("/total_balance", this.GetTotalCurrencyBalance) //所有法币账户，
+		g.GET("/order_list", this.GetOderList)                //法币成交列表
+		g.GET("/total_balance", this.GetTotalCurrencyBalance) //法币账户统计列表
 		g.GET("/user_detail", this.GetUserDetailList)         //法币账户资产展示
 		g.GET("/user_buysell", this.GetBuySellList)           //查看法币统计买入_卖出_划转
 	}
+}
+
+func (cu *CurrencyController) DownTradeAds(c *gin.Context) {
+	req := struct {
+		Id  int `form:"id" json:"id" binding:"required"`   //订单id
+		Uid int `form:"uid" json:"uid" binding:"required"` //用户uid
+	}{}
+	err := c.ShouldBind(&req)
+	if err != nil {
+		utils.AdminLog.Errorf(err.Error())
+		cu.RespErr(c, err)
+		return
+	}
+	err = new(models.Ads).DownTradeAds(req.Id, req.Uid)
+	if err != nil {
+		cu.RespErr(c, err)
+		return
+
+	}
+	cu.RespOK(c)
 }
 
 //查看法币统计买入_卖出_划转
@@ -145,13 +165,14 @@ func (cu *CurrencyController) GetTokensList(c *gin.Context) {
 	return
 }
 
+//法币成交列表
 func (cu *CurrencyController) GetOderList(c *gin.Context) {
 	//参数一大堆
 	req := struct {
 		Page     int    `form:"page" json:"page" binding:"required"`
 		Page_num int    `form:"rows" json:"rows" `
 		Start_t  string `form:"start_t" json:"start_t" `
-		End_t    string `form:"end_t" json:"end_t" `
+		Search   string `form:"search" json:"search" `     //筛选
 		Status   int    `form:"status" json:"status" `     //订单状态
 		Token_id int    `form:"token_id" json:"token_id" ` //货币名称
 		Ad_type  int    `form:"adtype" json:"adtype" `     //买卖方向
@@ -162,7 +183,7 @@ func (cu *CurrencyController) GetOderList(c *gin.Context) {
 		cu.RespErr(c, err)
 		return
 	}
-	list, err := new(models.Order).GetOrderList(req.Page, req.Page_num, req.Ad_type, req.Status, req.Token_id, req.Start_t, req.End_t)
+	list, err := new(models.Order).GetOrderList(req.Page, req.Page_num, req.Ad_type, req.Status, req.Token_id, req.Start_t, req.Search)
 	if err != nil {
 		cu.RespErr(c, err)
 		return
