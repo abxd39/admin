@@ -184,8 +184,16 @@ func (a *AdminController) Get(ctx *gin.Context) {
 		return
 	}
 
+	// 获取绑定的节点ID
+	roleIds, err := userMD.GetBindRoleIds(uid)
+	if err != nil {
+		a.RespErr(ctx, err)
+		return
+	}
+
 	// 设置返回数据
 	a.Put(ctx, "user", user)
+	a.Put(ctx, "role_ids", roleIds)
 
 	// 返回
 	a.RespOK(ctx)

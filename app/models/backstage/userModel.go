@@ -97,6 +97,17 @@ func (u *User) Get(uid int) (user *User, err error) {
 	return
 }
 
+// 用户组绑定的节点ID
+func (u *User) GetBindRoleIds(uid int) (roleIds []int, err error) {
+	engine := utils.Engine_backstage
+	err = engine.Table(new(RoleUser)).Where("uid=?", uid).Cols("role_id").Find(&roleIds)
+	if err != nil {
+		return nil, errors.NewSys(err)
+	}
+
+	return
+}
+
 // 新增管理员
 func (u *User) Add(user *User, roleIds string) (uid int, err error) {
 	// 整理数据
