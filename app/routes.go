@@ -21,4 +21,5 @@ func Router(r *gin.Engine) {
 	new(controller.CurrencyController).Router(r)
 	new(controller.TokenController).Router(r)
 	new(controller.RoleController).Router(r)
+	new(controller.NodeController).Router(r)
 }
