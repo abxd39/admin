@@ -128,8 +128,7 @@ func (r *RoleController) Update(ctx *gin.Context) {
 		return
 	}
 
-	name, nameOK := r.GetParam(ctx, "name")
-	if nameOK {
+	if name, ok := r.GetParam(ctx, "name"); ok {
 		if strLen := utf8.RuneCountInString(name); strLen == 0 || strLen > 10 {
 			r.RespErr(ctx, "参数name格式错误")
 			return
@@ -138,13 +137,11 @@ func (r *RoleController) Update(ctx *gin.Context) {
 		params["name"] = name
 	}
 
-	desc, descOK := r.GetParam(ctx, "desc")
-	if descOK {
+	if desc, ok := r.GetParam(ctx, "desc"); ok {
 		params["desc"] = desc
 	}
 
-	nodeIds, nodeIdsOk := r.GetParam(ctx, "node_ids")
-	if nodeIdsOk {
+	if nodeIds, ok := r.GetParam(ctx, "node_ids"); ok {
 		params["node_ids"] = nodeIds
 	}
 

@@ -253,8 +253,7 @@ func (a *AdminController) Update(ctx *gin.Context) {
 		return
 	}
 
-	name, nameOK := a.GetParam(ctx, "name")
-	if nameOK {
+	if name, ok := a.GetParam(ctx, "name"); ok {
 		if matched, err := regexp.MatchString(`^[a-z0-9_\-]{3,15}$`, name); err != nil || !matched {
 			a.RespErr(ctx, "参数name格式错误，3-15个字符")
 			return
@@ -263,8 +262,7 @@ func (a *AdminController) Update(ctx *gin.Context) {
 		params["name"] = name
 	}
 
-	nickname, nicknameOK := a.GetParam(ctx, "nickname")
-	if nicknameOK {
+	if nickname, ok := a.GetParam(ctx, "nickname"); ok {
 		if strLen := utf8.RuneCountInString(nickname); strLen < 2 || strLen > 15 {
 			a.RespErr(ctx, "参数nickname格式错误，2-15个字符")
 			return
@@ -273,8 +271,7 @@ func (a *AdminController) Update(ctx *gin.Context) {
 		params["nick_name"] = nickname
 	}
 
-	pwd, pwdOK := a.GetParam(ctx, "pwd")
-	if pwdOK {
+	if pwd, ok := a.GetParam(ctx, "pwd"); ok {
 		if matched, err := regexp.MatchString(`^[a-zA-Z0-9~!@#$%^&*_\-=+:;|,.?]{6,20}$`, pwd); err != nil || !matched {
 			a.RespErr(ctx, "密码格式错误，6-20个字符")
 			return
@@ -289,8 +286,7 @@ func (a *AdminController) Update(ctx *gin.Context) {
 		params["pwd"] = pwd
 	}
 
-	roleIds, roleIdsOK := a.GetParam(ctx, "role_ids") // 逗号分隔
-	if roleIdsOK {
+	if roleIds, ok := a.GetParam(ctx, "role_ids"); ok { // 逗号分隔
 		params["role_ids"] = roleIds
 	}
 
