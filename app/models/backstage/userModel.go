@@ -262,3 +262,43 @@ func (u *User) Update(uid int, params map[string]interface{}) error {
 
 	return nil
 }
+
+// 删除管理员
+func (u *User) Delete(uid int) error {
+	// 验证用户组是否存在
+	engine := utils.Engine_backstage
+	has, err := engine.Id(uid).Get(new(User))
+	if err != nil {
+		return errors.NewSys(err)
+	}
+	if !has {
+		return errors.NewNormal("管理员不存在或已删除")
+	} else if u.IsSuper == 1 {
+		return errors.NewNormal("超管不可删除")
+	}
+
+	// 开始删除，事务
+	session := engine.NewSession()
+	defer session.Close()
+
+	// 1. 删除管理员
+	_, err = session.ID(uid).Delete(new(User))
+	if err != nil {
+		session.Rollback()
+		return errors.NewSys(err)
+	}
+
+	// 2. 删除用户组、管理员关联
+	_, err = session.Where("uid=?", uid).Delete(new(RoleUser))
+	if err != nil {
+		session.Rollback()
+		return errors.NewSys(err)
+	}
+
+	err = session.Commit()
+	if err != nil {
+		return errors.NewSys(err)
+	}
+
+	return nil
+}

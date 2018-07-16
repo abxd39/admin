@@ -307,6 +307,24 @@ func (a *AdminController) Update(ctx *gin.Context) {
 
 // 删除管理员
 func (a *AdminController) Delete(ctx *gin.Context) {
+	// 获取参数
+	uid, err := a.GetInt(ctx, "uid")
+	if err != nil || uid < 1 {
+		a.RespErr(ctx, "参数uid格式错误")
+		return
+	}
 
+	// 调用model
+	err = new(bk.User).Delete(uid)
+	if err != nil {
+		a.RespErr(ctx, err)
+		return
+	}
+
+	// 设置返回数据
+	a.Put(ctx, "uid", uid)
+
+	// 返回
+	a.RespOK(ctx)
 	return
 }
