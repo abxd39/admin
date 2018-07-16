@@ -26,6 +26,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+	Engine_currency.ShowSQL(true)
 	err = Engine_currency.Ping()
 	if err != nil {
 		panic(err)
@@ -37,6 +38,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+	Engine_token.ShowSQL(true)
 	err = Engine_token.Ping()
 	if err != nil {
 		panic(err)
@@ -44,10 +46,10 @@ func init() {
 
 	dsource = "root:current@tcp(47.106.136.96:3306)/g_common?charset=utf8"
 	Engine_common, err = xorm.NewEngine("mysql", dsource)
-
 	if err != nil {
 		panic(err)
 	}
+	Engine_common.ShowSQL(true)
 	err = Engine_common.Ping()
 	if err != nil {
 		panic(err)
@@ -60,6 +62,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+	Engine_context.ShowSQL(true)
 	err = Engine_context.Ping()
 	if err != nil {
 		panic(err)
@@ -68,10 +71,10 @@ func init() {
 	dsource = "ccbk:ecrf981@@tcp(47.106.136.96:3306)/g_backstage?charset=utf8"
 	//dsource = "conn=ccbk:ecrf981@@tcp(47.106.136.96:3306)/g_common?charset=utf8"
 	Engine_backstage, err = xorm.NewEngine("mysql", dsource)
-
 	if err != nil {
 		panic(err)
 	}
+	Engine_backstage.ShowSQL(true)
 	err = Engine_backstage.Ping()
 	if err != nil {
 		panic(err)

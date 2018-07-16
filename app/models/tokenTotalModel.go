@@ -3,7 +3,6 @@ package models
 import (
 	"admin/utils"
 	"errors"
-	"fmt"
 )
 
 type UserToken struct {
@@ -52,41 +51,41 @@ func (u *UserToken) GetTokenDetailOfUid(uid, token_id int) ([]UserToken, error) 
 func (t *PersonalProperty) TotalUserBalance(page, rows, status int) (*ModelList, error) {
 	//查 用户表
 
-	list, err := new(WebUser).GetAllUser(page, rows, status)
-	if err != nil {
-		return nil, err
-	}
-	var uid []uint64
-	userlist, Ok := list.Items.([]UserGroup)
-	if !Ok {
-		return nil, errors.New("assert failed!!")
-	}
-	for _, v := range userlist {
-		uid = append(uid, v.Uid)
-	}
-	fmt.Printf("TotalUserBalance%#v\n", uid)
-	engine := utils.Engine_token
-	token := make([]UserToken, 0)
-	err = engine.In("uid", uid).Find(&token)
-	if err != nil {
-		return nil, err
-	}
-	Total := make([]PersonalProperty, 0)
-	for _, ob := range userlist {
-		pp := &PersonalProperty{}
-		pp.Uid = int(ob.Uid)
-		pp.NickName = ob.NickName
-		pp.Phone = ob.Phone
-		pp.Email = ob.Email
-		pp.Status = ob.Status
-		for _, result := range token {
-			if ob.Uid == result.Uid {
-				pp.token = append(pp.token, result)
-			}
-		}
+	// list, err := new(WebUser).GetAllUser(page, rows, status)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// var uid []uint64
+	// userlist, Ok := list.Items.([]UserGroup)
+	// if !Ok {
+	// 	return nil, errors.New("assert failed!!")
+	// }
+	// for _, v := range userlist {
+	// 	uid = append(uid, v.Uid)
+	// }
+	// fmt.Printf("TotalUserBalance%#v\n", uid)
+	// engine := utils.Engine_token
+	// token := make([]UserToken, 0)
+	// err = engine.In("uid", uid).Find(&token)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// Total := make([]PersonalProperty, 0)
+	// for _, ob := range userlist {
+	// 	pp := &PersonalProperty{}
+	// 	pp.Uid = int(ob.Uid)
+	// 	pp.NickName = ob.NickName
+	// 	pp.Phone = ob.Phone
+	// 	pp.Email = ob.Email
+	// 	pp.Status = ob.Status
+	// 	for _, result := range token {
+	// 		if ob.Uid == result.Uid {
+	// 			pp.token = append(pp.token, result)
+	// 		}
+	// 	}
 
-		Total = append(Total, *pp)
-	}
-	list.Items = Total
-	return list, nil
+	// 	Total = append(Total, *pp)
+	// }
+	// list.Items = Total
+	return nil, nil
 }

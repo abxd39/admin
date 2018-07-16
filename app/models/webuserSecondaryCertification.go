@@ -2,6 +2,7 @@ package models
 
 import (
 	"admin/utils"
+	"fmt"
 )
 
 //二级认证结构
@@ -10,7 +11,7 @@ type UserSecondaryCertification struct {
 	Id                    int    `xorm:"not null pk autoincr comment('自增id') INT(10)"`
 	Uid                   int    `xorm:"not null comment('用户uid') INT(64)"`
 	VerifyCount           int    `xorm:"not null comment('认证次数') TINYINT(4)"`
-	VerifyTime            string `xorm:"not null comment('认证时间') VARCHAR(100)"`
+	VerifyTime            int    `xorm:"not null comment('认证时间') VARCHAR(100)"`
 	VideoRecordingDigital string `xorm:"not null comment('视频录制的数字') VARCHAR(100)"`
 	VerifyStatus          int    `xorm:"not null comment('认证状态，1通过认证，2认证失败') TINYINT(4)"`
 	PositivePath          string `xorm:"not null comment('身份证正面图片路径') VARCHAR(100)"`
@@ -37,16 +38,8 @@ func (u *UserSecondaryCertificationGroup) GetSecondaryCertificationOfUid(uid int
 }
 
 //二级认证列表
-func (u *UserSecondaryCertification) GetSecondaryCertificationList(page, rows, verify_status, user_status int, certification_time string) ([]UserSecondaryCertificationGroup, int, int, error) {
-	limit := 0
-	if rows <= 0 {
-		rows = 50
-	}
-	if page <= 1 {
-		page = 1
-	} else {
-		limit = (page - 1) * rows
-	}
+func (u *UserSecondaryCertification) GetSecondaryCertificationList(page, rows, verify_status, user_status, time int, search string) (*ModelList, error) {
+
 	engine := utils.Engine_common
 	query := engine.Desc("id")
 	query = query.Cols("user_secondary_certification.uid", "verify_count", "verify_time", "verify_status", "video_recording_digital", "email", "phone", "status", "nick_name")
@@ -58,19 +51,26 @@ func (u *UserSecondaryCertification) GetSecondaryCertificationList(page, rows, v
 	if user_status != 0 {
 		query = query.Where("status=?", user_status)
 	}
-	if len(certification_time) != 0 {
-		query = query.Where("verify_time=?", certification_time)
+	if time != 0 {
+		query = query.Where("verify_time  BETWEEN ? AND ? ", time, time+86400)
+	}
+	if len(search) != 0 {
+		temp := fmt.Sprintf(" concat(IFNULL(`user`.`uid`,''),IFNULL(`user`.`phone`,''),IFNULL(`user_ex`.`nick_name`,''),IFNULL(`user`.`email`,'')) LIKE '%%%s%%'  ", search)
+		query = query.Where(temp)
 	}
 	tempquery := *query
-	list := make([]UserSecondaryCertificationGroup, 0)
-	err := query.Limit(rows, limit).Find(&list)
-	if err != nil {
-		return nil, 0, 0, err
-	}
 	count, err := tempquery.Count(&UserSecondaryCertificationGroup{})
 	if err != nil {
-		return nil, 0, 0, err
+		return nil, err
 	}
-	total_page := int(count) / rows
-	return list, total_page, int(count), nil
+	offset, modellist := u.Paging(page, rows, int(count))
+	list := make([]UserSecondaryCertificationGroup, 0)
+
+	err = query.Limit(modellist.PageSize, offset).Find(&list)
+	if err != nil {
+		return nil, err
+	}
+
+	modellist.Items = list
+	return modellist, nil
 }

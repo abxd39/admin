@@ -31,6 +31,7 @@ type BaseController struct {
 func (b *BaseController) Put(c *gin.Context, key string, value interface{}) {
 	// 使用gin context的Keys保存临时数据，保证每个请求之前都能reset
 	c.Keys[SAVE_DATA_KEY] = map[string]interface{}{key: value}
+	//c.Keys[SAVE_DATA_KEY] = value
 }
 
 // 正确的响应

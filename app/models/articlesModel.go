@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -72,7 +73,7 @@ func (a *ArticleType) GetArticleType() ([]ArticleType, error) {
 	return list, nil
 }
 
-func (a *ArticleList) GetArticleList(page, rows, tp, status int, st, et string) (*ModelList, error) {
+func (a *ArticleList) GetArticleList(page, rows, tp, status int, title, st string) (*ModelList, error) {
 	fmt.Println("GetArticleList")
 	engine := utils.Engine_common
 	query := engine.Desc("id")
@@ -82,12 +83,16 @@ func (a *ArticleList) GetArticleList(page, rows, tp, status int, st, et string) 
 	if status != 0 {
 		query = query.Where("astatus=?", status)
 	}
+	if len(title) != 0 {
+		temp := fmt.Sprintf(" concat(IFNULL(title,'')) LIKE '%%%s%%'  ", title)
+		query = query.Where(temp)
+	}
 	if len(st) != 0 {
-		query = query.Where("create_time<=?", st)
+		//temp := fmt.Sprintf("concat(IFNULL(create_time,'')) LIKE '%%%s%%' ", title)
+		substr := st[:11] + "23:59:59"
+		query = query.Where("create_time BETWEEN ? AND ? ", st, substr)
 	}
-	if len(et) != 0 {
-		query = query.Where("update_time>=?", et)
-	}
+
 	TempQuery := *query
 	count, err := TempQuery.Count(&Article{})
 	if err != nil {
@@ -166,15 +171,31 @@ func (a *Article) DeleteArticle(id int) error {
 	return nil
 }
 
-func (a *Article) AddArticle(u *Article) error {
+func (a *Article) AddArticle(id int, u *Article) error {
 	engine := utils.Engine_common
-	if u.Id != 0 {
-		_, err := engine.Id(u.Id).Update(u)
+	if id != 0 {
+		fmt.Println("cccccc")
+		art := new(Article)
+		has, err := engine.Id(id).Get(art)
 		if err != nil {
 			return err
 		}
-		return nil
+		if has {
+
+			if v := strings.Compare(art.Covers, u.Covers); v != 0 {
+				a.DeletFileToAliCloud(art.Covers)
+			}
+			_, err = engine.Id(id).Update(u)
+			if err != nil {
+				return err
+			}
+			return nil
+		}
+		return errors.New("Article is not exist !!!")
 	}
+	current := time.Now().Format("2006-01-02 15:04:05")
+	u.CreateTime = current
+	u.UpdateTime = current
 	result, err := engine.InsertOne(u)
 	if err != nil {
 		return err
@@ -197,10 +218,17 @@ func (a *Article) DeletFileToAliCloud(filepath string) error {
 		return errors.New("oss object delete failed!!")
 	}
 	substr := filepath[index+1:]
-	err = bucket.DeleteObject(substr)
+	isExist, err := bucket.IsObjectExist(substr)
 	if err != nil {
 		return err
 	}
+	if isExist {
+		err := bucket.DeleteObject(substr)
+		if err != nil {
+			return nil
+		}
+	}
+
 	return nil
 }
 
@@ -211,6 +239,16 @@ func (a *Article) LocalFileToAliCloud(filePath string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	//查找base64
+	fmt.Println("base34-1")
+	base := strings.Index(filePath, ";base64,")
+	if base < 0 {
+		fmt.Println("base34-3")
+		// 是远程的oss 文件路径
+		return filePath, nil
+	}
+	fmt.Println("base34-2")
+	fmt.Println(filePath)
 	// if len(remotePath) != 0 {
 	// 	index := strings.LastIndex(remotePath, "//")
 	// 	if index <= 0 {
@@ -225,9 +263,11 @@ func (a *Article) LocalFileToAliCloud(filePath string) (string, error) {
 
 	// 	}
 	// }
+	t := time.Now()
+	timestamp := strconv.FormatInt(t.UTC().UnixNano(), 10)
 	subm := strings.IndexByte(filePath, ',')
 	if subm < 0 {
-		return "", errors.New("find fail!!")
+		return "", errors.New("find failed!!")
 	}
 	substr := filePath[:subm]
 	subb := strings.IndexByte(substr, '/')
@@ -239,14 +279,15 @@ func (a *Article) LocalFileToAliCloud(filePath string) (string, error) {
 	fSuffix := substr[subb+1 : sube]
 	value := filePath[subm+1:]
 	h := md5.New()
-	h.Write([]byte(value)) // 需要加密的字符串为 123456
+	tempValue := value
+	tempValue += timestamp
+	h.Write([]byte(tempValue)) // 需要加密的字符串为 123456
 	cipherStr := h.Sum(nil)
 	okey := hex.EncodeToString(cipherStr)
 	fmt.Println(okey)
 	okey += "."
 	okey += fSuffix
 	fmt.Printf("%#v\n", okey)
-	fmt.Println(value)
 	ddd, _ := base64.StdEncoding.DecodeString(value)
 	err = bucket.PutObject(okey, bytes.NewReader(ddd))
 	if err != nil {

@@ -8,6 +8,7 @@ import (
 
 // 订单表
 type Order struct {
+	BaseModel   `xorm:"-"`
 	Id          uint64 `xorm:"not null pk autoincr comment('ID')  INT(10)"  json:"id"`
 	OrderId     string `xorm:"not null pk comment('订单ID') INT(10)"   json:"order_id"` // hash( type_id, 6( user_id, + 时间秒）
 	AdId        uint64 `xorm:"not null default 0 comment('广告ID') index INT(10)"  json:"ad_id"`
@@ -29,52 +30,114 @@ type Order struct {
 }
 
 type OrderGroup struct {
-	Order `xorm:"extends"`
-	Uid   uint64 `xorm:"INT(10)"     json:"uid"`
+	Order          `xorm:"extends"`
+	Uid            uint64  `xorm:"INT(10)"     json:"uid"`
+	TokenName      string  //货币名称
+	BuyQuantity    float64 //buy数量
+	BuyTotalPrice  int64   //总额
+	SellQuantity   float64 //卖出数量
+	SellTotalPrice int64   //总额
+	Transfer       float64
 }
 
 func (o *Order) TableName() string {
 	return "order"
 }
 
+func (o *OrderGroup) TableName() string {
+	return "order"
+}
+
 //查询个人的所有数据货币的交易记录
-func (this *Order) GetOrderListOfUid(page, rows, uid, token_id int) ([]OrderGroup, int, int, error) {
-	if page <= 1 {
-		page = 1
-	}
-	if rows < 1 {
-		rows = 50
-	}
-	begin := 0
-	if page > 1 {
-		begin = (page - 1) * rows
-	}
-	list := make([]OrderGroup, 0)
+func (this *Order) GetOrderListOfUid(page, rows, uid, token_id int) (*ModelList, error) {
+
 	engine := utils.Engine_currency
 
 	query := engine.Desc("order.id")
 	query = query.Join("INNER", "ads", "order.ad_id=ads.id")
+	query = query.Where("ads.uid=? and order.pay_status=3", uid)
 	if token_id != 0 {
-		query.Where("token_id=? and pay_status=3", token_id)
+		query.Where("order.token_id=? ", token_id)
 	}
-	query = query.Where("uid=?", uid)
-	query = query.Limit(rows, begin)
-	//query.GroupBy
+	sellQuery := *query
+	buyQuery := *query
+	query = query.Distinct("order.token_id")
 	tempquery := *query
-	err := query.Find(&list)
+	//计算 token_id 的数量
+	count, err := tempquery.Count(&Order{})
 	if err != nil {
-		return nil, 0, 0, err
+		return nil, err
 	}
-	count, err := tempquery.Distinct("token_id").Count(&Order{})
-	//engine.Query("")
-	fmt.Printf("%#v\n", count)
-	if err != nil {
-		return nil, 0, 0, err
-	}
+	offset, modeList := this.Paging(page, rows, int(count))
 
-	total := int(count) / rows
-	fmt.Println("000000000000000000")
-	return list, total, int(count), nil
+	list := make([]OrderGroup, 0)
+	err = query.Limit(modeList.PageSize, offset).Find(&list)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println("************************", list)
+	buyCountQuery := buyQuery
+	sellCountQuery := sellQuery
+	//查询所有币种名称及Id
+	reslt, err := new(Tokens).GetTokenList()
+	if err != nil {
+		return nil, err
+	}
+	for index, tokenid := range list {
+		//根据token_id 查找货币名称
+		for _, value := range reslt {
+			if value.Id == int(tokenid.TokenId) {
+				list[index].TokenName = value.Name
+				break
+			}
+		}
+		// 查询卖出总价
+		//buyresult, err := buyQuery.Where("order.ad_type =1 AND order.token_id=? ", listTokenId).Limit(modeList.PageSize, offset).SumsInt(&Order{}, "order.price", "order.num")
+		//buyresult, err := buyQuery.Where("order.ad_type =1 AND order.token_id=? ", tokenid.TokenId).Sum(&Order{}, "order.order_id * ad_id")
+		buylist := make([]Order, 0)
+		err := buyQuery.Where("order.ad_type =1 AND order.token_id=? ", tokenid.TokenId).Find(&buylist)
+		if err != nil {
+			return nil, err
+		} else {
+			for _, value := range buylist {
+				list[index].BuyTotalPrice += this.Int64MulInt64By8Bit(value.Price, value.Num)
+			}
+		}
+
+		//查询卖出总数量
+		buyCount, err := buyCountQuery.Where("order.ad_type =1 AND order.token_id=? ", tokenid.TokenId).Sum(&Order{}, "order.num")
+		if err != nil {
+			return nil, err
+		} else {
+			list[index].BuyQuantity = buyCount //买入的总量 统计
+		}
+		//查询买入总价
+		//sellresult, err := sellQuery.Where(" order.ad_type =2 AND order.token_id=?", listTokenId).Limit(modeList.PageSize, offset).SumsInt(&Order{}, "order.price", "order.num")
+		//sellresult, err := sellQuery.Where(" order.ad_type =2 AND order.token_id=?", tokenid.TokenId).Sum(&Order{}, "order.order_id * order.ad_id")
+		sellList := make([]Order, 0)
+		err = sellQuery.Where(" order.ad_type =2 AND order.token_id=?", tokenid.TokenId).Find(&sellList)
+		if err != nil {
+			return nil, err
+		} else {
+			for _, value := range sellList {
+				list[index].SellTotalPrice = this.Int64MulInt64By8Bit(value.Price, value.Num)
+				fmt.Println("sellresult", list[index].SellTotalPrice)
+			}
+
+		}
+		//计算总数量
+		sellCount, err := sellCountQuery.Where(" order.ad_type =2 AND order.token_id=?", tokenid.TokenId).Sum(&Order{}, "order.num")
+		if err != nil {
+			return nil, err
+		} else {
+			list[index].SellQuantity = sellCount
+		}
+	}
+	//计算所有token_id 相同的 数量和单价
+
+	fmt.Println("list=", len(list))
+	modeList.Items = list
+	return modeList, nil
 }
 
 //
@@ -100,7 +163,7 @@ func (this *Order) GetOrderId(uid []int, status int) ([]OrderGroup, error) {
 }
 
 //列出订单
-func (this *Order) GetOrderList(Page, PageNum, AdType, States, TokenId int, StartTime, EndTime string) (*[]Order, int, int, error) {
+func (this *Order) GetOrderList(Page, PageNum, AdType, States, TokenId int, StartTime, EndTime string) (*ModelList, error) {
 
 	engine := utils.Engine_currency
 	if Page <= 1 {
@@ -111,7 +174,6 @@ func (this *Order) GetOrderList(Page, PageNum, AdType, States, TokenId int, Star
 	}
 
 	query := engine.Desc("id")
-	orderModel := new(Order)
 
 	// if States != 0 { // 状态为0，表示已经删除
 	// 	query = query.Where("states = 0")
@@ -135,18 +197,25 @@ func (this *Order) GetOrderList(Page, PageNum, AdType, States, TokenId int, Star
 	if EndTime != `` {
 		query = query.Where("created_time <= ?", EndTime)
 	}
-	list := make([]Order, 0)
+
 	tmpQuery := *query
-	countQuery := &tmpQuery
+	count, err := tmpQuery.Count(&Order{})
+	if err != nil {
+		return nil, err
+	}
+	offset, modelList := this.Paging(Page, PageNum, int(count))
 	//查询符合要求数据
-	err := query.Limit(PageNum, (Page-1)*PageNum).Find(&list)
+	list := make([]Order, 0)
+	err = query.Limit(modelList.PageSize, offset).Find(&list)
+	if err != nil {
+		return nil, err
+	}
 	//所有符合要求的数据的函数
-	total, _ := countQuery.Count(orderModel)
 
 	if err != nil {
-		return nil, 0, 0, err
+		return nil, err
 	}
-	page := int(total) / PageNum
-	return &list, page, int(total), nil
+	modelList.Items = list
+	return modelList, nil
 
 }
