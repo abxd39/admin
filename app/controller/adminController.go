@@ -297,6 +297,9 @@ func (a *AdminController) Update(ctx *gin.Context) {
 		return
 	}
 
+	// 设置返回数据
+	a.Put(ctx, "uid", uid)
+
 	// 返回
 	a.RespOK(ctx)
 	return

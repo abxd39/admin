@@ -16,7 +16,6 @@ type Role struct {
 	Name             string `xorm:"not null default '' VARCHAR(36)" json:"name"`
 	Desc             string `xorm:"not null VARCHAR(100)" json:"desc"`
 	People           int    `xorm:"not null default 0 comment('人数') INT(6)" json:"people"`
-	IsSuper          int    `xorm:"not null default 0 comment('是否超管 0 否 1是') TINYINT(1)" json:"is_super"`
 }
 
 // 用户组列表

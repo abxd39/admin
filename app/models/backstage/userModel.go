@@ -24,6 +24,7 @@ type User struct {
 	CreateTime       int64  `xorm:"not null comment('创建时间') INT(11)" json:"create_time"`
 	UpdateTime       int64  `xorm:"not null comment('修改时间') INT(11)" json:"update_time"`
 	LastLoginTime    int64  `xorm:"not null default 0 comment('上次登录时间') INT(11)" json:"last_login_time"`
+	IsSuper          int    `xorm:"not null default 0 comment('是否超管 0 否 1是') TINYINT(1)" json:"is_super"`
 }
 
 // 登录
