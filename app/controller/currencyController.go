@@ -17,7 +17,8 @@ type CurrencyController struct {
 func (this *CurrencyController) Router(r *gin.Engine) {
 	g := r.Group("/currency")
 	{
-		g.GET("/list", this.GetTradeList)                     //法币挂单管理
+		g.GET("/list", this.GetTradeList) //法币挂单管理
+		//g.POST
 		g.GET("/tokens", this.GetTokensList)                  //获取 所有数据货币的名称及货币Id
 		g.GET("/order", this.GetOderList)                     //法币成交列表
 		g.GET("/total_balance", this.GetTotalCurrencyBalance) //所有法币账户，
@@ -104,30 +105,25 @@ func (cu *CurrencyController) GetTotalCurrencyBalance(c *gin.Context) {
 	return
 }
 
-// type Currency struct {
-// 	Page    int    `form:"page" json:"page" binding:"required"`
-// 	PageNum int    `form:"rows" json:"rows" `
-// 	Ustatus int    `form:"status" json:"status" ` //用户登录状态
-// 	Search  string `form:"search" json:"search" `
-// 	Verify  int    `form:"verify" json:"verify" ` //实名认证 二级认证 google 验证  交易权限
-// 	/// g_currency
-// 	Date    string `form:"date" json:"date" `         //挂单日期
-// 	TokenId int    `form:"token_id" json:"token_id" ` //货币名称
-// 	TradeId int    `form:"tid" json:"tid" `           //交易方向
-// }
 //法币挂单管理
 func (cu *CurrencyController) GetTradeList(c *gin.Context) {
-	req := models.Currency{}
-
+	req := struct {
+		Page    int    `form:"page" json:"page" binding:"required"`
+		PageNum int    `form:"rows" json:"rows" `
+		Ustatus int    `form:"status" json:"status" ` //用户登录状态
+		Search  string `form:"search" json:"search" `
+		Verify  int    `form:"verify" json:"verify" `     //实名认证 二级认证 google 验证  交易权限
+		Date    string `form:"date" json:"date" `         //挂单日期
+		TokenId int    `form:"token_id" json:"token_id" ` //货币名称
+		TradeId int    `form:"tid" json:"tid" `           //交易方向
+	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
 		utils.AdminLog.Errorf(err.Error())
 		cu.RespErr(c, err)
 		return
 	}
-	fmt.Println(".0.0.0.0.0.0.0.0.0.00.0.0.0.00.0.0....0.0.0.0.0.0")
-	fmt.Println(req)
-	list, err := new(models.Ads).GetAdsList(req)
+	list, err := new(models.Ads).GetAdsList(req.Page, req.PageNum, req.Ustatus, req.TokenId, req.TradeId, req.Verify, req.Search, req.Date)
 	if err != nil {
 		cu.RespErr(c, err)
 		return

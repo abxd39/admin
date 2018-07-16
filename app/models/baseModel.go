@@ -40,7 +40,6 @@ func (b *BaseModel) Paging(pageIndex, pageSize, total int) (offset int, modelLis
 	return
 }
 
-<<<<<<< HEAD
 func (b *BaseModel) Int64MulInt64By8Bit(ma int64, mb int64) int64 {
 	dd := decimal.New(ma, 0)
 	dp := decimal.New(mb, 0)
@@ -55,7 +54,8 @@ func (b *BaseModel) Int64DivInt64By8Bit(da int64, db int64) int64 {
 
 	num := dd.Div(dp).Round(8).Coefficient().Int64()
 	return num
-=======
+}
+
 // 不分页列表，也包装成一个ModelList
 func (b *BaseModel) NoPaging(total int, list interface{}) *ModelList {
 	return &ModelList{
@@ -66,5 +66,5 @@ func (b *BaseModel) NoPaging(total int, list interface{}) *ModelList {
 		Total:     total,
 		Items:     list,
 	}
->>>>>>> 5d25afcff9fe1b12698725d8e6b7f39a00de65d4
+
 }

@@ -74,11 +74,8 @@ func (this *Ads) GetIdList(uid []int) ([]AdIdOfUid, error) {
 }
 
 //法币挂单管理
-func (this *Ads) GetAdsList(cur Currency) (*ModelList, error) {
+func (this *Ads) GetAdsList(page, rows, status, tokenid, tradeid, verify int, search, date string) (*ModelList, error) {
 
-	if cur.PageNum <= 0 {
-		cur.PageNum = 100
-	}
 	engine := utils.Engine_currency
 	query := engine.Desc("id")
 
@@ -86,16 +83,16 @@ func (this *Ads) GetAdsList(cur Currency) (*ModelList, error) {
 	// query := engine.Join("INNER", "user_currency", "ads.uid=user_currency.uid")
 	// query = query.Join("LEFT", "user_currency_count", "ads.uid=user_currency_count.uid")
 	//挂单日期
-	if cur.TradeId != 0 {
-		query = query.Where("type_id", cur.TradeId)
+	if tradeid != 0 {
+		query = query.Where("type_id", tradeid)
 	}
-	if cur.TokenId != 0 {
-		query = query.Where("token_id=?", cur.TokenId)
+	if tokenid != 0 {
+		query = query.Where("token_id=?", tokenid)
 	}
 
-	if len(cur.Date) != 0 {
-		substr := cur.Date[:11] + "23:59:59"
-		query = query.Where("created_time BETWEEN ? AND ? ", cur.Date, substr)
+	if len(date) != 0 {
+		substr := date[:11] + "23:59:59"
+		query = query.Where("created_time BETWEEN ? AND ? ", date, substr)
 	}
 	tempQuery := *query
 	uidQuery := *query
@@ -106,7 +103,7 @@ func (this *Ads) GetAdsList(cur Currency) (*ModelList, error) {
 	}
 
 	fmt.Println("count=", count)
-	offset, modelList := this.Paging(cur.Page, cur.PageNum, int(count))
+	offset, modelList := this.Paging(page, rows, int(count))
 	fmt.Println("offset=", offset, "modelList", modelList)
 	list := make([]AdsUserCurrencyCount, 0)
 	err = query.Limit(modelList.PageSize, offset).Find(&list)
@@ -130,7 +127,7 @@ func (this *Ads) GetAdsList(cur Currency) (*ModelList, error) {
 	}
 	fmt.Println("uidList", len(uid))
 	//跨库查询 用户资料
-	ulist, err := new(UserGroup).GetCurreryList(uid, cur.Verify, cur.Search)
+	ulist, err := new(UserGroup).GetCurreryList(uid, verify, search)
 	if err != nil {
 		return nil, err
 	}
