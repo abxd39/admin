@@ -88,19 +88,21 @@ func (b *BaseController) RespErr(ctx *gin.Context, options ...interface{}) {
 }
 
 // 获取get、post提交的参数
-func (b *BaseController) GetParam(ctx *gin.Context, key string) string {
-	param := ctx.Query(key)
+// 参数存在时第二个参数返回true，即使参数的值为空字符串
+// 参数不存在时第二个参数返回false
+func (b *BaseController) GetParam(ctx *gin.Context, key string) (string, bool) {
+	param, ok := ctx.GetQuery(key)
 	if len(param) == 0 { // get获取不到时，尝试post获取
-		param = ctx.PostForm(key)
+		param, ok = ctx.GetPostForm(key)
 	}
 
-	return param
+	return param, ok
 }
 
 // 获取get、post提交的string类型的参数
 // def表示默认值，取第一个，多余的丢弃
 func (b *BaseController) GetString(ctx *gin.Context, key string, def ...string) string {
-	param := b.GetParam(ctx, key)
+	param, _ := b.GetParam(ctx, key)
 	if len(param) == 0 && len(def) > 0 {
 		return def[0]
 	}
@@ -111,7 +113,7 @@ func (b *BaseController) GetString(ctx *gin.Context, key string, def ...string) 
 // 获取get、post提交的int类型的参数
 // def表示默认值，取第一个，多余的丢弃
 func (b *BaseController) GetInt(ctx *gin.Context, key string, def ...int) (int, error) {
-	param := b.GetParam(ctx, key)
+	param, _ := b.GetParam(ctx, key)
 	if len(param) == 0 && len(def) > 0 {
 		return def[0], nil
 	}
@@ -122,7 +124,7 @@ func (b *BaseController) GetInt(ctx *gin.Context, key string, def ...int) (int, 
 // 获取get、post提交的int64类型的参数
 // def表示默认值，取第一个，多余的丢弃
 func (b *BaseController) GetInt64(ctx *gin.Context, key string, def ...int64) (int64, error) {
-	param := b.GetParam(ctx, key)
+	param, _ := b.GetParam(ctx, key)
 	if len(param) == 0 && len(def) > 0 {
 		return def[0], nil
 	}
@@ -133,7 +135,7 @@ func (b *BaseController) GetInt64(ctx *gin.Context, key string, def ...int64) (i
 // 获取get、post提交的float64类型的参数
 // def表示默认值，取第一个，多余的丢弃
 func (b *BaseController) GetFloat64(ctx *gin.Context, key string, def ...float64) (float64, error) {
-	param := b.GetParam(ctx, key)
+	param, _ := b.GetParam(ctx, key)
 	if len(param) == 0 && len(def) > 0 {
 		return def[0], nil
 	}
@@ -144,7 +146,7 @@ func (b *BaseController) GetFloat64(ctx *gin.Context, key string, def ...float64
 // 获取get、post提交的float64类型的参数
 // def表示默认值，取第一个，多余的丢弃
 func (b *BaseController) GetBool(ctx *gin.Context, key string, def ...bool) (bool, error) {
-	param := b.GetParam(ctx, key)
+	param, _ := b.GetParam(ctx, key)
 	if len(param) == 0 && len(def) > 0 {
 		return def[0], nil
 	}
