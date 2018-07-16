@@ -152,6 +152,9 @@ func (r *RoleController) Update(ctx *gin.Context) {
 		return
 	}
 
+	// 设置返回数据
+	r.Put(ctx, "id", id)
+
 	// 返回
 	r.RespOK(ctx)
 	return
@@ -172,6 +175,9 @@ func (r *RoleController) Delete(ctx *gin.Context) {
 		r.RespErr(ctx, err)
 		return
 	}
+
+	// 设置返回数据
+	r.Put(ctx, "id", id)
 
 	// 返回
 	r.RespOK(ctx)
