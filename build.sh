@@ -1,3 +1,5 @@
+#! /bin/sh
+
 # dir=/F/project
 dir=/Volumes/WorkHD/workspace/go
 
