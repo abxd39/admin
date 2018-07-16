@@ -3,7 +3,7 @@ dir=/Volumes/WorkHD/workspace/go
 
 target=admin
 
-GOOS=linux GOARCH=amd64 go build -o ${target}
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o ${target}
 
 mkdir ${dir}/bin
 rm ${dir}/bin/${target}
