@@ -99,7 +99,11 @@ func (r *RoleController) Add(ctx *gin.Context) {
 	nodeIds := r.GetString(ctx, "node_ids", "")
 
 	// 调用model
-	id, err := new(backstage.Role).Add(name, desc, nodeIds)
+	role := &backstage.Role{
+		Name: name,
+		Desc: desc,
+	}
+	id, err := new(backstage.Role).Add(role, nodeIds)
 	if err != nil {
 		r.RespErr(ctx, err)
 		return

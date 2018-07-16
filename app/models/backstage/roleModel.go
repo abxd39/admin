@@ -71,15 +71,15 @@ func (r *Role) GetBindNodeIds(roleId int) (nodeIds []int, err error) {
 }
 
 // 新增用户组
-func (r *Role) Add(name, desc, nodeIds string) (id int, err error) {
+func (r *Role) Add(role *Role, nodeIds string) (id int, err error) {
 	// 判断用户组名称是否已存在
 	engine := utils.Engine_backstage
 	checkRole := new(Role)
-	has, err := engine.Where("name=?", name).Get(checkRole)
+	has, err := engine.Where("name=?", role.Name).Get(checkRole)
 	if err != nil {
 		return 0, errors.NewSys(err)
 	}
-	if has && checkRole.Name == name {
+	if has && checkRole.Name == role.Name {
 		return 0, errors.NewNormal("名称已存在")
 	}
 
@@ -92,34 +92,31 @@ func (r *Role) Add(name, desc, nodeIds string) (id int, err error) {
 	}
 
 	// 1. 新增用户组
-	roleMD := &Role{
-		Name: name,
-		Desc: desc,
-	}
-
-	_, err = session.Insert(roleMD)
+	_, err = session.Insert(role)
 	if err != nil {
 		session.Rollback()
 		return 0, errors.NewSys(err)
 	}
-	roleId := roleMD.Id // 刚刚生成的id
+	roleId := role.Id // 刚刚生成的id
 
 	// 2. 新增用户组、节点关联
-	if nodeIds != "" { // 重要！！！split空字符串会返回一个包含空字符元素的数组
-		nodeIdArr := strings.Split(nodeIds, ",") // 逗号分隔
-		for _, v := range nodeIdArr {
-			nodeId, _ := strconv.Atoi(v)
+	nodeIdArr := strings.Split(nodeIds, ",") // 逗号分隔
+	for _, v := range nodeIdArr {
+		nodeId, err := strconv.Atoi(v)
+		if err != nil || nodeId <= 0 {
+			session.Rollback()
+			return 0, errors.NewNormal("参数node_ids格式错误")
+		}
 
-			roleNodeMD := &RoleNode{
-				RoleId: roleId,
-				NodeId: nodeId,
-			}
+		roleNodeMD := &RoleNode{
+			RoleId: roleId,
+			NodeId: nodeId,
+		}
 
-			_, err = session.Insert(roleNodeMD)
-			if err != nil {
-				session.Rollback()
-				return 0, errors.NewSys(err)
-			}
+		_, err = session.Insert(roleNodeMD)
+		if err != nil {
+			session.Rollback()
+			return 0, errors.NewSys(err)
 		}
 	}
 
@@ -180,21 +177,23 @@ func (r *Role) Update(id int, name, desc, nodeIds string) error {
 	}
 
 	// 2.2 新增关联
-	if nodeIds != "" { // 重要！！！split空字符串会返回一个包含空字符元素的数组
-		nodeIdArr := strings.Split(nodeIds, ",") // 逗号分隔
-		for _, v := range nodeIdArr {
-			nodeId, _ := strconv.Atoi(v)
+	nodeIdArr := strings.Split(nodeIds, ",") // 逗号分隔
+	for _, v := range nodeIdArr {
+		nodeId, err := strconv.Atoi(v)
+		if err != nil || nodeId <= 0 {
+			session.Rollback()
+			return errors.NewNormal("参数node_ids格式错误")
+		}
 
-			roleNodeMD := &RoleNode{
-				RoleId: id,
-				NodeId: nodeId,
-			}
+		roleNodeMD := &RoleNode{
+			RoleId: id,
+			NodeId: nodeId,
+		}
 
-			_, err = session.Insert(roleNodeMD)
-			if err != nil {
-				session.Rollback()
-				return errors.NewSys(err)
-			}
+		_, err = session.Insert(roleNodeMD)
+		if err != nil {
+			session.Rollback()
+			return errors.NewSys(err)
 		}
 	}
 

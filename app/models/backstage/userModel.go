@@ -134,21 +134,23 @@ func (u *User) Add(user *User, roleIds string) (uid int, err error) {
 	uid = user.Uid // 刚刚生成的管理员ID
 
 	// 2. 新增管理员、用户组关联
-	if roleIds != "" { // 重要！！！split空字符串会返回一个包含空字符元素的数组
-		roleIdArr := strings.Split(roleIds, ",") // 逗号分隔
-		for _, v := range roleIdArr {
-			roleId, _ := strconv.Atoi(v)
+	roleIdArr := strings.Split(roleIds, ",") // 逗号分隔
+	for _, v := range roleIdArr {
+		roleId, err := strconv.Atoi(v)
+		if err != nil || roleId <= 0 {
+			session.Rollback()
+			return 0, errors.NewNormal("参数role_ids格式错误")
+		}
 
-			roleUserMD := &RoleUser{
-				RoleId: roleId,
-				Uid:    uid,
-			}
+		roleUserMD := &RoleUser{
+			RoleId: roleId,
+			Uid:    uid,
+		}
 
-			_, err = session.Insert(roleUserMD)
-			if err != nil {
-				session.Rollback()
-				return 0, errors.NewSys(err)
-			}
+		_, err = session.Insert(roleUserMD)
+		if err != nil {
+			session.Rollback()
+			return 0, errors.NewSys(err)
 		}
 	}
 
@@ -215,21 +217,23 @@ func (u *User) Update(user *User, roleIds string) error {
 	}
 
 	// 2.2 新增关联
-	if roleIds != "" { // 重要！！！split空字符串会返回一个包含空字符元素的数组
-		roleIdArr := strings.Split(roleIds, ",") // 逗号分隔
-		for _, v := range roleIdArr {
-			roleId, _ := strconv.Atoi(v)
+	roleIdArr := strings.Split(roleIds, ",") // 逗号分隔
+	for _, v := range roleIdArr {
+		roleId, err := strconv.Atoi(v)
+		if err != nil || roleId <= 0 {
+			session.Rollback()
+			return errors.NewNormal("参数role_ids格式错误")
+		}
 
-			roleUserMD := &RoleUser{
-				RoleId: roleId,
-				Uid:    user.Uid,
-			}
+		roleUserMD := &RoleUser{
+			RoleId: roleId,
+			Uid:    user.Uid,
+		}
 
-			_, err = session.Insert(roleUserMD)
-			if err != nil {
-				session.Rollback()
-				return errors.NewSys(err)
-			}
+		_, err = session.Insert(roleUserMD)
+		if err != nil {
+			session.Rollback()
+			return errors.NewSys(err)
 		}
 	}
 
