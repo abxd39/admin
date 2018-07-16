@@ -59,6 +59,10 @@ func (a *AdIdOfUid) TableName() string {
 	return "ads"
 }
 
+func (a *Ads) TableName() string {
+	return "ads"
+}
+
 //根据UID提取广告id
 func (this *Ads) GetIdList(uid []int) ([]AdIdOfUid, error) {
 	if len(uid) <= 0 {
@@ -71,6 +75,29 @@ func (this *Ads) GetIdList(uid []int) ([]AdIdOfUid, error) {
 		return nil, err
 	}
 	return adlist, nil
+}
+
+//法币挂单 下架订单
+func (this *Ads) DownTradeAds(id, uid int) error {
+	engine := utils.Engine_currency
+	query := engine.Desc("id")
+	query = query.Where("id=? AND uid=?", id, uid)
+	UpUery := *query
+	has, err := query.Exist(&Ads{})
+	if err != nil {
+		fmt.Println("0.0.0.0.0.0.0.0.00.0.0.")
+		return err
+	}
+	if !has {
+		return errors.New(" 订单不存在！！")
+	}
+	_, err = UpUery.Update(&Ads{
+		States: 2, //0 下架 1 上架
+	})
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 //法币挂单管理
