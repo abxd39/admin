@@ -24,7 +24,7 @@ type Node struct {
 }
 
 // 节点列表，all
-func (n *Node) ListAll(pageIndex, pageSize int, filter map[string]string) (list []Node, err error) {
+func (n *Node) ListAll(filter map[string]string) (modelList *models.ModelList, err error) {
 	// 获取总数
 	engine := utils.Engine_backstage
 	query := engine.Desc("weight")
@@ -35,10 +35,11 @@ func (n *Node) ListAll(pageIndex, pageSize int, filter map[string]string) (list 
 	}
 
 	// 获取列表数据
+	var list []Node
 	err = query.Find(&list)
 	if err != nil {
 		return nil, errors.NewSys(err)
 	}
 
-	return
+	return n.NoPaging(len(list), list), nil
 }

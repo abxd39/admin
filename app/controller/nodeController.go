@@ -19,21 +19,8 @@ func (n *NodeController) Router(e *gin.Engine) {
 
 // 节点列表
 func (n *NodeController) List(ctx *gin.Context) {
-	// 获取参数
-	page, err := n.GetInt(ctx, "page", 1)
-	if err != nil {
-		n.RespErr(ctx, "参数page格式错误")
-		return
-	}
-
-	rows, err := n.GetInt(ctx, "rows", 10)
-	if err != nil {
-		n.RespErr(ctx, "参数rows格式错误")
-		return
-	}
-
 	// 调用model
-	list, err := new(backstage.Node).ListAll(page, rows, nil)
+	list, err := new(backstage.Node).ListAll(nil)
 	if err != nil {
 		n.RespErr(ctx, err)
 		return
