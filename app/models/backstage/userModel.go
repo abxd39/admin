@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-// 管理员s
+// 管理员
 type User struct {
 	models.BaseModel `xorm:"-"`
 	Uid              int    `xorm:"not null pk autoincr INT(11)" json:"uid"`
@@ -92,6 +92,17 @@ func (u *User) Get(uid int) (user *User, err error) {
 	}
 	if !has {
 		return nil, errors.NewNormal("管理员不存在或已被删除")
+	}
+
+	return
+}
+
+// 用户组绑定的节点ID
+func (u *User) GetBindRoleIds(uid int) (roleIds []int, err error) {
+	engine := utils.Engine_backstage
+	err = engine.Table(new(RoleUser)).Where("uid=?", uid).Cols("role_id").Find(&roleIds)
+	if err != nil {
+		return nil, errors.NewSys(err)
 	}
 
 	return

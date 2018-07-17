@@ -1,16 +1,18 @@
 package controller
 
 import (
-	bk "admin/app/models/backstage"
-	"admin/utils"
 	"fmt"
 	"net/http"
+	"regexp"
+	"time"
+	"unicode/utf8"
+
+	bk "admin/app/models/backstage"
+	"admin/utils"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	google "github.com/mojocn/base64Captcha"
-	"regexp"
-	"unicode/utf8"
 )
 
 // 管理员
@@ -112,6 +114,16 @@ func (a *AdminController) Login(ctx *gin.Context) {
 	var name string
 	name, uid, err = new(bk.User).Login(req.Phone, req.LoginPwd)
 	if err != nil {
+		// @@@写入登录日志，登录失败@@@
+		if _, err := new(bk.UserLoginLog).Add(&bk.UserLoginLog{
+			Uid:       uid,
+			LoginTime: time.Now().Unix(),
+			States:    2,
+		}); err != nil {
+
+		}
+
+		// 返回
 		ctx.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": "登录失败"})
 		return
 	}
@@ -123,6 +135,17 @@ func (a *AdminController) Login(ctx *gin.Context) {
 	session.Set("uid", uid)
 	session.Set("phone", req.Phone)
 	session.Save()
+
+	// @@@写入登录日志，登录成功@@@
+	if _, err := new(bk.UserLoginLog).Add(&bk.UserLoginLog{
+		Uid:       uid,
+		LoginTime: time.Now().Unix(),
+		States:    1,
+	}); err != nil {
+		utils.AdminLog.Error("记录管理员登录日志失败", err)
+	}
+
+	// 返回
 	ctx.JSON(http.StatusOK, gin.H{"code": 0, "data": "", "uid": uid, "name": name, "msg": "登录成功"})
 	return
 }
@@ -184,8 +207,16 @@ func (a *AdminController) Get(ctx *gin.Context) {
 		return
 	}
 
+	// 获取绑定的节点ID
+	roleIds, err := userMD.GetBindRoleIds(uid)
+	if err != nil {
+		a.RespErr(ctx, err)
+		return
+	}
+
 	// 设置返回数据
 	a.Put(ctx, "user", user)
+	a.Put(ctx, "role_ids", roleIds)
 
 	// 返回
 	a.RespOK(ctx)

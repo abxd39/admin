@@ -46,9 +46,9 @@ func (c *Controller) RespOK(ctx *gin.Context, msg ...string) {
 	c.resp.Data = ctx.Keys[SAVE_DATA_KEY]
 
 	// 没有数据时，让data字段的json值为[]而非null
-	if c.resp.Data == nil {
+	/*if c.resp.Data == nil {
 		c.resp.Data = []int{}
-	}
+	}*/
 
 	ctx.JSON(http.StatusOK, c.resp)
 }
@@ -80,9 +80,9 @@ func (c *Controller) RespErr(ctx *gin.Context, options ...interface{}) {
 	}
 
 	// 没有数据时，让data字段的json值为[]而非null
-	if c.resp.Data == nil {
+	/*if c.resp.Data == nil {
 		c.resp.Data = []int{}
-	}
+	}*/
 
 	ctx.JSON(http.StatusOK, c.resp)
 }
