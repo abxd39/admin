@@ -6,6 +6,8 @@ import (
 
 	"admin/app/models"
 	"admin/utils"
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-gonic/gin"
 	"strconv"
 	"strings"
 	"time"
@@ -28,7 +30,7 @@ type User struct {
 }
 
 // 登录
-func (u *User) Login(name, pwd string) (string, int, error) {
+func (u *User) Login(name, pwd string) (bool, string, int, error) {
 	engine := utils.Engine_backstage
 	fmt.Println("login")
 	user := &User{}
@@ -36,18 +38,24 @@ func (u *User) Login(name, pwd string) (string, int, error) {
 	if err != nil {
 		utils.AdminLog.Errorln(err.Error())
 		fmt.Println("login", err.Error())
-		return "", 0, err
+		return false, "", 0, err
 	}
 	//find 如果不存在 数据库是否会返回 一个错误给我
 	if user.States == 0 {
-		return "", 0, errors.New("该用户已锁定")
+		return false, "", 0, errors.New("该用户已锁定")
 	}
 	fmt.Printf("数据库中的has值为%s", user.Pwd)
 	if utils.Md5(utils.Md5(pwd)+user.Salt) != user.Pwd {
-		return "", 0, errors.New("密码不对！！")
+		return false, "", 0, errors.New("密码不对！！")
 	}
-	//
-	return user.NickName, user.Uid, nil
+
+	// 是否超管
+	var isSuper bool
+	if user.IsSuper == 1 {
+		isSuper = true
+	}
+
+	return isSuper, user.NickName, user.Uid, nil
 }
 
 // 管理员列表
@@ -312,4 +320,26 @@ func (u *User) Delete(uid int) error {
 	}
 
 	return nil
+}
+
+// 检查管理员api权限
+func (u *User) CheckPermission(ctx *gin.Context, uid int, api string) (bool, error) {
+	// 判断是否超管
+	session := sessions.Default(ctx)
+	if session.Get("is_super").(bool) { // 超管，直接返回true
+		return true, nil
+	}
+
+	// 判断是否拥有该节点的权限
+	engine := utils.Engine_backstage
+	result := &struct {
+		Cnt int
+	}{}
+	engine.SQL(fmt.Sprintf("SELECT COUNT(n.id) as cnt FROM user u JOIN role_user ru ON ru.uid=u.uid JOIN role_node rn ON rn.role_id=ru.role_id JOIN node n ON n.id=rn.node_id JOIN node_api na ON na.node_id=n.id WHERE u.uid=%d AND na.api='%s'", uid, api)).Get(result)
+
+	if result.Cnt > 0 {
+		return true, nil
+	} else {
+		return false, nil
+	}
 }
