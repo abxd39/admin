@@ -31,7 +31,7 @@ func (a *AdminController) Router(e *gin.Engine) {
 		group.POST("/add", a.Add)
 		group.POST("/update", a.Update)
 		group.POST("/delete", a.Delete)
-
+		group.GET("/list_login_log", a.ListLoginLog)
 	}
 }
 
@@ -185,8 +185,6 @@ func (a *AdminController) List(ctx *gin.Context) {
 
 	// 返回
 	a.RespOK(ctx)
-	return
-
 	return
 }
 
@@ -354,6 +352,42 @@ func (a *AdminController) Delete(ctx *gin.Context) {
 
 	// 设置返回数据
 	a.Put(ctx, "uid", uid)
+
+	// 返回
+	a.RespOK(ctx)
+	return
+}
+
+// 管理员登录日志列表
+func (a *AdminController) ListLoginLog(ctx *gin.Context) {
+	// 获取参数
+	page, err := a.GetInt(ctx, "page", 1)
+	if err != nil {
+		a.RespErr(ctx, "参数page格式错误")
+		return
+	}
+
+	rows, err := a.GetInt(ctx, "rows", 10)
+	if err != nil {
+		a.RespErr(ctx, "参数rows格式错误")
+		return
+	}
+
+	// 筛选参数
+	filter := make(map[string]string)
+	if v, ok := a.GetParam(ctx, "login_date"); ok {
+		filter["login_date"] = v
+	}
+
+	// 调用model
+	list, err := new(bk.UserLoginLog).List(page, rows, filter)
+	if err != nil {
+		a.RespErr(ctx, err)
+		return
+	}
+
+	// 设置返回数据
+	a.Put(ctx, "list", list)
 
 	// 返回
 	a.RespOK(ctx)
