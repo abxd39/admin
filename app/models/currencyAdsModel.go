@@ -33,11 +33,12 @@ type Ads struct {
 
 // 法币交易列表 - 用户虚拟币-订单统计 - 用户虚拟货币资产
 type AdsUserCurrencyCount struct {
-	Ads     `xorm:"extends"`
-	Uname   string `xorm:"-"`
-	Phone   string `xorm:"-"`
-	Email   string `xorm:"-"`
-	Ustatus uint32 `xorm:"-"`
+	Ads           `xorm:"extends"`
+	TWOVerifyMark int    `xorm:"-"`
+	Uname         string `xorm:"-"`
+	Phone         string `xorm:"-"`
+	Email         string `xorm:"-"`
+	Ustatus       uint32 `xorm:"-"`
 }
 
 //g_currency
@@ -92,7 +93,7 @@ func (this *Ads) DownTradeAds(id, uid int) error {
 		return errors.New(" 订单不存在！！")
 	}
 	_, err = UpUery.Update(&Ads{
-		States: 2, //0 下架 1 上架
+		States: 2, //2 下架 1 上架
 	})
 	if err != nil {
 		return err
@@ -101,6 +102,9 @@ func (this *Ads) DownTradeAds(id, uid int) error {
 }
 
 //法币挂单管理
+//交易 权限
+//交易方向
+// 刷选
 func (this *Ads) GetAdsList(page, rows, status, tokenid, tradeid, verify int, search, date string) (*ModelList, error) {
 
 	engine := utils.Engine_currency
@@ -109,17 +113,53 @@ func (this *Ads) GetAdsList(page, rows, status, tokenid, tradeid, verify int, se
 	//总页数
 	// query := engine.Join("INNER", "user_currency", "ads.uid=user_currency.uid")
 	// query = query.Join("LEFT", "user_currency_count", "ads.uid=user_currency_count.uid")
+	// 分叉
 	//挂单日期
+	if verify != 0 || status != 0 || search != `` {
+		ulist, err := new(UserGroup).UserList(page, rows, verify, status, search, 0)
+		uid := make([]uint64, 0)
+		value, ok := ulist.Items.([]UserGroup)
+		if !ok {
+			return nil, errors.New("assert failed!!!")
+		}
+		for _, v := range value {
+			uid = append(uid, v.Uid)
+		}
+		fmt.Println("uidlist", uid)
+		list := make([]AdsUserCurrencyCount, 0)
+		query = query.In("uid", uid)
+		tempQuery := *query
+		count, err := tempQuery.Count(&AdsUserCurrencyCount{})
+		offset, modelList := this.Paging(page, rows, int(count))
+		err = query.Limit(modelList.PageSize, offset).Find(&list)
+		if err != nil {
+			return nil, err
+		}
+		for index, vads := range list {
+			for _, v := range value {
+				if vads.Uid == v.Uid {
+					list[index].TWOVerifyMark = v.TWOVerifyMark
+					list[index].Phone = v.Phone
+					list[index].Uname = v.NickName
+					list[index].Ustatus = uint32(v.Status)
+					list[index].Email = v.Email
+					break
+				}
+			}
+		}
+		modelList.Items = list
+		return modelList, nil
+	}
+
 	if tradeid != 0 {
 		query = query.Where("type_id", tradeid)
 	}
 	if tokenid != 0 {
 		query = query.Where("token_id=?", tokenid)
 	}
-
-	if len(date) != 0 {
-		substr := date[:11] + "23:59:59"
-		query = query.Where("created_time BETWEEN ? AND ? ", date, substr)
+	if date != `` {
+		subst := date[:11] + "23:59:59"
+		query = query.Where("created_time  BETWEEN ? AND ? ", date, subst)
 	}
 	tempQuery := *query
 	uidQuery := *query
@@ -162,6 +202,7 @@ func (this *Ads) GetAdsList(page, rows, status, tokenid, tradeid, verify int, se
 	for index, value := range list {
 		for _, v := range ulist {
 			if value.Uid == v.Uid {
+				list[index].TWOVerifyMark = v.TWOVerifyMark
 				list[index].Phone = v.Phone
 				list[index].Uname = v.NickName
 				list[index].Ustatus = uint32(v.Status)

@@ -2,6 +2,7 @@ package models
 
 import (
 	"admin/utils"
+	"errors"
 	"fmt"
 )
 
@@ -13,15 +14,16 @@ type UserSecondaryCertification struct {
 	VerifyCount           int    `xorm:"not null comment('认证次数') TINYINT(4)"`
 	VerifyTime            int    `xorm:"not null comment('认证时间') VARCHAR(100)"`
 	VideoRecordingDigital string `xorm:"not null comment('视频录制的数字') VARCHAR(100)"`
-	VerifyStatus          int    `xorm:"not null comment('认证状态，1通过认证，2认证失败') TINYINT(4)"`
-	PositivePath          string `xorm:"not null comment('身份证正面图片路径') VARCHAR(100)"`
-	ReverseSidePath       string `xorm:"not null comment('身份证反面图片路径') VARCHAR(100)"`
-	VideoPath             string `xorm:"not null comment('视频路径') VARCHAR(100)"`
+	//VerifyStatus          int    `xorm:"not null comment('认证状态，1通过认证，2认证失败') TINYINT(4)"`
+	PositivePath    string `xorm:"not null comment('身份证正面图片路径') VARCHAR(100)"`
+	ReverseSidePath string `xorm:"not null comment('身份证反面图片路径') VARCHAR(100)"`
+	VideoPath       string `xorm:"not null comment('视频路径') VARCHAR(100)"`
 }
 
 type UserSecondaryCertificationGroup struct {
 	UserSecondaryCertification `xorm:"extends"`
 	NickName                   string `xorm:"not null default '' comment('用户昵称') VARCHAR(64)"`
+	SecurityAuth               int    `xorm:"comment('认证状态1110') TINYINT(8)"`
 	Phone                      string `xorm:"comment('手机') unique VARCHAR(64)"`
 	Email                      string `xorm:"comment('邮箱') unique VARCHAR(128)"`
 	Account                    string `xorm:"comment('账号') unique VARCHAR(64)"`
@@ -33,8 +35,28 @@ func (u *UserSecondaryCertificationGroup) TableName() string {
 }
 
 //二级认证详情
-func (u *UserSecondaryCertificationGroup) GetSecondaryCertificationOfUid(uid int) (UserSecondaryCertificationGroup, error) {
-	return UserSecondaryCertificationGroup{}, nil
+func (u *UserSecondaryCertificationGroup) GetSecondaryCertificationOfUid(uid int) (*UserSecondaryCertificationGroup, error) {
+	engine := utils.Engine_common
+	//
+	query := engine.Desc("id")
+	query = query.Join("INNER", "user", "user.uid=user_secondary_certification.uid")
+	query = query.Join("LEFT", "user_ex", "user_ex.uid = user_secondary_certification.uid")
+	query = query.Cols("user_secondary_certification.uid", "user_secondary_certification.verify_count", "user_secondary_certification.verify_time", "user.security_auth", "user_secondary_certification.video_recording_digital", "user.email", "user.phone", "user.status", "user_ex.nick_name")
+	query = query.Where("user_secondary_certification.uid=?", uid)
+	tempQuery := *query
+	has, err := tempQuery.Exist(&UserSecondaryCertification{})
+	if err != nil {
+		return nil, err
+	}
+	if !has {
+		return nil, errors.New("没有二次认证信息！！")
+	}
+	us := new(UserSecondaryCertificationGroup)
+	_, err = query.Get(us)
+	if err != nil {
+		return nil, err
+	}
+	return us, nil
 }
 
 //二级认证列表
@@ -42,9 +64,9 @@ func (u *UserSecondaryCertification) GetSecondaryCertificationList(page, rows, v
 
 	engine := utils.Engine_common
 	query := engine.Desc("id")
-	query = query.Cols("user_secondary_certification.uid", "verify_count", "verify_time", "verify_status", "video_recording_digital", "email", "phone", "status", "nick_name")
 	query = query.Join("INNER", "user", "user.uid=user_secondary_certification.uid")
-	query = query.Join("LEFT", "user_ex", "user_ex.uid=user.uid")
+	query = query.Join("LEFT", "user_ex", "user_ex.uid = user.uid")
+	query = query.Cols("user_secondary_certification.uid", "user_secondary_certification.verify_count", "user_secondary_certification.verify_time", "user.security_auth", "user_secondary_certification.video_recording_digital", "user.email", "user.phone", "user.status", "user_ex.nick_name")
 	if verify_status != 0 {
 		query = query.Where("verify_status=?", verify_status)
 	}

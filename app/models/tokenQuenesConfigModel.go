@@ -2,6 +2,7 @@ package models
 
 import (
 	"admin/utils"
+	"errors"
 )
 
 type QuenesConfig struct {
@@ -37,4 +38,24 @@ func (q *QuenesConfig) GetTokenCashList(page, rows, token_id int) (*ModelList, e
 	}
 	modelList.Items = list
 	return modelList, nil
+}
+
+//修改删除 兑币
+func (q *QuenesConfig) DeleteCash(id int) error {
+	engine := utils.Engine_token
+	query := engine.Desc("id")
+	query = query.Where("id=?", id)
+	tempQuery := *query
+	has, err := tempQuery.Exist(&QuenesConfig{})
+	if err != nil {
+		return err
+	}
+	if !has {
+		return errors.New(" 兑币对不存在！！")
+	}
+	_, err = query.Delete(&QuenesConfig{})
+	if err != nil {
+		return err
+	}
+	return nil
 }

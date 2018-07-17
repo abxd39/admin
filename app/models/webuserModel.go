@@ -49,7 +49,28 @@ type UserGroup struct {
 	RealNameVerifyMark int
 	GoogleVerifyMark   int
 	TWOVerifyMark      int
-	Total              int64 // 账户的折合总资产
+	TotalCNY           int64 // 账户的折合总资产
+	TotalCurrentCNY    int64 //法币账户折合
+	LockCurrentCNY     int64 // 法币折合冻结CNY
+	TotalTokenCNY      int64 //币币账户折合
+	LockTokenCNY       int64 //bibi 折合冻结CNY
+
+}
+
+const (
+	AUTH_EMAIL  = 2 //00000010
+	AUTH_PHONE  = 1 //00000001
+	AUTH_GOOGLE = 8 //00001000
+	AUTH_TWO    = 4 //0100
+)
+
+type FirstDetail struct {
+	UserEx  `xorm:"extends"`
+	Account string `xorm:"comment('账号') unique VARCHAR(64)"`
+}
+
+func (f *FirstDetail) TableName() string {
+	return "user_ex"
 }
 
 func (w *WebUser) TableName() string {
@@ -58,6 +79,89 @@ func (w *WebUser) TableName() string {
 
 func (w *UserGroup) TableName() string {
 	return "user"
+}
+
+//确认实名
+func (w *WebUser) CertificationAffirmLimit(uid int) error {
+	engine := utils.Engine_common
+	query := engine.Where("uid=?", uid)
+	temp := *query
+	wu := new(WebUser)
+	has, err := temp.Get(wu)
+	if err != nil {
+		return err
+	}
+	if !has {
+		return errors.New("用户不存在！！")
+	}
+	c := wu.SecurityAuth | 16 // 16 为实名状态标识
+	_, err = query.Update(&WebUser{
+		SecurityAuth: c,
+	})
+	return nil
+}
+
+//单个用户的认证详情
+func (w *FirstDetail) GetFirstDetail(uid int) (*FirstDetail, error) {
+	engine := utils.Engine_common
+	query := engine.Desc("user_ex.uid")
+	query = query.Join("INNER", "user", "user.uid=user_ex.uid")
+	query = query.Where("user_ex.uid=?", uid)
+	query = query.Cols("user_ex.register_time", "user_ex.uid", "user_ex.real_name", "user_ex.identify_card", "user.account", "user_ex.nick_name")
+	temp := *query
+	has, err := temp.Exist(&FirstDetail{})
+	if err != nil {
+		fmt.Println("bukexue ")
+		return nil, err
+	}
+	if !has {
+		return nil, errors.New("用户不存在！！")
+	}
+	u := new(FirstDetail)
+	_, err = query.Get(u)
+	if err != nil {
+		return nil, err
+	}
+	return u, nil
+}
+
+//拉取一级实名认证列表
+func (w *WebUser) GetFirstList(page, rows, status, cstatus int, time uint64, search string) (*ModelList, error) {
+	engine := utils.Engine_common
+	query := engine.Desc("user.uid")
+	query = query.Cols("user_ex.real_name", "user.uid", "user_ex.register_time", "user.phone", "user_ex.nick_name", "user.email", "user.security_auth", "user.status")
+	query = query.Join("INNER", "user_ex", "user_ex.uid=user.uid")
+	if status != 0 {
+		query = query.Where("`user`.`status`=?", status)
+	}
+	if cstatus != 0 {
+		query = query.Where("security_auth=?", cstatus)
+	}
+	if time != 0 {
+		//query = query.Where("")
+		query = query.Where("`user_ex`.`register_time` BETWEEN ? AND ? ", time, time+86400)
+	}
+	if len(search) > 0 {
+		temp := fmt.Sprintf(" concat(IFNULL(`user`.`uid`,''),IFNULL(`user`.`phone`,''),IFNULL(`user_ex`.`nick_name`,''),IFNULL(`user`.`email`,'')) LIKE '%%%s%%'  ", search)
+		query = query.Where(temp)
+	}
+	tempQuery := *query
+	count, err := tempQuery.Count(&WebUser{})
+	if err != nil {
+		return nil, err
+	}
+	offset, modelList := w.Paging(page, rows, int(count))
+
+	list := make([]UserGroup, 0)
+
+	err = query.Limit(modelList.PageSize, offset).Find(&list)
+	if err != nil {
+		utils.AdminLog.Errorln(err.Error())
+		return nil, err
+	}
+
+	modelList.Items = list
+	return modelList, nil
 }
 
 //获取白名单列表
@@ -250,6 +354,12 @@ func (w *WebUser) GetCurreryList(uid []uint64, verify int, search string) ([]Use
 	err := query.Find(&list)
 	if err != nil {
 		return nil, err
+	}
+	//认证 判段
+	for index, v := range list {
+		if v.SecurityAuth&AUTH_TWO == 1 {
+			list[index].TWOVerifyMark = 1
+		}
 	}
 	return list, nil
 }

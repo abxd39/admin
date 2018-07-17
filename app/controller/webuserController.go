@@ -25,9 +25,95 @@ func (w *WebUserManageController) Router(r *gin.Engine) {
 		g.POST("/addwhite_list", w.AddWhiteList)                      //增加删除白名单
 		g.GET("/user_whitelist", w.WhiteUserList)                     //白名单用户列表
 		g.GET("/terminal_list", w.GetTerminalTypeList)                //登录终端类型
-
+		g.GET("/get_second_detail", w.GetSecondDetail)                //二级实名详情
+		g.GET("/get_first_datail", w.GetFirstDetail)                  //一级实名认证详情
+		g.GET("/get_first_list", w.GetFirstList)                      //p2-4一级实名认证列表
+		g.POST("/certification_affirm", w.CertificationAffirm)        //审核用户一级认证
 	}
 }
+func (w *WebUserManageController) CertificationAffirm(c *gin.Context) {
+	req := struct {
+		Uid int `form:"uid" json:"uid" binding:"required"`
+	}{}
+	err := c.ShouldBind(&req)
+	if err != nil {
+		utils.AdminLog.Errorln("param buind failed !!")
+		w.RespErr(c, err)
+		return
+	}
+	err = new(models.WebUser).CertificationAffirmLimit(req.Uid)
+	if err != nil {
+		w.RespErr(c, err)
+		return
+	}
+	w.RespOK(c)
+	return
+}
+
+func (w *WebUserManageController) GetFirstList(c *gin.Context) {
+	req := struct {
+		Page    int    `form:"page" json:"page" binding:"required"`
+		Rows    int    `form:"rows" json:"rows" `
+		Cstatus int    `form:"cstatus" json:"cstatus" ` //认证状态
+		Date    uint64 `form:"time" json:"time" `       //日期
+		Status  int    `form:"status" json:"status" `   //用户状态
+		Search  string `form:"search" json:"search" `   //刷选
+	}{}
+	err := c.ShouldBind(&req)
+	if err != nil {
+		utils.AdminLog.Errorln("param buind failed !!")
+		w.RespErr(c, err)
+		return
+	}
+	list, err := new(models.WebUser).GetFirstList(req.Page, req.Rows, req.Status, req.Cstatus, req.Date, req.Search)
+	if err != nil {
+		w.RespErr(c, err)
+		return
+	}
+	w.Put(c, "list", list)
+	w.RespOK(c)
+}
+
+func (w *WebUserManageController) GetFirstDetail(c *gin.Context) {
+	req := struct {
+		Uid int `form:"uid" json:"uid" binding:"required"`
+	}{}
+	err := c.ShouldBind(&req)
+	if err != nil {
+		utils.AdminLog.Errorln("param buind failed !!")
+		w.RespErr(c, err)
+		return
+	}
+	result, err := new(models.FirstDetail).GetFirstDetail(req.Uid)
+	if err != nil {
+		w.RespErr(c, err)
+		return
+	}
+	w.Put(c, "list", result)
+	w.RespOK(c)
+	return
+}
+
+func (w *WebUserManageController) GetSecondDetail(c *gin.Context) {
+	req := struct {
+		Uid int `form:"uid" json:"uid" binding:"required"`
+	}{}
+	err := c.ShouldBind(&req)
+	if err != nil {
+		utils.AdminLog.Errorln("param buind failed !!")
+		w.RespErr(c, err)
+		return
+	}
+	user, err := new(models.UserSecondaryCertificationGroup).GetSecondaryCertificationOfUid(req.Uid)
+	if err != nil {
+		w.RespErr(c, err)
+		return
+	}
+	w.Put(c, "list", user)
+	w.RespOK(c)
+	return
+}
+
 func (w *WebUserManageController) GetTerminalTypeList(c *gin.Context) {
 	list, err := new(models.UserLoginTerminalType).GetTerminalTypeList()
 	if err != nil {
