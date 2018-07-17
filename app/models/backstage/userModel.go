@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-// 管理员s
+// 管理员
 type User struct {
 	models.BaseModel `xorm:"-"`
 	Uid              int    `xorm:"not null pk autoincr INT(11)" json:"uid"`
