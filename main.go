@@ -1,16 +1,24 @@
 package main
 
 import (
-	"admin/app"
 	"fmt"
 
+	"admin/app"
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
+	r := gin.Default()
 
-	router := gin.Default()
-	app.Router(router)
-	router.Run(fmt.Sprintf(":%d", 8001))
+	// session
+	store := cookie.NewStore([]byte("secret"))
+	r.Use(sessions.Sessions("mysession", store))
 
+	// custom middleware
+	//r.Use(utils.CheckLogin())
+
+	app.Router(r)
+	r.Run(fmt.Sprintf(":%d", 8001))
 }
