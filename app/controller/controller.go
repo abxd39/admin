@@ -70,9 +70,9 @@ func (c *Controller) RespErr(ctx *gin.Context, options ...interface{}) {
 			c.resp.Code = constant.RESPONSE_CODE_SYSTEM // 设为系统错误code
 
 			if os.Getenv("API_ENV") == "prod" { // 生产环境不显示错误细节
-				c.resp.Msg = opt.String()
-			} else { // 开发环境显示错误细节
 				c.resp.Msg = opt.Error()
+			} else { // 开发环境显示错误细节
+				c.resp.Msg = opt.String()
 			}
 		case errors.NormalErrorInterface: // 常规错误
 			if opt.Status() != 0 { // 常规错误指定了code并且不为0
@@ -85,7 +85,10 @@ func (c *Controller) RespErr(ctx *gin.Context, options ...interface{}) {
 	}
 
 	// 优先使用系统指定msg
-	c.resp.Msg = constant.GetResponseMsg(c.resp.Code)
+	sysMsg := constant.GetResponseMsg(c.resp.Code)
+	if len(sysMsg) > 0 {
+		c.resp.Msg = constant.GetResponseMsg(c.resp.Code)
+	}
 
 	// 没有数据时，让data字段的json值为[]而非null
 	/*if c.resp.Data == nil {
@@ -100,7 +103,7 @@ func (c *Controller) RespErr(ctx *gin.Context, options ...interface{}) {
 // 参数不存在时第二个参数返回false
 func (c *Controller) GetParam(ctx *gin.Context, key string) (string, bool) {
 	param, ok := ctx.GetQuery(key)
-	if len(param) == 0 { // get获取不到时，尝试post获取
+	if !ok { // get获取不到时，尝试post获取
 		param, ok = ctx.GetPostForm(key)
 	}
 
