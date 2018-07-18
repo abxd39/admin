@@ -43,14 +43,17 @@ func CheckLogin() gin.HandlerFunc {
 			"admin/logout": true,
 		}
 
-		session := sessions.Default(ctx)
-		uid := session.Get("uid")
+		var uid int
 		if _, ok := noNeedLoginAPIs[api]; !ok { // !ok
-			if uid == nil { // 不存在，未登录
+			session := sessions.Default(ctx)
+			uidInterface := session.Get("uid")
+			if uidInterface == nil { // 不存在，未登录
 				new(controller.BaseController).RespErr(ctx, errors.NewNormal(constant.RESPONSE_CODE_SESSION_INVALID))
 				ctx.Abort()
 				return
 			}
+
+			uid = uidInterface.(int)
 		}
 
 		// 2. 验证权限
@@ -62,8 +65,7 @@ func CheckLogin() gin.HandlerFunc {
 		}
 
 		if _, ok := noNeedAuthAPIs[api]; !ok { // !ok
-			uidInt, _ := uid.(int)
-			result, err := new(backstage.User).CheckPermission(ctx, uidInt, api)
+			result, err := new(backstage.User).CheckPermission(ctx, uid, api)
 			if err != nil {
 				new(controller.BaseController).RespErr(ctx, errors.NewSys(err))
 				ctx.Abort()
