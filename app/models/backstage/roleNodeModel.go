@@ -6,3 +6,8 @@ type RoleNode struct {
 	RoleId int `xorm:"not null default 0 comment('角色id') INT(11)"`
 	NodeId int `xorm:"not null default 0 comment('节点id') INT(11)"`
 }
+
+// 表名
+func (*RoleNode) TableName() string {
+	return "role_node"
+}

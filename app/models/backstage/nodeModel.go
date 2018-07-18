@@ -23,6 +23,11 @@ type Node struct {
 	FullId           string `xorm:"not null comment('全ID，逗号分隔，前后加逗号') VARCHAR(500)" json:"full_id"`
 }
 
+// 表名
+func (*Node) TableName() string {
+	return "node"
+}
+
 // 节点列表，all
 func (n *Node) ListAll(filter map[string]string) (modelList *models.ModelList, err error) {
 	// 获取总数

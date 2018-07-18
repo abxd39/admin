@@ -5,3 +5,8 @@ type NodeAPI struct {
 	NodeId int `xorm:"not null comment('节点ID') INT(11)"`
 	Api    int `xorm:"not null comment('API接口地址') VARCHAR(200)"`
 }
+
+// 表名
+func (*NodeAPI) TableName() string {
+	return "node_api"
+}

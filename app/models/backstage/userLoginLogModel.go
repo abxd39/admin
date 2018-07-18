@@ -18,6 +18,11 @@ type UserLoginLog struct {
 	LoginTime        int64  `xorm:"not null comment('登录时间') INT(11)" json:"login_time"`
 }
 
+// 表名
+func (*UserLoginLog) TableName() string {
+	return "user_login_log"
+}
+
 // 登录日志列表
 func (l *UserLoginLog) List(pageIndex, pageSize int, filter map[string]string) (modelList *models.ModelList, err error) {
 	// 获取总数

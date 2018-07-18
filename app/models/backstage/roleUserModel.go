@@ -5,3 +5,8 @@ type RoleUser struct {
 	RoleId int `xorm:"not null INT(11)"`
 	Uid    int `xorm:"not null INT(11)"`
 }
+
+// 表名
+func (*RoleUser) TableName() string {
+	return "role_user"
+}

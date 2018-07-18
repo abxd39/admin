@@ -29,6 +29,11 @@ type User struct {
 	IsSuper          int    `xorm:"not null default 0 comment('是否超管 0 否 1是') TINYINT(1)" json:"is_super"`
 }
 
+// 表名
+func (*User) TableName() string {
+	return "user"
+}
+
 // 登录
 func (u *User) Login(name, pwd string) (bool, string, int, error) {
 	engine := utils.Engine_backstage
@@ -342,4 +347,22 @@ func (u *User) CheckPermission(ctx *gin.Context, uid int, api string) (bool, err
 	} else {
 		return false, nil
 	}
+}
+
+// 左侧目录
+func (u *User) GetLeftMenu(ctx *gin.Context) {
+	engine := utils.Engine_backstage
+
+	// 判断是否超管
+	session := sessions.Default(ctx)
+	if session.Get("is_super").(bool) { // 超管
+		engine.SQL("SELECT n.* FROM ")
+	} else {
+
+	}
+}
+
+// 右侧目录
+func (u *User) GetRightMenu(ctx *gin.Context) {
+
 }
