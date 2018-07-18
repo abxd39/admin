@@ -90,7 +90,7 @@ func (r *RoleController) Get(ctx *gin.Context) {
 func (r *RoleController) Add(ctx *gin.Context) {
 	// 获取参数
 	name := r.GetString(ctx, "name")
-	if strLen := utf8.RuneCountInString(name); strLen == 0 || strLen > 10 {
+	if strLen := utf8.RuneCountInString(name); strLen < 1 || strLen > 10 {
 		r.RespErr(ctx, "参数name格式错误")
 		return
 	}
@@ -131,7 +131,7 @@ func (r *RoleController) Update(ctx *gin.Context) {
 	}
 
 	if name, ok := r.GetParam(ctx, "name"); ok {
-		if strLen := utf8.RuneCountInString(name); strLen == 0 || strLen > 10 {
+		if strLen := utf8.RuneCountInString(name); strLen < 1 || strLen > 10 {
 			r.RespErr(ctx, "参数name格式错误")
 			return
 		}

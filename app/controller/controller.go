@@ -2,6 +2,7 @@ package controller
 
 import (
 	"net/http"
+	"os"
 	"strconv"
 
 	"admin/constant"
@@ -65,10 +66,14 @@ func (c *Controller) RespErr(ctx *gin.Context, options ...interface{}) {
 		case int:
 			c.resp.Code = opt // 当前指定code
 		case string:
-			c.resp.Msg = opt
 		case errors.SysErrorInterface: // 系统错误
 			c.resp.Code = constant.RESPONSE_CODE_SYSTEM // 设为系统错误code
-			c.resp.Msg = opt.String()                   // todo 根据环境使用生产用opt.Error()，本地用opt.String()
+
+			if os.Getenv("API_ENV") == "prod" { // 生产环境不显示错误细节
+				c.resp.Msg = opt.String()
+			} else { // 开发环境显示错误细节
+				c.resp.Msg = opt.Error()
+			}
 		case errors.NormalErrorInterface: // 常规错误
 			if opt.Status() != 0 { // 常规错误指定了code并且不为0
 				c.resp.Code = opt.Status()
@@ -78,6 +83,9 @@ func (c *Controller) RespErr(ctx *gin.Context, options ...interface{}) {
 			c.resp.Msg = opt.Error()
 		}
 	}
+
+	// 优先使用系统指定msg
+	c.resp.Msg = constant.GetResponseMsg(c.resp.Code)
 
 	// 没有数据时，让data字段的json值为[]而非null
 	/*if c.resp.Data == nil {

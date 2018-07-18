@@ -31,7 +31,7 @@ func (a *AdminController) Router(e *gin.Engine) {
 		group.POST("/add", a.Add)
 		group.POST("/update", a.Update)
 		group.POST("/delete", a.Delete)
-
+		group.GET("/list_login_log", a.ListLoginLog)
 	}
 }
 
@@ -57,7 +57,6 @@ func (a *AdminController) Code(ctx *gin.Context) {
 	base64stringD := google.CaptchaWriteToBase64Encoding(capD)
 	//ctx.Request.AddCookie(cook)
 	session := sessions.Default(ctx)
-	session.Clear()
 	session.Set("idkey", idKeyD)
 	session.Save()
 	ctx.Data(0, idKeyD, capD.BinaryEncodeing())
@@ -110,9 +109,7 @@ func (a *AdminController) Login(ctx *gin.Context) {
 	//var hanlen int
 	//fmt.Println("vvvvvvvvvvvvvvvvvvvvv", req.LoginPwd)
 	//查数据库 验证用户名和密码
-	var uid int
-	var name string
-	name, uid, err = new(bk.User).Login(req.Phone, req.LoginPwd)
+	isSuper, name, uid, err := new(bk.User).Login(req.Phone, req.LoginPwd)
 	if err != nil {
 		// @@@写入登录日志，登录失败@@@
 		if _, err := new(bk.UserLoginLog).Add(&bk.UserLoginLog{
@@ -133,7 +130,8 @@ func (a *AdminController) Login(ctx *gin.Context) {
 	//添加cooke 用户名
 
 	session.Set("uid", uid)
-	session.Set("phone", req.Phone)
+	session.Set("name", req.Phone)
+	session.Set("is_super", isSuper)
 	session.Save()
 
 	// @@@写入登录日志，登录成功@@@
@@ -152,14 +150,25 @@ func (a *AdminController) Login(ctx *gin.Context) {
 
 // 登出
 func (a *AdminController) Logout(ctx *gin.Context) {
+	// 清空session
 	session := sessions.Default(ctx)
 	session.Clear()
+	session.Save()
+
+	// 返回
 	ctx.JSON(http.StatusOK, gin.H{"code": 0, "data": "", "msg": "成功"})
 	return
 }
 
 // 管理员列表
 func (a *AdminController) List(ctx *gin.Context) {
+	// 判断登录
+	err := a.CheckLogin(ctx)
+	if err != nil {
+		a.RespErr(ctx, err)
+		return
+	}
+
 	// 获取参数
 	page, err := a.GetInt(ctx, "page", 1)
 	if err != nil {
@@ -185,8 +194,6 @@ func (a *AdminController) List(ctx *gin.Context) {
 
 	// 返回
 	a.RespOK(ctx)
-	return
-
 	return
 }
 
@@ -354,6 +361,42 @@ func (a *AdminController) Delete(ctx *gin.Context) {
 
 	// 设置返回数据
 	a.Put(ctx, "uid", uid)
+
+	// 返回
+	a.RespOK(ctx)
+	return
+}
+
+// 管理员登录日志列表
+func (a *AdminController) ListLoginLog(ctx *gin.Context) {
+	// 获取参数
+	page, err := a.GetInt(ctx, "page", 1)
+	if err != nil {
+		a.RespErr(ctx, "参数page格式错误")
+		return
+	}
+
+	rows, err := a.GetInt(ctx, "rows", 10)
+	if err != nil {
+		a.RespErr(ctx, "参数rows格式错误")
+		return
+	}
+
+	// 筛选参数
+	filter := make(map[string]string)
+	if v, ok := a.GetParam(ctx, "login_date"); ok {
+		filter["login_date"] = v
+	}
+
+	// 调用model
+	list, err := new(bk.UserLoginLog).List(page, rows, filter)
+	if err != nil {
+		a.RespErr(ctx, err)
+		return
+	}
+
+	// 设置返回数据
+	a.Put(ctx, "list", list)
 
 	// 返回
 	a.RespOK(ctx)
