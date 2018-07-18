@@ -18,6 +18,11 @@ type Role struct {
 	People           int    `xorm:"not null default 0 comment('人数') INT(6)" json:"people"`
 }
 
+// 表名
+func (*Role) TableName() string {
+	return "role"
+}
+
 // 用户组列表
 func (r *Role) List(pageIndex, pageSize int) (modelList *models.ModelList, err error) {
 	// 获取总数

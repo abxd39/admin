@@ -3,12 +3,16 @@ package utils
 import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/redis"
+	"github.com/gin-gonic/gin"
 )
 
 var Store sessions.Store
 
 func init() {
-	stype, _ := Cfg.GetValue("session", "type")
+	stype, err := Cfg.GetValue("session", "type")
+	if err != nil {
+		panic("utils.session:" + err.Error())
+	}
 
 	switch stype {
 	case "redis":
@@ -16,8 +20,12 @@ func init() {
 		if err != nil {
 			panic("utils.session:" + err.Error())
 		}
-		Store, err = redis.NewStore(10, "tcp", addr, "ailaiduokeji657@@@", []byte("secret"))
-		//Store, err = redis.NewStore(10, "tcp", "localhost:6379", "", []byte("secret"))
+		pwd, err := Cfg.GetValue("session", "pwd")
+		if err != nil {
+			panic("utils.session:" + err.Error())
+		}
+
+		Store, err = redis.NewStore(10, "tcp", addr, pwd, []byte("secret"))
 		if err != nil {
 			panic("utils.session:" + err.Error())
 		}
@@ -27,20 +35,14 @@ func init() {
 
 }
 
-/* 使用示例
-r.GET("/incr", func(c *gin.Context) {
-	session := sessions.Default(c)
-	var count int
-	v := session.Get("count")
-	if v == nil {
-		count = 0
-	} else {
-		count = v.(int)
-		count++
-	}
-	session.Set("count", count)
-	session.Save()
-	c.JSON(200, gin.H{"count": count})
-})
+// 当前登录的管理员的id
+func GetUid(ctx *gin.Context) int {
+	session := sessions.Default(ctx)
+	return session.Get("uid").(int)
+}
 
-*/
+// 当前登录管理员是否超管
+func IsSuper(ctx *gin.Context) bool {
+	session := sessions.Default(ctx)
+	return session.Get("is_super").(bool)
+}

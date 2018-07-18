@@ -32,6 +32,8 @@ func (a *AdminController) Router(e *gin.Engine) {
 		group.POST("/update", a.Update)
 		group.POST("/delete", a.Delete)
 		group.GET("/list_login_log", a.ListLoginLog)
+		group.GET("/my_left_menu", a.MyLeftMenu)
+		group.GET("/my_right_menu", a.MyRightMenu)
 	}
 }
 
@@ -109,15 +111,17 @@ func (a *AdminController) Login(ctx *gin.Context) {
 	//var hanlen int
 	//fmt.Println("vvvvvvvvvvvvvvvvvvvvv", req.LoginPwd)
 	//查数据库 验证用户名和密码
-	isSuper, name, uid, err := new(bk.User).Login(req.Phone, req.LoginPwd)
+	isSuper, nickName, uid, err := new(bk.User).Login(req.Phone, req.LoginPwd)
 	if err != nil {
 		// @@@写入登录日志，登录失败@@@
 		if _, err := new(bk.UserLoginLog).Add(&bk.UserLoginLog{
 			Uid:       uid,
-			LoginTime: time.Now().Unix(),
+			NickName:  req.Phone,
 			States:    2,
+			LoginIp:   utils.GetRemoteAddr(ctx),
+			LoginTime: time.Now().Unix(),
 		}); err != nil {
-
+			utils.AdminLog.Error("记录管理员登录日志失败", err)
 		}
 
 		// 返回
@@ -137,14 +141,16 @@ func (a *AdminController) Login(ctx *gin.Context) {
 	// @@@写入登录日志，登录成功@@@
 	if _, err := new(bk.UserLoginLog).Add(&bk.UserLoginLog{
 		Uid:       uid,
-		LoginTime: time.Now().Unix(),
+		NickName:  nickName,
 		States:    1,
+		LoginIp:   utils.GetRemoteAddr(ctx),
+		LoginTime: time.Now().Unix(),
 	}); err != nil {
 		utils.AdminLog.Error("记录管理员登录日志失败", err)
 	}
 
 	// 返回
-	ctx.JSON(http.StatusOK, gin.H{"code": 0, "data": "", "uid": uid, "name": name, "msg": "登录成功"})
+	ctx.JSON(http.StatusOK, gin.H{"code": 0, "data": "", "uid": uid, "name": nickName, "msg": "登录成功"})
 	return
 }
 
@@ -162,13 +168,6 @@ func (a *AdminController) Logout(ctx *gin.Context) {
 
 // 管理员列表
 func (a *AdminController) List(ctx *gin.Context) {
-	// 判断登录
-	err := a.CheckLogin(ctx)
-	if err != nil {
-		a.RespErr(ctx, err)
-		return
-	}
-
 	// 获取参数
 	page, err := a.GetInt(ctx, "page", 1)
 	if err != nil {
@@ -390,6 +389,85 @@ func (a *AdminController) ListLoginLog(ctx *gin.Context) {
 
 	// 调用model
 	list, err := new(bk.UserLoginLog).List(page, rows, filter)
+	if err != nil {
+		a.RespErr(ctx, err)
+		return
+	}
+
+	// 重新组装数据
+	if list.Total > 0 {
+		if items, ok := list.Items.([]bk.UserLoginLog); ok {
+			type NewItem struct {
+				Id        int    `json:"id"`
+				Uid       int    `json:"uid"`
+				NickName  string `json:"nick_name"`
+				LoginIp   string `json:"login_ip"`
+				LoginTime int64  `json:"login_time"`
+				Desc      string `json:"desc"`
+			}
+
+			newItems := make([]NewItem, len(items))
+			for k, v := range items {
+				state := "成功"
+				if v.States == 2 {
+					state = "失败"
+				}
+
+				newItems[k] = NewItem{
+					Id:        v.Id,
+					Uid:       v.Uid,
+					NickName:  v.NickName,
+					LoginIp:   v.LoginIp,
+					LoginTime: v.LoginTime,
+					Desc:      fmt.Sprintf("%s在%s时，登录%s。", v.NickName, utils.Unix2Date(v.LoginTime), state),
+				}
+			}
+
+			// 用新的items
+			list.Items = newItems
+		} else {
+			// 类型断言错误
+			a.RespErr(ctx, "类型错误")
+			return
+		}
+	}
+
+	// 设置返回数据
+	a.Put(ctx, "list", list)
+
+	// 返回
+	a.RespOK(ctx)
+	return
+}
+
+// 获取左侧菜单
+func (a *AdminController) MyLeftMenu(ctx *gin.Context) {
+	// 调用model
+	list, err := new(bk.User).MyLeftMenu(ctx)
+	if err != nil {
+		a.RespErr(ctx, err)
+		return
+	}
+
+	// 设置返回数据
+	a.Put(ctx, "list", list)
+
+	// 返回
+	a.RespOK(ctx)
+	return
+}
+
+// 获取右侧菜单
+func (a *AdminController) MyRightMenu(ctx *gin.Context) {
+	// 获取参数
+	pid, err := a.GetInt(ctx, "pid")
+	if err != nil {
+		a.RespErr(ctx, "参数pid格式错误")
+		return
+	}
+
+	// 调用model
+	list, err := new(bk.User).MyRightMenu(ctx, pid)
 	if err != nil {
 		a.RespErr(ctx, err)
 		return

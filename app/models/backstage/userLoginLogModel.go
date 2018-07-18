@@ -10,10 +10,17 @@ import (
 // 管理员登录日志
 type UserLoginLog struct {
 	models.BaseModel `xorm:"-"`
-	Id               int   `xorm:"not null pk autoincr INT(11)" json:"id"`
-	Uid              int   `xorm:"not null comment('管理员ID') INT(11)" json:"uid"`
-	LoginTime        int64 `xorm:"not null comment('登录时间') INT(11)" json:"login_time"`
-	States           int   `xorm:"not null comment('1登录成功 2登录失败') TINYINT(1)" json:"states"`
+	Id               int    `xorm:"not null pk autoincr INT(11)" json:"id"`
+	Uid              int    `xorm:"not null comment('管理员ID') INT(11)" json:"uid"`
+	NickName         string `xorm:"not null comment('管理员昵称') VARCHAR(60)" json:"nick_name"`
+	States           int    `xorm:"not null comment('1登录成功 2登录失败') TINYINT(1)" json:"states"`
+	LoginIp          string `xorm:"not null comment('登录IP') VARCHAR(30)" json:"login_ip"`
+	LoginTime        int64  `xorm:"not null comment('登录时间') INT(11)" json:"login_time"`
+}
+
+// 表名
+func (*UserLoginLog) TableName() string {
+	return "user_login_log"
 }
 
 // 登录日志列表
