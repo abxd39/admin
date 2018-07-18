@@ -1,10 +1,5 @@
 package models
 
-import (
-	"admin/utils"
-	"errors"
-)
-
 type QuenesConfig struct {
 	BaseModel    `xorm:"-"`
 	Id           int64  `xorm:"pk autoincr BIGINT(20)"`
@@ -14,48 +9,4 @@ type QuenesConfig struct {
 	Price        int64  `xorm:"comment('初始价格') BIGINT(20)"`
 	Name         string `xorm:"comment('USDT/BTC') VARCHAR(32)"`
 	Scope        string `xorm:"comment('振幅') DECIMAL(6,2)"`
-}
-
-func (q *QuenesConfig) GetTokenCashList(page, rows, token_id int) (*ModelList, error) {
-	engine := utils.Engine_token
-
-	query := engine.Desc("id")
-	if token_id != 0 {
-		query = query.Where("token_id=?", token_id)
-	}
-	tquery := *query
-	count, err := tquery.Count(&QuenesConfig{})
-	if err != nil {
-		return nil, err
-	}
-	offset, modelList := q.Paging(page, rows, int(count))
-	query.Limit(modelList.PageSize, offset)
-
-	list := make([]QuenesConfig, 0)
-	err = query.Find(&list)
-	if err != nil {
-		return nil, err
-	}
-	modelList.Items = list
-	return modelList, nil
-}
-
-//修改删除 兑币
-func (q *QuenesConfig) DeleteCash(id int) error {
-	engine := utils.Engine_token
-	query := engine.Desc("id")
-	query = query.Where("id=?", id)
-	tempQuery := *query
-	has, err := tempQuery.Exist(&QuenesConfig{})
-	if err != nil {
-		return err
-	}
-	if !has {
-		return errors.New(" 兑币对不存在！！")
-	}
-	_, err = query.Delete(&QuenesConfig{})
-	if err != nil {
-		return err
-	}
-	return nil
 }

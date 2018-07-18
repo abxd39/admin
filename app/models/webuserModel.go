@@ -7,17 +7,20 @@ import (
 	//google "code.google.com/a_game/src/models"
 )
 
+
+
 type UserEx struct {
-	BaseModel     `xorm:"-"`
-	Uid           int64  `xorm:"not null pk comment(' 用户ID') BIGINT(11)" json:"uid"`
-	NickName      string `xorm:"not null default '' comment('用户昵称') VARCHAR(64)" json:"nick_name"`
-	HeadSculpture string `xorm:"not null default '' comment('头像图片路径') VARCHAR(100)" json:"head_sculpture"`
-	RegisterTime  int64  `xorm:"comment('注册时间') BIGINT(20)" json:"register_time"`
-	InviteCode    string `xorm:"comment('邀请码') VARCHAR(64)" json:"invite_code"`
-	RealName      string `xorm:"comment(' 真名') VARCHAR(32)" json:"real_name"`
-	IdentifyCard  string `xorm:"comment('身份证号') VARCHAR(64)" json:"identify_card"`
-	InviteId      int64  `xorm:"comment('邀请者id') BIGINT(11)" json:"invite_id"`
-	Invites       int    `xorm:"default 0 comment('邀请人数') INT(11)" json:"invites"`
+	Uid           int64  `xorm:"not null pk comment(' 用户ID') BIGINT(11)"`
+	NickName      string `xorm:"not null default '' comment('用户昵称') VARCHAR(64)"`
+	HeadSculpture string `xorm:"not null default '' comment('头像图片路径') VARCHAR(100)"`
+	RegisterTime  int64  `xorm:"comment('注册时间') BIGINT(20)"`
+	AffirmTime    int64  `xorm:"comment('实名认证时间') BIGINT(20)"`
+	InviteCode    string `xorm:"comment('邀请码') VARCHAR(64)"`
+	RealName      string `xorm:"comment(' 真名') VARCHAR(32)"`
+	IdentifyCard  string `xorm:"comment('身份证号') VARCHAR(64)"`
+	InviteId      int64  `xorm:"comment('邀请者id') BIGINT(11)"`
+	Invites       int    `xorm:"default 0 comment('邀请人数') INT(11)"`
+	AffirmCount   int    `xorm:"default 0 comment('实名认证的次数') TINYINT(4)"`
 }
 
 type WebUser struct {
@@ -46,6 +49,8 @@ type UserGroup struct {
 	NickName           string `xorm:"not null default '' comment('用户昵称') VARCHAR(64)"`
 	RegisterTime       int64  `xorm:"comment('注册时间') BIGINT(20)"`
 	RealName           string `xorm:"comment(' 真名') VARCHAR(32)"`
+	AffirmTime    		int64  `xorm:"comment('实名认证时间') BIGINT(20)"`
+	AffirmCount   int    `xorm:"default 0 comment('实名认证的次数') TINYINT(4)"`
 	RealNameVerifyMark int
 	GoogleVerifyMark   int
 	TWOVerifyMark      int
@@ -67,6 +72,7 @@ const (
 type FirstDetail struct {
 	UserEx  `xorm:"extends"`
 	Account string `xorm:"comment('账号') unique VARCHAR(64)"`
+	SecurityAuth     int    `xorm:"comment('认证状态1110') TINYINT(8)"`
 }
 
 func (f *FirstDetail) TableName() string {
@@ -82,7 +88,7 @@ func (w *UserGroup) TableName() string {
 }
 
 //确认实名
-func (w *WebUser) CertificationAffirmLimit(uid int) error {
+func (w *WebUser) CertificationAffirmLimit(uid,status int) error {
 	engine := utils.Engine_common
 	query := engine.Where("uid=?", uid)
 	temp := *query
@@ -94,10 +100,13 @@ func (w *WebUser) CertificationAffirmLimit(uid int) error {
 	if !has {
 		return errors.New("用户不存在！！")
 	}
-	c := wu.SecurityAuth | 16 // 16 为实名状态标识
+	c := wu.SecurityAuth | status // 16 为实名状态标识
 	_, err = query.Update(&WebUser{
 		SecurityAuth: c,
 	})
+	if err!=nil{
+		return  err
+	}
 	return nil
 }
 
@@ -107,7 +116,7 @@ func (w *FirstDetail) GetFirstDetail(uid int) (*FirstDetail, error) {
 	query := engine.Desc("user_ex.uid")
 	query = query.Join("INNER", "user", "user.uid=user_ex.uid")
 	query = query.Where("user_ex.uid=?", uid)
-	query = query.Cols("user_ex.register_time", "user_ex.uid", "user_ex.real_name", "user_ex.identify_card", "user.account", "user_ex.nick_name")
+	query = query.Cols("user_ex.register_time", "user_ex.uid", "user_ex.real_name", "user_ex.identify_card","user_ex.affirm_time","user_ex.affirm_count", "user.account", "user_ex.nick_name","user.security_auth")
 	temp := *query
 	has, err := temp.Exist(&FirstDetail{})
 	if err != nil {

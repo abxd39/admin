@@ -2,7 +2,6 @@ package controller
 
 import (
 	"admin/app/models"
-	"admin/constant"
 	"admin/utils"
 	"errors"
 	"fmt"
@@ -21,7 +20,7 @@ func (this *CurrencyController) Router(r *gin.Engine) {
 		g.GET("/list", this.GetTradeList)                     //p4-2-0法币挂单管理
 		g.POST("/down_trade_order", this.DownTradeAds)        //p4-2-0法币挂单管理 下架交易单
 		g.GET("/tokens", this.GetTokensList)                  //获取 所有数据货币的名称及货币Id
-		g.GET("/order_list", this.GetOderList)                //p4-2-1法币成交管理
+		g.GET("/order_list", this.GetOderList)                //p4-2-1法币成交列表
 		g.GET("/total_balance", this.GetTotalCurrencyBalance) //p2-3-1法币账户统计列表
 		g.GET("/user_detail", this.GetUserDetailList)         //p2-3-1-2法币账户资产展示
 		g.GET("/user_buysell", this.GetBuySellList)           //p2-3-1-1查看统计买入_卖出_划转
@@ -133,7 +132,7 @@ func (cu *CurrencyController) GetUserDetailList(c *gin.Context) {
 	err := c.ShouldBind(&req)
 	if err != nil {
 		utils.AdminLog.Errorf(err.Error())
-		cu.RespErr(c, constant.RESPONSE_CODE_ERROR, "参数错误")
+		cu.RespErr(c, err)
 		return
 	}
 
@@ -203,7 +202,6 @@ func (cu *CurrencyController) GetTradeList(c *gin.Context) {
 }
 
 func (cu *CurrencyController) GetTokensList(c *gin.Context) {
-	fmt.Println("tttttttttttttttttttttttttttttttttttttttt")
 	list, err := new(models.Tokens).GetTokenList()
 	if err != nil {
 		cu.RespErr(c, err)

@@ -152,7 +152,7 @@ func (this *Ads) GetAdsList(page, rows, status, tokenid, tradeid, verify int, se
 	}
 
 	if tradeid != 0 {
-		query = query.Where("type_id", tradeid)
+		query = query.Where("type_id=?", tradeid)
 	}
 	if tokenid != 0 {
 		query = query.Where("token_id=?", tokenid)

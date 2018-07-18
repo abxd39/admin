@@ -96,6 +96,8 @@ func (r *RoleController) Add(ctx *gin.Context) {
 	}
 
 	desc := r.GetString(ctx, "desc", "")
+
+
 	nodeIds := r.GetString(ctx, "node_ids", "")
 
 	// 调用model

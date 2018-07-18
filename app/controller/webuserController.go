@@ -28,12 +28,16 @@ func (w *WebUserManageController) Router(r *gin.Engine) {
 		g.GET("/get_second_detail", w.GetSecondDetail)                //二级实名详情
 		g.GET("/get_first_datail", w.GetFirstDetail)                  //一级实名认证详情
 		g.GET("/get_first_list", w.GetFirstList)                      //p2-4一级实名认证列表
-		g.POST("/certification_affirm", w.CertificationAffirm)        //审核用户一级认证
+		g.POST("/certification_affirm", w.CertificationAffirm)        //审核用户认证
+
 	}
 }
+
+
 func (w *WebUserManageController) CertificationAffirm(c *gin.Context) {
 	req := struct {
 		Uid int `form:"uid" json:"uid" binding:"required"`
+		status int `form:"status" json:"status" binding:"required"`
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
@@ -41,7 +45,7 @@ func (w *WebUserManageController) CertificationAffirm(c *gin.Context) {
 		w.RespErr(c, err)
 		return
 	}
-	err = new(models.WebUser).CertificationAffirmLimit(req.Uid)
+	err = new(models.WebUser).CertificationAffirmLimit(req.Uid,req.status)
 	if err != nil {
 		w.RespErr(c, err)
 		return
