@@ -38,7 +38,7 @@ func CheckLogin() gin.HandlerFunc {
 		// 1. 验证登录
 		// 无需登录的api
 		noNeedLoginAPIs := map[string]bool{
-			"admin/code":   true,
+			"admin/code":   true, // 值用不到
 			"admin/login":  true,
 			"admin/logout": true,
 		}
@@ -59,20 +59,20 @@ func CheckLogin() gin.HandlerFunc {
 		// 2. 验证权限
 		// 无需验证权限的api
 		noNeedAuthAPIs := map[string]bool{
-			"admin/code":   true,
+			"admin/code":   true, // 值用不到
 			"admin/login":  true,
 			"admin/logout": true,
 		}
 
 		if _, ok := noNeedAuthAPIs[api]; !ok { // !ok
-			result, err := new(backstage.User).CheckPermission(ctx, uid, api)
+			has, err := new(backstage.User).CheckPermission(ctx, uid, api)
 			if err != nil {
 				new(controller.BaseController).RespErr(ctx, errors.NewSys(err))
 				ctx.Abort()
 				return
 			}
-			if !result {
-				new(controller.BaseController).RespErr(ctx, errors.NewSys(constant.RESPONSE_CODE_NO_API_PERMISSION))
+			if !has {
+				new(controller.BaseController).RespErr(ctx, errors.NewNormal(constant.RESPONSE_CODE_NO_API_PERMISSION))
 				ctx.Abort()
 				return
 			}
