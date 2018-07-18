@@ -59,9 +59,11 @@ func CheckLogin() gin.HandlerFunc {
 		// 2. 验证权限
 		// 无需验证权限的api
 		noNeedAuthAPIs := map[string]bool{
-			"admin/code":   true, // 值用不到
-			"admin/login":  true,
-			"admin/logout": true,
+			"admin/code":          true, // 值用不到
+			"admin/login":         true,
+			"admin/logout":        true,
+			"admin/my_left_menu":  true,
+			"admin/my_right_menu": true,
 		}
 
 		if _, ok := noNeedAuthAPIs[api]; !ok { // !ok

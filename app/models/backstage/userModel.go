@@ -6,7 +6,6 @@ import (
 
 	"admin/app/models"
 	"admin/utils"
-	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"strconv"
 	"strings"
@@ -330,17 +329,30 @@ func (u *User) Delete(uid int) error {
 // 检查管理员api权限
 func (u *User) CheckPermission(ctx *gin.Context, uid int, api string) (bool, error) {
 	// 判断是否超管
-	session := sessions.Default(ctx)
-	if session.Get("is_super").(bool) { // 超管，直接返回true
+	if utils.IsSuper(ctx) { // 超管，直接返回true
 		return true, nil
 	}
 
 	// 判断是否拥有该节点的权限
-	engine := utils.Engine_backstage
+	// 表名
+	userTable := u.TableName()
+	roleUserTable := new(RoleUser).TableName()
+	roleNodeTable := new(RoleNode).TableName()
+	nodeTable := new(Node).TableName()
+	nodeAPITable := new(NodeAPI).TableName()
+
 	result := &struct {
 		Cnt int
 	}{}
-	engine.SQL(fmt.Sprintf("SELECT COUNT(n.id) as cnt FROM user u JOIN role_user ru ON ru.uid=u.uid JOIN role_node rn ON rn.role_id=ru.role_id JOIN node n ON n.id=rn.node_id JOIN node_api na ON na.node_id=n.id WHERE u.uid=%d AND na.api='%s'", uid, api)).Get(result)
+
+	engine := utils.Engine_backstage
+	engine.SQL(fmt.Sprintf("SELECT COUNT(n.id) as cnt"+
+		" FROM %s u"+
+		" JOIN %s ru ON ru.uid=u.uid"+
+		" JOIN %s rn ON rn.role_id=ru.role_id"+
+		" JOIN %s n ON n.id=rn.node_id"+
+		" JOIN %s na ON na.node_id=n.id"+
+		" WHERE u.uid=%d AND na.api='%s'", userTable, roleUserTable, roleNodeTable, nodeTable, nodeAPITable, uid, api)).Get(result)
 
 	if result.Cnt > 0 {
 		return true, nil
@@ -349,20 +361,69 @@ func (u *User) CheckPermission(ctx *gin.Context, uid int, api string) (bool, err
 	}
 }
 
-// 左侧目录
-func (u *User) GetLeftMenu(ctx *gin.Context) {
-	engine := utils.Engine_backstage
+// 获取管理员拥有的左侧菜单
+func (u *User) MyLeftMenu(ctx *gin.Context) ([]Node, error) {
+	// 表名
+	userTable := u.TableName()
+	roleUserTable := new(RoleUser).TableName()
+	roleNodeTable := new(RoleNode).TableName()
+	nodeTable := new(Node).TableName()
+
+	var list []Node
 
 	// 判断是否超管
-	session := sessions.Default(ctx)
-	if session.Get("is_super").(bool) { // 超管
-		engine.SQL("SELECT n.* FROM ")
+	engine := utils.Engine_backstage
+	if utils.IsSuper(ctx) { // 超管，直接返回所有左侧菜单
+		engine.Where("type=1").And("states=1").And("menu_type=1").Find(&list)
 	} else {
-
+		uid := utils.GetUid(ctx)
+		engine.SQL(fmt.Sprintf("SELECT n.*"+
+			" FROM %s u"+
+			" JOIN %s ru ON ru.uid=u.uid"+
+			" JOIN %s rn ON rn.role_id=ru.role_id"+
+			" JOIN %s n ON n.id=rn.node_id"+
+			" WHERE u.uid=%d"+
+			" AND n.type=1"+
+			" AND n.states=1"+
+			" AND n.menu_type=1", userTable, roleUserTable, roleNodeTable, nodeTable, uid)).Find(&list)
 	}
+
+	return list, nil
 }
 
-// 右侧目录
-func (u *User) GetRightMenu(ctx *gin.Context) {
+// 获取管理员拥有的右侧菜单
+func (u *User) MyRightMenu(ctx *gin.Context, pid int) ([]Node, error) {
+	// 获取上级信息
+	parent, err := new(Node).Get(pid)
+	if err != nil {
+		return nil, err
+	}
 
+	// 表名
+	userTable := u.TableName()
+	roleUserTable := new(RoleUser).TableName()
+	roleNodeTable := new(RoleNode).TableName()
+	nodeTable := new(Node).TableName()
+
+	var list []Node
+
+	// 判断是否超管
+	engine := utils.Engine_backstage
+	if utils.IsSuper(ctx) { // 超管，直接返回所有左侧菜单
+		engine.Where("type=1").And("states=1").And("menu_type=2").And(fmt.Sprintf("full_id LIKE '%s%%'", parent.FullId)).Find(&list)
+	} else {
+		uid := utils.GetUid(ctx)
+		engine.SQL(fmt.Sprintf("SELECT n.*"+
+			" FROM %s u"+
+			" JOIN %s ru ON ru.uid=u.uid"+
+			" JOIN %s rn ON rn.role_id=ru.role_id"+
+			" JOIN %s n ON n.id=rn.node_id"+
+			" WHERE u.uid=%d"+
+			" AND n.type=1"+
+			" AND n.states=1"+
+			" AND n.menu_type=2"+
+			" AND n.full_id LIKE '%s%%'", userTable, roleUserTable, roleNodeTable, nodeTable, uid, parent.FullId)).Find(&list)
+	}
+
+	return list, nil
 }

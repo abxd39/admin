@@ -48,3 +48,18 @@ func (n *Node) ListAll(filter map[string]string) (modelList *models.ModelList, e
 
 	return n.NoPaging(len(list), list), nil
 }
+
+// 节点详情
+func (n *Node) Get(id int) (node *Node, err error) {
+	engine := utils.Engine_backstage
+	node = new(Node)
+	has, err := engine.Id(id).Get(node)
+	if err != nil {
+		return nil, errors.NewSys(err)
+	}
+	if !has {
+		return nil, errors.NewNormal("权限节点不存在")
+	}
+
+	return
+}

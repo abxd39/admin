@@ -32,6 +32,8 @@ func (a *AdminController) Router(e *gin.Engine) {
 		group.POST("/update", a.Update)
 		group.POST("/delete", a.Delete)
 		group.GET("/list_login_log", a.ListLoginLog)
+		group.GET("/my_left_menu", a.MyLeftMenu)
+		group.GET("/my_right_menu", a.MyRightMenu)
 	}
 }
 
@@ -428,6 +430,47 @@ func (a *AdminController) ListLoginLog(ctx *gin.Context) {
 			a.RespErr(ctx, "类型错误")
 			return
 		}
+	}
+
+	// 设置返回数据
+	a.Put(ctx, "list", list)
+
+	// 返回
+	a.RespOK(ctx)
+	return
+}
+
+// 获取左侧菜单
+func (a *AdminController) MyLeftMenu(ctx *gin.Context) {
+	// 调用model
+	list, err := new(bk.User).MyLeftMenu(ctx)
+	if err != nil {
+		a.RespErr(ctx, err)
+		return
+	}
+
+	// 设置返回数据
+	a.Put(ctx, "list", list)
+
+	// 返回
+	a.RespOK(ctx)
+	return
+}
+
+// 获取右侧菜单
+func (a *AdminController) MyRightMenu(ctx *gin.Context) {
+	// 获取参数
+	pid, err := a.GetInt(ctx, "pid")
+	if err != nil {
+		a.RespErr(ctx, "参数pid格式错误")
+		return
+	}
+
+	// 调用model
+	list, err := new(bk.User).MyRightMenu(ctx, pid)
+	if err != nil {
+		a.RespErr(ctx, err)
+		return
 	}
 
 	// 设置返回数据
