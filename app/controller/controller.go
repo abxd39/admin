@@ -87,7 +87,7 @@ func (c *Controller) RespErr(ctx *gin.Context, options ...interface{}) {
 	// 优先使用系统指定msg
 	sysMsg := constant.GetResponseMsg(c.resp.Code)
 	if len(sysMsg) > 0 {
-		c.resp.Msg = constant.GetResponseMsg(c.resp.Code)
+		c.resp.Msg = sysMsg
 	}
 
 	// 没有数据时，让data字段的json值为[]而非null
