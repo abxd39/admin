@@ -66,6 +66,7 @@ func (c *Controller) RespErr(ctx *gin.Context, options ...interface{}) {
 		case int:
 			c.resp.Code = opt // 当前指定code
 		case string:
+			c.resp.Msg = opt
 		case errors.SysErrorInterface: // 系统错误
 			c.resp.Code = constant.RESPONSE_CODE_SYSTEM // 设为系统错误code
 
