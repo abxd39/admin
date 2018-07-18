@@ -166,13 +166,6 @@ func (a *AdminController) Logout(ctx *gin.Context) {
 
 // 管理员列表
 func (a *AdminController) List(ctx *gin.Context) {
-	// 判断登录
-	err := a.CheckLogin(ctx)
-	if err != nil {
-		a.RespErr(ctx, err)
-		return
-	}
-
 	// 获取参数
 	page, err := a.GetInt(ctx, "page", 1)
 	if err != nil {
