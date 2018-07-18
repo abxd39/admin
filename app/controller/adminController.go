@@ -109,15 +109,17 @@ func (a *AdminController) Login(ctx *gin.Context) {
 	//var hanlen int
 	//fmt.Println("vvvvvvvvvvvvvvvvvvvvv", req.LoginPwd)
 	//查数据库 验证用户名和密码
-	isSuper, name, uid, err := new(bk.User).Login(req.Phone, req.LoginPwd)
+	isSuper, nickName, uid, err := new(bk.User).Login(req.Phone, req.LoginPwd)
 	if err != nil {
 		// @@@写入登录日志，登录失败@@@
 		if _, err := new(bk.UserLoginLog).Add(&bk.UserLoginLog{
 			Uid:       uid,
-			LoginTime: time.Now().Unix(),
+			NickName:  req.Phone,
 			States:    2,
+			LoginIp:   utils.GetRemoteAddr(ctx),
+			LoginTime: time.Now().Unix(),
 		}); err != nil {
-
+			utils.AdminLog.Error("记录管理员登录日志失败", err)
 		}
 
 		// 返回
@@ -137,14 +139,16 @@ func (a *AdminController) Login(ctx *gin.Context) {
 	// @@@写入登录日志，登录成功@@@
 	if _, err := new(bk.UserLoginLog).Add(&bk.UserLoginLog{
 		Uid:       uid,
-		LoginTime: time.Now().Unix(),
+		NickName:  nickName,
 		States:    1,
+		LoginIp:   utils.GetRemoteAddr(ctx),
+		LoginTime: time.Now().Unix(),
 	}); err != nil {
 		utils.AdminLog.Error("记录管理员登录日志失败", err)
 	}
 
 	// 返回
-	ctx.JSON(http.StatusOK, gin.H{"code": 0, "data": "", "uid": uid, "name": name, "msg": "登录成功"})
+	ctx.JSON(http.StatusOK, gin.H{"code": 0, "data": "", "uid": uid, "name": nickName, "msg": "登录成功"})
 	return
 }
 
@@ -393,6 +397,44 @@ func (a *AdminController) ListLoginLog(ctx *gin.Context) {
 	if err != nil {
 		a.RespErr(ctx, err)
 		return
+	}
+
+	// 重新组装数据
+	if list.Total > 0 {
+		if items, ok := list.Items.([]bk.UserLoginLog); ok {
+			type NewItem struct {
+				Id        int    `json:"id"`
+				Uid       int    `json:"uid"`
+				NickName  string `json:"nick_name"`
+				LoginIp   string `json:"login_ip"`
+				LoginTime int64  `json:"login_time"`
+				Desc      string `json:"desc"`
+			}
+
+			newItems := make([]NewItem, len(items))
+			for k, v := range items {
+				state := "成功"
+				if v.States == 0 {
+					state = "失败"
+				}
+
+				newItems[k] = NewItem{
+					Id:        v.Id,
+					Uid:       v.Uid,
+					NickName:  v.NickName,
+					LoginIp:   v.LoginIp,
+					LoginTime: v.LoginTime,
+					Desc:      fmt.Sprintf("%s在%s时，登录%s。", v.NickName, utils.Unix2Date(v.LoginTime), state),
+				}
+			}
+
+			// 用新的items
+			list.Items = newItems
+		} else {
+			// 类型断言错误
+			a.RespErr(ctx, "类型错误")
+			return
+		}
 	}
 
 	// 设置返回数据
