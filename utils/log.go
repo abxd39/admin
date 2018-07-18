@@ -1,11 +1,10 @@
 package utils
 
 import (
+	"os"
 
-"os"
-
-"github.com/liudng/godump"
-"github.com/sirupsen/logrus"
+	"github.com/liudng/godump"
+	"github.com/sirupsen/logrus"
 )
 
 var AdminLog *logrus.Logger

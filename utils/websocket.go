@@ -9,4 +9,4 @@ var Upgrader = websocket.Upgrader{
 
 var Clients = make(map[*websocket.Conn]bool)
 
-var Broadcast = make(chan map[string]interface{})           // broadcast channel
+var Broadcast = make(chan map[string]interface{}) // broadcast channel

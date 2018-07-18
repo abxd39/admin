@@ -42,6 +42,12 @@ type Trade struct {
 	States       int    `xorm:"comment('0是挂单，1是部分成交,2成交， -1撤销') INT(11)"`
 }
 
+func (this *EntrustDetail) IsExist(symbol string) (bool, error) {
+	engine := utils.Engine_token
+	query := engine.Desc("trade_id")
+	return query.Where("symbol=?", symbol).Exist(&EntrustDetail{})
+}
+
 func (this *EntrustDetail) EvacuateOder(uid, odid int) error {
 	engine := utils.Engine_token
 	query := engine.Desc("trade_id")

@@ -8,7 +8,7 @@ import (
 type TestController struct {
 }
 
-func (this *TestController)Router(r *gin.Engine){
+func (this *TestController) Router(r *gin.Engine) {
 	group := r.Group("/test")
 	{
 		group.GET("/hello", this.Hello)
@@ -19,23 +19,23 @@ func (this *TestController)Router(r *gin.Engine){
 	}
 }
 
-func (this *TestController)Hello(ctx *gin.Context) {
+func (this *TestController) Hello(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, "hello")
 	return
 }
-func (this *TestController)Create(ctx *gin.Context) {
+func (this *TestController) Create(ctx *gin.Context) {
 
 	return
 }
-func (this *TestController)List(ctx *gin.Context) {
+func (this *TestController) List(ctx *gin.Context) {
 
 	return
 }
-func (this *TestController)Delete(ctx *gin.Context) {
+func (this *TestController) Delete(ctx *gin.Context) {
 
 	return
 }
-func (this *TestController)Update(ctx *gin.Context) {
+func (this *TestController) Update(ctx *gin.Context) {
 
 	return
 }

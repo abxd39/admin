@@ -24,6 +24,7 @@ type UserSecondaryCertificationGroup struct {
 	UserSecondaryCertification `xorm:"extends"`
 	NickName                   string `xorm:"not null default '' comment('用户昵称') VARCHAR(64)"`
 	SecurityAuth               int    `xorm:"comment('认证状态1110') TINYINT(8)"`
+	TwoVerifyMark              int
 	Phone                      string `xorm:"comment('手机') unique VARCHAR(64)"`
 	Email                      string `xorm:"comment('邮箱') unique VARCHAR(128)"`
 	Account                    string `xorm:"comment('账号') unique VARCHAR(64)"`
@@ -55,6 +56,9 @@ func (u *UserSecondaryCertificationGroup) GetSecondaryCertificationOfUid(uid int
 	_, err = query.Get(us)
 	if err != nil {
 		return nil, err
+	}
+	if us.SecurityAuth&utils.AUTH_TWO == 1 {
+		us.TwoVerifyMark = 1
 	}
 	return us, nil
 }
@@ -92,7 +96,11 @@ func (u *UserSecondaryCertification) GetSecondaryCertificationList(page, rows, v
 	if err != nil {
 		return nil, err
 	}
-
+	for index, _ := range list {
+		if list[index].SecurityAuth&utils.AUTH_TWO == 1 {
+			list[index].TwoVerifyMark = 1
+		}
+	}
 	modellist.Items = list
 	return modellist, nil
 }

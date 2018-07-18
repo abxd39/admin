@@ -3,6 +3,7 @@ package models
 import (
 	"admin/utils"
 	"errors"
+	"fmt"
 )
 
 type UserToken struct {
@@ -17,14 +18,14 @@ type UserToken struct {
 
 //资产
 type PersonalProperty struct {
-	Uid      int
-	NickName string
-	Phone    string
-	Email    string
-	Btc      float32 //折合比特币总数
-	Balance  float64 // 这和人民币总数
-	Status   int     //账号状态
-	token    []UserToken
+	BaseModel `xorm:"-"`
+	Uid       uint64
+	NickName  string
+	Phone     string
+	Email     string
+	Btc       float32 //折合比特币总数
+	Balance   float64 // 这和人民币总数
+	Status    int     //账号状态
 }
 
 // var Total []PersonalProperty
@@ -48,44 +49,96 @@ func (u *UserToken) GetTokenDetailOfUid(uid, token_id int) ([]UserToken, error) 
 
 //所有用户 的全部币币资产
 //第一步get 所有用户
-func (t *PersonalProperty) TotalUserBalance(page, rows, status int) (*ModelList, error) {
+func (t *PersonalProperty) TotalUserBalance(page, rows, status int, search string) (*ModelList, error) {
 	//查 用户表
+	engine := utils.Engine_token
+	if status != 0 || search != `` {
+		list, err := new(WebUser).GetAllUser(page, rows, status, search)
+		if err != nil {
+			return nil, err
+		}
+		var uid []uint64
+		userlist, Ok := list.Items.([]UserGroup)
+		if !Ok {
+			return nil, errors.New("assert failed!!")
+		}
+		for _, v := range userlist {
+			uid = append(uid, v.Uid)
+		}
+		fmt.Printf("TotalUserBalance%#v\n", uid)
 
-	// list, err := new(WebUser).GetAllUser(page, rows, status)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// var uid []uint64
-	// userlist, Ok := list.Items.([]UserGroup)
-	// if !Ok {
-	// 	return nil, errors.New("assert failed!!")
-	// }
-	// for _, v := range userlist {
-	// 	uid = append(uid, v.Uid)
-	// }
-	// fmt.Printf("TotalUserBalance%#v\n", uid)
-	// engine := utils.Engine_token
-	// token := make([]UserToken, 0)
-	// err = engine.In("uid", uid).Find(&token)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// Total := make([]PersonalProperty, 0)
-	// for _, ob := range userlist {
-	// 	pp := &PersonalProperty{}
-	// 	pp.Uid = int(ob.Uid)
-	// 	pp.NickName = ob.NickName
-	// 	pp.Phone = ob.Phone
-	// 	pp.Email = ob.Email
-	// 	pp.Status = ob.Status
-	// 	for _, result := range token {
-	// 		if ob.Uid == result.Uid {
-	// 			pp.token = append(pp.token, result)
-	// 		}
-	// 	}
+		query := engine.Desc("uid")
+		query = query.In("uid", uid)
+		tempQuery := *query
+		count, err := tempQuery.Count(&UserToken{})
+		if err != nil {
+			return nil, err
+		}
+		offset, modelList := t.Paging(page, rows, int(count))
+		tokenlist := make([]PersonalProperty, 0)
+		err = query.Limit(modelList.PageSize, offset).Find(&tokenlist)
+		if err != nil {
+			return nil, err
+		}
 
-	// 	Total = append(Total, *pp)
-	// }
-	// list.Items = Total
-	return nil, nil
+		for index, _ := range tokenlist {
+
+			for _, ob := range userlist {
+				if tokenlist[index].Uid == ob.Uid {
+					tokenlist[index].Email = ob.Email
+					tokenlist[index].NickName = ob.NickName
+					tokenlist[index].Phone = ob.Phone
+
+				}
+
+			}
+		}
+
+		modelList.Items = tokenlist
+		return modelList, nil
+	}
+	//去重找uid的所有uid
+	query := engine.Desc("uid")
+	tempQuery := *query
+
+	count, err := tempQuery.Count(&PersonalProperty{})
+	if err != nil {
+		return nil, err
+	}
+	offset, modelList := t.Paging(page, rows, int(count))
+	tokenlist := make([]PersonalProperty, 0)
+
+	query = query.Limit(modelList.PageSize, offset)
+	countQuery := *query
+	err = query.Find(&tokenlist)
+	if err != nil {
+		return nil, err
+	}
+	countList := make([]UserToken, 0)
+	err = countQuery.Distinct("uid").Find(&countList)
+	if err != nil {
+		return nil, err
+	}
+	//根据uid 获取用户资料
+	uidlist := make([]uint64, 0)
+	for _, v := range countList {
+		uidlist = append(uidlist, v.Uid)
+	}
+
+	ulist, err := new(UserGroup).GetUserListForUid(uidlist)
+	if err != nil {
+		return nil, err
+	}
+
+	for i, _ := range tokenlist {
+		for _, value := range ulist {
+			if tokenlist[i].Uid == value.Uid {
+				tokenlist[i].Phone = value.Phone
+				tokenlist[i].NickName = value.NickName
+				tokenlist[i].Email = value.Email
+			}
+		}
+	}
+	modelList.Items = tokenlist
+	return modelList, nil
 }

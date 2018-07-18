@@ -7,6 +7,6 @@ import (
 type PublicController struct {
 }
 
-func (this *PublicController)Router(r *gin.Engine){
-	r.Static("/public",  "./public")
+func (this *PublicController) Router(r *gin.Engine) {
+	r.Static("/public", "./public")
 }

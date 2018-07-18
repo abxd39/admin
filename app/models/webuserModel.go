@@ -7,8 +7,6 @@ import (
 	//google "code.google.com/a_game/src/models"
 )
 
-
-
 type UserEx struct {
 	Uid           int64  `xorm:"not null pk comment(' 用户ID') BIGINT(11)"`
 	NickName      string `xorm:"not null default '' comment('用户昵称') VARCHAR(64)"`
@@ -49,30 +47,26 @@ type UserGroup struct {
 	NickName           string `xorm:"not null default '' comment('用户昵称') VARCHAR(64)"`
 	RegisterTime       int64  `xorm:"comment('注册时间') BIGINT(20)"`
 	RealName           string `xorm:"comment(' 真名') VARCHAR(32)"`
-	AffirmTime    		int64  `xorm:"comment('实名认证时间') BIGINT(20)"`
-	AffirmCount   int    `xorm:"default 0 comment('实名认证的次数') TINYINT(4)"`
-	RealNameVerifyMark int
-	GoogleVerifyMark   int
-	TWOVerifyMark      int
-	TotalCNY           int64 // 账户的折合总资产
-	TotalCurrentCNY    int64 //法币账户折合
-	LockCurrentCNY     int64 // 法币折合冻结CNY
-	TotalTokenCNY      int64 //币币账户折合
-	LockTokenCNY       int64 //bibi 折合冻结CNY
+	AffirmTime         int64  `xorm:"comment('实名认证时间') BIGINT(20)"`
+	AffirmCount        int    `xorm:"default 0 comment('实名认证的次数') TINYINT(4)"`
+	RealNameVerifyMark int    //一级实名认证
+	GoogleVerifyMark   int    //google 认证
+	TWOVerifyMark      int    //二级认证
+	PhoneVerifyMark    int    //电话认证
+	EMAILVerifyMark    int    //邮箱认证
+	TotalCNY           int64  // 账户的折合总资产
+	TotalCurrentCNY    int64  //法币账户折合
+	LockCurrentCNY     int64  // 法币折合冻结CNY
+	TotalTokenCNY      int64  //币币账户折合
+	LockTokenCNY       int64  //bibi 折合冻结CNY
 
 }
 
-const (
-	AUTH_EMAIL  = 2 //00000010
-	AUTH_PHONE  = 1 //00000001
-	AUTH_GOOGLE = 8 //00001000
-	AUTH_TWO    = 4 //0100
-)
-
 type FirstDetail struct {
-	UserEx  `xorm:"extends"`
-	Account string `xorm:"comment('账号') unique VARCHAR(64)"`
-	SecurityAuth     int    `xorm:"comment('认证状态1110') TINYINT(8)"`
+	UserEx       `xorm:"extends"`
+	Account      string `xorm:"comment('账号') unique VARCHAR(64)"`
+	SecurityAuth int    `xorm:"comment('认证状态1110') TINYINT(8)"`
+	VerifyMark   int    //一级实名认证状态
 }
 
 func (f *FirstDetail) TableName() string {
@@ -87,8 +81,8 @@ func (w *UserGroup) TableName() string {
 	return "user"
 }
 
-//确认实名
-func (w *WebUser) CertificationAffirmLimit(uid,status int) error {
+//二级认证审核
+func (w *WebUser) SecondAffirmLimit(uid, status int) error {
 	engine := utils.Engine_common
 	query := engine.Where("uid=?", uid)
 	temp := *query
@@ -100,13 +94,48 @@ func (w *WebUser) CertificationAffirmLimit(uid,status int) error {
 	if !has {
 		return errors.New("用户不存在！！")
 	}
-	c := wu.SecurityAuth | status // 16 为实名状态标识
-	_, err = query.Update(&WebUser{
-		SecurityAuth: c,
-	})
-	if err!=nil{
-		return  err
+	if status == utils.AUTH_NIL {
+		wu.SecurityAuth = wu.SecurityAuth &^ wu.SecurityAuth
 	}
+	if status == utils.AUTH_FIRST {
+		wu.SecurityAuth = wu.SecurityAuth | utils.AUTH_FIRST // 16 为实名状态标识
+	}
+	_, err = query.Update(&WebUser{
+		SecurityAuth: wu.SecurityAuth,
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+//审核实名
+func (w *WebUser) FirstAffirmLimit(uid, status int) error {
+	engine := utils.Engine_common
+	query := engine.Where("uid=?", uid)
+	temp := *query
+	wu := new(WebUser)
+	has, err := temp.Get(wu)
+	if err != nil {
+		return err
+	}
+	if !has {
+		return errors.New("用户不存在！！")
+	}
+
+	if status == utils.AUTH_NIL {
+		wu.SecurityAuth = wu.SecurityAuth &^ wu.SecurityAuth
+	}
+	if status == utils.AUTH_FIRST {
+		wu.SecurityAuth = wu.SecurityAuth | utils.AUTH_FIRST // 16 为实名状态标识
+	}
+	_, err = query.Update(&WebUser{
+		SecurityAuth: wu.SecurityAuth,
+	})
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -116,7 +145,7 @@ func (w *FirstDetail) GetFirstDetail(uid int) (*FirstDetail, error) {
 	query := engine.Desc("user_ex.uid")
 	query = query.Join("INNER", "user", "user.uid=user_ex.uid")
 	query = query.Where("user_ex.uid=?", uid)
-	query = query.Cols("user_ex.register_time", "user_ex.uid", "user_ex.real_name", "user_ex.identify_card","user_ex.affirm_time","user_ex.affirm_count", "user.account", "user_ex.nick_name","user.security_auth")
+	query = query.Cols("user_ex.register_time", "user_ex.uid", "user_ex.real_name", "user_ex.identify_card", "user_ex.affirm_time", "user_ex.affirm_count", "user.account", "user_ex.nick_name", "user.security_auth")
 	temp := *query
 	has, err := temp.Exist(&FirstDetail{})
 	if err != nil {
@@ -130,6 +159,9 @@ func (w *FirstDetail) GetFirstDetail(uid int) (*FirstDetail, error) {
 	_, err = query.Get(u)
 	if err != nil {
 		return nil, err
+	}
+	if u.SecurityAuth&utils.AUTH_FIRST == 1 {
+		u.VerifyMark = 1
 	}
 	return u, nil
 }
@@ -342,7 +374,7 @@ func (w *WebUser) UserList(page, rows, verify, status int, search string, date i
 	return modelList, nil
 }
 
-//
+//获取用户列表
 func (w *WebUser) GetCurreryList(uid []uint64, verify int, search string) ([]UserGroup, error) {
 	engine := utils.Engine_common
 
@@ -366,7 +398,26 @@ func (w *WebUser) GetCurreryList(uid []uint64, verify int, search string) ([]Use
 	}
 	//认证 判段
 	for index, v := range list {
-		if v.SecurityAuth&AUTH_TWO == 1 {
+		if v.SecurityAuth&utils.AUTH_TWO == 1 {
+			list[index].TWOVerifyMark = 1
+		}
+	}
+	return list, nil
+}
+
+func (w *WebUser) GetUserListForUid(uid []uint64) ([]UserGroup, error) {
+	engine := utils.Engine_common
+	query := engine.Desc("user.uid")
+	query = query.Join("INNER", "user_ex", "user.uid=user_ex.uid")
+	query = query.In("user.uid", uid)
+	list := make([]UserGroup, 0)
+	err := query.Find(&list)
+	if err != nil {
+		return nil, err
+	}
+	//认证 判段
+	for index, v := range list {
+		if v.SecurityAuth&utils.AUTH_TWO == 1 {
 			list[index].TWOVerifyMark = 1
 		}
 	}

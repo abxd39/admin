@@ -21,10 +21,10 @@ func (this *TokenController) Router(r *gin.Engine) {
 		g.GET("/record_list", this.GetRecordList)        //bibi p4-1-1 成交记录
 		g.GET("/total_balance", this.GetTokenBalance)    //bibi p2-3-2币币账户统计列表
 		g.GET("/user_token_detail", this.GetTokenDetail) //p2-3-2-1查看币币账户资产
-		g.GET("/token_cash_list", this.GetTokenCashList)      //p4-1-2币兑管理
-		g.GET("/delete_cash", this.DeleteCash)           //删除币兑
+		g.GET("/token_cash_list", this.GetTokenCashList) //p4-1-2币兑管理
+		g.POST("/delete_cash", this.DeleteCash)          //删除币兑
 		g.GET("/modify_cash", this.ModifyCash)           //修改币兑
-		g.GET("/add_cash", this.AddCash)                 //添加币兑
+		g.POST("/add_cash", this.AddCash)                //添加币兑
 		g.GET("/change_detail", this.ChangeDetail)       //p2-3-4币币账户变更详情
 	}
 }
@@ -39,9 +39,9 @@ func (this *TokenController) DeleteCash(c *gin.Context) {
 		this.RespErr(c, err)
 		return
 	}
-	err= new(models.ConfigQuenes).DeleteCash(req.Id)
-	if err!=nil{
-		this.RespErr(c,err)
+	err = new(models.ConfigQuenes).DeleteCash(req.Id)
+	if err != nil {
+		this.RespErr(c, err)
 		return
 	}
 	this.RespOK(c)
@@ -58,12 +58,12 @@ func (this *TokenController) ModifyCash(c *gin.Context) {
 		this.RespErr(c, err)
 		return
 	}
-	result,err:=new(models.ConfigQuenes).ModifyCash(req.Id)
-	if err!=nil{
-		this.RespErr(c,err)
+	result, err := new(models.ConfigQuenes).ModifyCash(req.Id)
+	if err != nil {
+		this.RespErr(c, err)
 		return
 	}
-	this.Put(c,"data",result)
+	this.Put(c, "data", result)
 
 	this.RespOK(c)
 	return
@@ -77,9 +77,10 @@ func (this *TokenController) AddCash(c *gin.Context) {
 		this.RespErr(c, err)
 		return
 	}
-	err= new(models.ConfigQuenes).AddCash(&req)
-	if err!=nil{
-		this.RespErr(c,err)
+	err = new(models.ConfigQuenes).AddCash(&req)
+	if err != nil {
+		fmt.Println("0cccccccccccccccccc0", err)
+		this.RespErr(c, err)
 		return
 	}
 	this.RespOK(c)
@@ -124,9 +125,9 @@ func (this *TokenController) ChangeDetail(c *gin.Context) {
 
 func (this *TokenController) GetTokenCashList(c *gin.Context) {
 	req := struct {
-		Page    int `form:"page" json:"page" binding:"required"`
-		Rows    int `form:"rows" json:"rows" `
-		TokenId int `form:"token_id" json:"token_id" `
+		Page int `form:"page" json:"page" binding:"required"`
+		Rows int `form:"rows" json:"rows" `
+		Id   int `form:"id" json:"id" `
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
@@ -134,7 +135,7 @@ func (this *TokenController) GetTokenCashList(c *gin.Context) {
 		this.RespErr(c, err)
 		return
 	}
-	list, err := new(models.ConfigQuenes).GetTokenCashList(req.Page, req.Rows, req.TokenId)
+	list, err := new(models.ConfigQuenes).GetTokenCashList(req.Page, req.Rows, req.Id)
 	if err != nil {
 		this.RespErr(c, err)
 		return
@@ -168,9 +169,10 @@ func (this *TokenController) GetTokenDetail(c *gin.Context) {
 //bibi 账户统计表
 func (this *TokenController) GetTokenBalance(c *gin.Context) {
 	req := struct {
-		Page     int `form:"page" json:"page" binding:"required"`
-		Page_num int `form:"rows" json:"rows" `
-		Status   int `form:"status" json:"status" `
+		Page   int    `form:"page" json:"page" binding:"required"`
+		Rows   int    `form:"rows" json:"rows" `
+		Status int    `form:"status" json:"status" `
+		Search string `form:"search" json:"search" `
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
@@ -179,7 +181,7 @@ func (this *TokenController) GetTokenBalance(c *gin.Context) {
 		return
 	}
 	fmt.Printf("GetTokenBalance%#v\n", req)
-	list, err := new(models.PersonalProperty).TotalUserBalance(req.Page, req.Page_num, req.Status)
+	list, err := new(models.PersonalProperty).TotalUserBalance(req.Page, req.Rows, req.Status, req.Search)
 	if err != nil {
 		this.RespErr(c, err)
 		return

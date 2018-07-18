@@ -3,6 +3,7 @@ package models
 import (
 	"admin/utils"
 	"errors"
+	"fmt"
 )
 
 //交易对
@@ -32,12 +33,21 @@ type ConfigQuenes struct {
 	SundaySwitch         int    `xorm:"comment('周日可交易') TINYINT(4)" jons:"sunday_switch"`
 }
 
-func (q *ConfigQuenes) GetTokenCashList(page, rows, token_id int) (*ModelList, error) {
+type ConfigQuenesEx struct {
+	ConfigQuenes `xorm:"extends"`
+	IsModifyMark bool //是否允许修改状态
+}
+
+func (c *ConfigQuenesEx) TableName() string {
+	return "config_quenes"
+}
+
+func (q *ConfigQuenes) GetTokenCashList(page, rows, id int) (*ModelList, error) {
 	engine := utils.Engine_token
 
 	query := engine.Desc("id")
-	if token_id != 0 {
-		query = query.Where("token_id=?", token_id)
+	if id != 0 {
+		query = query.Where("id=?", id)
 	}
 	tquery := *query
 	count, err := tquery.Count(&ConfigQuenes{})
@@ -77,70 +87,82 @@ func (q *ConfigQuenes) DeleteCash(id int) error {
 }
 
 //修改
-func (q*ConfigQuenes)ModifyCash(id int)(*ConfigQuenes,error)  {
-	engine:=utils.Engine_token
+func (q *ConfigQuenes) ModifyCash(id int) (*ConfigQuenesEx, error) {
+	engine := utils.Engine_token
 	query := engine.Desc("id")
 	query = query.Where("id=?", id)
 	tempQuery := *query
-	c:=new(ConfigQuenes)
+	c := new(ConfigQuenesEx)
 	has, err := tempQuery.Get(c)
 	if err != nil {
-		return nil,err
+		return nil, err
 	}
 	if !has {
-		return nil,errors.New(" 兑币对不存在！！")
+		return nil, errors.New(" 兑币对不存在！！")
 	}
-	return c,nil
+	//查数据库是否有挂单
+	has, err = new(EntrustDetail).IsExist(c.Name)
+	if err != nil {
+		return nil, err
+	}
+	if has {
+		c.IsModifyMark = has
+	}
+	return c, nil
 }
 
 //添加 和修改后的提交
-func (q*ConfigQuenes)AddCash(c *ConfigQuenes)error{
+func (q *ConfigQuenes) AddCash(c *ConfigQuenes) error {
 	//
-	engine:=utils.Engine_token
+	engine := utils.Engine_token
 
-	if c.Id!=0{
-			//修改 则需要判断是否存在
-			has,err:=engine.Id(c.Id).Exist(&ConfigQuenes{})
-			if err!=nil{
-				return err
-			}
-			if !has{
-				return errors.New("兑币不存在修改失败")
-			}
-			_,err=engine.Where("id",c.Id).Update(&ConfigQuenes{
-				TokenId:c.TokenId,
-				TokenTradeId:c.TokenTradeId,
-				Switch:c.Switch,
-				Price:c.Price,
-				Scope:c.Scope,
-				Name:c.Name,
-				Low:c.Low,
-				High:c.High,
-				Amount:c.Amount,
-				SellPoundage:c.SellPoundage,
-				BuyPoundage:c.BuyPoundage,
-				BuyMinimumPrice:c.BuyMinimumPrice,
-				BuyMaxmunPrice:c.BuyMaxmunPrice,
-				SellMinimumPrice:c.SellMinimumPrice,
-				SellMaxmumPrice:c.SellMinimumPrice,
-				MaxmumTradingVolume:c.MaxmumTradingVolume,
-				MinimumTradingVolume:c.MinimumTradingVolume,
-				BeginTime:c.BeginTime,
-				EndTime: c.EndTime,
-				SaturdaySwitch:c.SaturdaySwitch,
-				SundaySwitch:c.SundaySwitch,
-			})
-			if err!=nil{
-				return  err
-			}
-			return  nil
-		}else {
-			//新曾
-			_,err:=engine.InsertOne(c)
-			if err!=nil{
-				return  err
-			}
-			return  nil
+	if c.Id != 0 {
+		//修改 则需要判断是否存在
+		has, err := engine.Id(c.Id).Exist(&ConfigQuenes{})
+		if err != nil {
+
+			return err
+		}
+		if !has {
+			return errors.New("兑币不存在修改失败")
+		}
+		_, err = engine.Where("id=?", c.Id).Update(&ConfigQuenes{
+			TokenId:              c.TokenId,
+			TokenTradeId:         c.TokenTradeId,
+			Switch:               c.Switch,
+			Price:                c.Price,
+			Scope:                c.Scope,
+			Name:                 c.Name,
+			Low:                  c.Low,
+			High:                 c.High,
+			Amount:               c.Amount,
+			SellPoundage:         c.SellPoundage,
+			BuyPoundage:          c.BuyPoundage,
+			BuyMinimumPrice:      c.BuyMinimumPrice,
+			BuyMaxmunPrice:       c.BuyMaxmunPrice,
+			SellMinimumPrice:     c.SellMinimumPrice,
+			SellMaxmumPrice:      c.SellMinimumPrice,
+			MaxmumTradingVolume:  c.MaxmumTradingVolume,
+			MinimumTradingVolume: c.MinimumTradingVolume,
+			BeginTime:            c.BeginTime,
+			EndTime:              c.EndTime,
+			SaturdaySwitch:       c.SaturdaySwitch,
+			SundaySwitch:         c.SundaySwitch,
+		})
+		if err != nil {
+			fmt.Println("0000000000000001")
+			return err
+		}
+		fmt.Println("11111111111111111")
+		return nil
+	} else {
+		//新曾
+		fmt.Println("2222222222222222")
+		_, err := engine.InsertOne(c)
+		if err != nil {
+			return err
+		}
+		return nil
 
 	}
 

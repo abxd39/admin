@@ -28,15 +28,15 @@ func (w *WebUserManageController) Router(r *gin.Engine) {
 		g.GET("/get_second_detail", w.GetSecondDetail)                //二级实名详情
 		g.GET("/get_first_datail", w.GetFirstDetail)                  //一级实名认证详情
 		g.GET("/get_first_list", w.GetFirstList)                      //p2-4一级实名认证列表
-		g.POST("/certification_affirm", w.CertificationAffirm)        //审核用户认证
+		g.POST("/first_affirm", w.FirstAffirm)                        //审核用户实名认证
+		g.POST("/second_affirm", w.SecondAffirm)                      //审核二级实名认证
 
 	}
 }
 
-
-func (w *WebUserManageController) CertificationAffirm(c *gin.Context) {
+func (w *WebUserManageController) SecondAffirm(c *gin.Context) {
 	req := struct {
-		Uid int `form:"uid" json:"uid" binding:"required"`
+		Uid    int `form:"uid" json:"uid" binding:"required"`
 		status int `form:"status" json:"status" binding:"required"`
 	}{}
 	err := c.ShouldBind(&req)
@@ -45,7 +45,27 @@ func (w *WebUserManageController) CertificationAffirm(c *gin.Context) {
 		w.RespErr(c, err)
 		return
 	}
-	err = new(models.WebUser).CertificationAffirmLimit(req.Uid,req.status)
+	err = new(models.WebUser).SecondAffirmLimit(req.Uid, req.status)
+	if err != nil {
+		w.RespErr(c, err)
+		return
+	}
+	w.RespOK(c)
+	return
+}
+
+func (w *WebUserManageController) FirstAffirm(c *gin.Context) {
+	req := struct {
+		Uid    int `form:"uid" json:"uid" binding:"required"`
+		status int `form:"status" json:"status" binding:"required"`
+	}{}
+	err := c.ShouldBind(&req)
+	if err != nil {
+		utils.AdminLog.Errorln("param buind failed !!")
+		w.RespErr(c, err)
+		return
+	}
+	err = new(models.WebUser).FirstAffirmLimit(req.Uid, req.status)
 	if err != nil {
 		w.RespErr(c, err)
 		return
@@ -74,6 +94,7 @@ func (w *WebUserManageController) GetFirstList(c *gin.Context) {
 		w.RespErr(c, err)
 		return
 	}
+
 	w.Put(c, "list", list)
 	w.RespOK(c)
 }
@@ -346,37 +367,14 @@ func (w *WebUserManageController) GetWebUserList(c *gin.Context) {
 	}
 	fmt.Println("0.00.0.0.0.0.000000000000000", reuslt)
 	list, Ok := reuslt.Items.([]models.UserGroup)
+
 	fmt.Println("GetWebUserList-1")
 	if !Ok {
 		fmt.Println("GetWebUserList-2")
 		w.RespErr(c, err)
 		return
 	}
-	for index, _ := range list {
-
-		if list[index].SecurityAuth == 28 {
-			list[index].GoogleVerifyMark = 1
-			list[index].RealNameVerifyMark = 1
-			list[index].TWOVerifyMark = 1
-		} else if list[index].SecurityAuth == 4 {
-			list[index].TWOVerifyMark = 1
-
-		} else if list[index].SecurityAuth == 8 {
-			list[index].GoogleVerifyMark = 1
-		} else if list[index].SecurityAuth == 12 {
-			list[index].GoogleVerifyMark = 1
-			list[index].TWOVerifyMark = 1
-		} else if list[index].SecurityAuth == 16 {
-			list[index].RealNameVerifyMark = 1
-		} else if list[index].SecurityAuth == 20 {
-			list[index].RealNameVerifyMark = 1
-			list[index].TWOVerifyMark = 1
-		} else if list[index].SecurityAuth == 24 {
-			list[index].RealNameVerifyMark = 1
-			list[index].GoogleVerifyMark = 1
-		}
-
-	}
+	list = w.VerifyOperator(list)
 	if err != nil {
 		w.RespErr(c, err)
 		return
@@ -388,4 +386,21 @@ func (w *WebUserManageController) GetWebUserList(c *gin.Context) {
 	w.RespOK(c)
 	//c.JSON(http.StatusOK, gin.H{"code": 0, "page": page, "data": reuslt, "total": total, "msg": "成功"})
 	return
+}
+
+func (w *WebUserManageController) VerifyOperator(list []models.UserGroup) []models.UserGroup {
+	for index, _ := range list {
+
+		if list[index].SecurityAuth&utils.AUTH_GOOGLE == 1 {
+			list[index].GoogleVerifyMark = 1
+		}
+		if list[index].SecurityAuth&utils.AUTH_TWO == 1 {
+			list[index].TWOVerifyMark = 1
+		}
+		if list[index].SecurityAuth&utils.AUTH_FIRST == 1 {
+			list[index].RealNameVerifyMark = 1
+		}
+
+	}
+	return nil
 }

@@ -1,5 +1,5 @@
 package utils
 
-func init(){
+func init() {
 
 }
