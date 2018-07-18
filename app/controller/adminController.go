@@ -414,7 +414,7 @@ func (a *AdminController) ListLoginLog(ctx *gin.Context) {
 			newItems := make([]NewItem, len(items))
 			for k, v := range items {
 				state := "成功"
-				if v.States == 0 {
+				if v.States == 2 {
 					state = "失败"
 				}
 
