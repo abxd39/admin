@@ -32,6 +32,7 @@ func (a *AdminController) Router(e *gin.Engine) {
 		group.POST("/update", a.Update)
 		group.POST("/delete", a.Delete)
 		group.GET("/list_login_log", a.ListLoginLog)
+		group.POST("/delete_login_log", a.DeleteLoginLog)
 		group.GET("/my_left_menu", a.MyLeftMenu)
 		group.GET("/my_right_menu", a.MyRightMenu)
 	}
@@ -438,6 +439,15 @@ func (a *AdminController) ListLoginLog(ctx *gin.Context) {
 
 	// 设置返回数据
 	a.Put(ctx, "list", list)
+
+	// 返回
+	a.RespOK(ctx)
+	return
+}
+
+// 删除管理员登录日志
+func (a *AdminController) DeleteLoginLog(ctx *gin.Context) {
+	// todo
 
 	// 返回
 	a.RespOK(ctx)
