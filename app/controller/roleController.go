@@ -3,7 +3,9 @@ package controller
 import (
 	"unicode/utf8"
 
+	"admin/app/models"
 	"admin/app/models/backstage"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -26,6 +28,12 @@ func (r *RoleController) Router(e *gin.Engine) {
 // 用户组列表
 func (r *RoleController) List(ctx *gin.Context) {
 	// 获取参数
+	isPage, err := r.GetBool(ctx, "is_page", true)
+	if err != nil {
+		r.RespErr(ctx, "参数is_page格式错误")
+		return
+	}
+
 	page, err := r.GetInt(ctx, "page", 1)
 	if err != nil {
 		r.RespErr(ctx, "参数page格式错误")
@@ -39,7 +47,12 @@ func (r *RoleController) List(ctx *gin.Context) {
 	}
 
 	// 调用model
-	list, err := new(backstage.Role).List(page, rows)
+	var list *models.ModelList
+	if isPage {
+		list, err = new(backstage.Role).List(page, rows)
+	} else {
+		list, err = new(backstage.Role).ListAll()
+	}
 	if err != nil {
 		r.RespErr(ctx, err)
 		return

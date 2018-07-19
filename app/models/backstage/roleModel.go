@@ -48,6 +48,20 @@ func (r *Role) List(pageIndex, pageSize int) (modelList *models.ModelList, err e
 	return
 }
 
+// 用户组列表，不分页
+func (r *Role) ListAll() (*models.ModelList, error) {
+	engine := utils.Engine_backstage
+	query := engine.Desc("id")
+
+	var list []Role
+	err := query.Find(&list)
+	if err != nil {
+		return nil, errors.NewSys(err)
+	}
+
+	return r.NoPaging(len(list), list), nil
+}
+
 // 用户组详情
 func (r *Role) Get(id int) (role *Role, err error) {
 	engine := utils.Engine_backstage
