@@ -134,7 +134,7 @@ func (u *User) Add(user *User, roleIds string) (uid int, err error) {
 
 	// 判断管理员名称是否已存在
 	engine := utils.Engine_backstage
-	has, err := engine.Where("name=?", user.Name).Get(new(User))
+	has, err := engine.Where("name=?", user.Name).Exist(new(User))
 	if err != nil {
 		return 0, errors.NewSys(err)
 	}
@@ -193,7 +193,7 @@ func (u *User) Add(user *User, roleIds string) (uid int, err error) {
 func (u *User) Update(uid int, params map[string]interface{}) error {
 	// 验证管理员是否存在
 	engine := utils.Engine_backstage
-	has, err := engine.Id(uid).Get(new(User))
+	has, err := engine.Id(uid).Exist(new(User))
 	if err != nil {
 		return errors.NewSys(err)
 	}
@@ -205,7 +205,7 @@ func (u *User) Update(uid int, params map[string]interface{}) error {
 	userData := make(map[string]interface{})
 	if v, ok := params["name"]; ok {
 		// 判断管理员用户名是否已存在
-		has, err = engine.Where("name=?", v).And("uid!=?", uid).Get(new(User))
+		has, err = engine.Where("name=?", v).And("uid!=?", uid).Exist(new(User))
 		if err != nil {
 			return errors.NewSys(err)
 		}
@@ -291,7 +291,7 @@ func (u *User) Update(uid int, params map[string]interface{}) error {
 func (u *User) Delete(uid int) error {
 	// 验证用户组是否存在
 	engine := utils.Engine_backstage
-	has, err := engine.Id(uid).Get(new(User))
+	has, err := engine.Id(uid).Exist(new(User))
 	if err != nil {
 		return errors.NewSys(err)
 	}

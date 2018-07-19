@@ -92,12 +92,11 @@ func (r *Role) GetBindNodeIds(roleId int) (nodeIds []int, err error) {
 func (r *Role) Add(role *Role, nodeIds string) (id int, err error) {
 	// 判断用户组名称是否已存在
 	engine := utils.Engine_backstage
-	checkRole := new(Role)
-	has, err := engine.Where("name=?", role.Name).Get(checkRole)
+	has, err := engine.Where("name=?", role.Name).Exist(new(Role))
 	if err != nil {
 		return 0, errors.NewSys(err)
 	}
-	if has && checkRole.Name == role.Name {
+	if has {
 		return 0, errors.NewNormal("名称已存在")
 	}
 
@@ -152,7 +151,7 @@ func (r *Role) Add(role *Role, nodeIds string) (id int, err error) {
 func (r *Role) Update(id int, params map[string]interface{}) error {
 	// 验证用户组是否存在
 	engine := utils.Engine_backstage
-	has, err := engine.Id(id).Get(new(Role))
+	has, err := engine.Id(id).Exist(new(Role))
 	if err != nil {
 		return errors.NewSys(err)
 	}
@@ -164,7 +163,7 @@ func (r *Role) Update(id int, params map[string]interface{}) error {
 	roleData := make(map[string]interface{})
 	if v, ok := params["name"]; ok {
 		// 判断用户组名称是否已存在
-		has, err = engine.Where("name=?", v).And("id!=?", id).Get(new(Role))
+		has, err = engine.Where("name=?", v).And("id!=?", id).Exist(new(Role))
 		if err != nil {
 			return errors.NewSys(err)
 		}
@@ -239,7 +238,7 @@ func (r *Role) Update(id int, params map[string]interface{}) error {
 func (r *Role) Delete(id int) error {
 	// 验证用户组是否存在
 	engine := utils.Engine_backstage
-	has, err := engine.Id(id).Get(new(Role))
+	has, err := engine.Id(id).Exist(new(Role))
 	if err != nil {
 		return errors.NewSys(err)
 	}
