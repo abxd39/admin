@@ -47,11 +47,11 @@ func (r *RoleController) List(ctx *gin.Context) {
 	}
 
 	// 调用model
-	var list *models.ModelList
+	var modelList *models.ModelList
 	if isPage {
-		list, err = new(backstage.Role).List(page, rows)
+		modelList, _, err = new(backstage.Role).List(page, rows)
 	} else {
-		list, err = new(backstage.Role).ListAll()
+		modelList, _, err = new(backstage.Role).ListAll()
 	}
 	if err != nil {
 		r.RespErr(ctx, err)
@@ -59,7 +59,7 @@ func (r *RoleController) List(ctx *gin.Context) {
 	}
 
 	// 设置返回数据
-	r.Put(ctx, "list", list)
+	r.Put(ctx, "list", modelList)
 
 	// 返回
 	r.RespOK(ctx)

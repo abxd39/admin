@@ -183,14 +183,14 @@ func (a *AdminController) List(ctx *gin.Context) {
 	}
 
 	// 调用model
-	list, err := new(bk.User).List(page, rows, nil)
+	modelList, _, err := new(bk.User).List(page, rows, nil)
 	if err != nil {
 		a.RespErr(ctx, err)
 		return
 	}
 
 	// 设置返回数据
-	a.Put(ctx, "list", list)
+	a.Put(ctx, "list", modelList)
 
 	// 返回
 	a.RespOK(ctx)
@@ -393,15 +393,15 @@ func (a *AdminController) ListLoginLog(ctx *gin.Context) {
 	}
 
 	// 调用model
-	list, err := new(bk.UserLoginLog).List(page, rows, filter)
+	modelList, _, err := new(bk.UserLoginLog).List(page, rows, filter)
 	if err != nil {
 		a.RespErr(ctx, err)
 		return
 	}
 
 	// 重新组装数据
-	if list.Total > 0 {
-		if items, ok := list.Items.([]bk.UserLoginLog); ok {
+	if modelList.Total > 0 {
+		if items, ok := modelList.Items.([]bk.UserLoginLog); ok {
 			type NewItem struct {
 				Id        int    `json:"id"`
 				Uid       int    `json:"uid"`
@@ -429,7 +429,7 @@ func (a *AdminController) ListLoginLog(ctx *gin.Context) {
 			}
 
 			// 用新的items
-			list.Items = newItems
+			modelList.Items = newItems
 		} else {
 			// 类型断言错误
 			a.RespErr(ctx, "类型错误")
@@ -438,7 +438,7 @@ func (a *AdminController) ListLoginLog(ctx *gin.Context) {
 	}
 
 	// 设置返回数据
-	a.Put(ctx, "list", list)
+	a.Put(ctx, "list", modelList)
 
 	// 返回
 	a.RespOK(ctx)

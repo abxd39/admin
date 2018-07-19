@@ -24,24 +24,23 @@ func (*Role) TableName() string {
 }
 
 // 用户组列表
-func (r *Role) List(pageIndex, pageSize int) (modelList *models.ModelList, err error) {
+func (r *Role) List(pageIndex, pageSize int) (modelList *models.ModelList, list []Role, err error) {
 	// 获取总数
 	engine := utils.Engine_backstage
 	query := engine.Desc("id")
 	tempQuery := *query
 	count, err := tempQuery.Count(&Role{})
 	if err != nil {
-		return nil, errors.NewSys(err)
+		return nil, nil, errors.NewSys(err)
 	}
 
 	// 获取分页
 	offset, modelList := r.Paging(pageIndex, pageSize, int(count))
 
 	// 获取列表数据
-	var list []Role
 	err = query.Limit(modelList.PageSize, offset).Find(&list)
 	if err != nil {
-		return nil, errors.NewSys(err)
+		return nil, nil, errors.NewSys(err)
 	}
 	modelList.Items = list
 
@@ -49,17 +48,17 @@ func (r *Role) List(pageIndex, pageSize int) (modelList *models.ModelList, err e
 }
 
 // 用户组列表，不分页
-func (r *Role) ListAll() (*models.ModelList, error) {
+func (r *Role) ListAll() (*models.ModelList, []Role, error) {
 	engine := utils.Engine_backstage
 	query := engine.Desc("id")
 
 	var list []Role
 	err := query.Find(&list)
 	if err != nil {
-		return nil, errors.NewSys(err)
+		return nil, nil, errors.NewSys(err)
 	}
 
-	return r.NoPaging(len(list), list), nil
+	return r.NoPaging(len(list), list), list, nil
 }
 
 // 用户组详情

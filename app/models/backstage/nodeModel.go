@@ -29,7 +29,7 @@ func (*Node) TableName() string {
 }
 
 // 节点列表，all
-func (n *Node) ListAll(filter map[string]string) (modelList *models.ModelList, err error) {
+func (n *Node) ListAll(filter map[string]string) (modelList *models.ModelList, list []Node, err error) {
 	// 获取总数
 	engine := utils.Engine_backstage
 	query := engine.Desc("weight")
@@ -40,13 +40,12 @@ func (n *Node) ListAll(filter map[string]string) (modelList *models.ModelList, e
 	}
 
 	// 获取列表数据
-	var list []Node
 	err = query.Find(&list)
 	if err != nil {
-		return nil, errors.NewSys(err)
+		return nil, nil, errors.NewSys(err)
 	}
 
-	return n.NoPaging(len(list), list), nil
+	return n.NoPaging(len(list), list), list, nil
 }
 
 // 节点详情

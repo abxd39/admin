@@ -28,6 +28,12 @@ type User struct {
 	IsSuper          int    `xorm:"is_super" json:"is_super"`
 }
 
+// 管理员 + 管理员所在的用户组名称(多个用逗号分隔)
+type UserWithRoleName struct {
+	User     `xorm:"extends"`
+	RoleName string `json:"role_name"`
+}
+
 // 表名
 func (*User) TableName() string {
 	return "user"
@@ -63,31 +69,33 @@ func (u *User) Login(name, pwd string) (bool, string, int, error) {
 }
 
 // 管理员列表
-func (u *User) List(pageIndex, pageSize int, filter map[string]string) (modelList *models.ModelList, err error) {
+func (u *User) List(pageIndex, pageSize int, filter map[string]string) (modelList *models.ModelList, list []UserWithRoleName, err error) {
 	// 获取总数
 	engine := utils.Engine_backstage
 	query := engine.Desc("uid")
+	query.
+		Join("LEFT", new(RoleUser).TableName(), "role_user.uid=user.uid").
+		Join("LEFT", new(Role).TableName(), "role.id=role_user.role_id")
 
 	// 筛选
-	query.Where("is_super=0") // 不显示超管
+	query.Where("user.is_super=0") // 不显示超管
 	if v, ok := filter["phone"]; ok {
-		query.And("phone like '%?%'", v)
+		query.And("user.phone like '%?%'", v)
 	}
 
 	tempQuery := *query
 	count, err := tempQuery.Count(&User{})
 	if err != nil {
-		return nil, errors.NewSys(err)
+		return nil, nil, errors.NewSys(err)
 	}
 
 	// 获取分页
 	offset, modelList := u.Paging(pageIndex, pageSize, int(count))
 
 	// 获取列表数据
-	var list []User
-	err = query.Limit(modelList.PageSize, offset).Find(&list)
+	err = query.Select("user.*, GROUP_CONCAT(role.name) role_name").Limit(modelList.PageSize, offset).GroupBy("user.uid").Find(&list)
 	if err != nil {
-		return nil, errors.NewSys(err)
+		return nil, nil, errors.NewSys(err)
 	}
 	modelList.Items = list
 

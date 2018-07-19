@@ -24,7 +24,7 @@ func (*UserLoginLog) TableName() string {
 }
 
 // 登录日志列表
-func (l *UserLoginLog) List(pageIndex, pageSize int, filter map[string]string) (modelList *models.ModelList, err error) {
+func (l *UserLoginLog) List(pageIndex, pageSize int, filter map[string]string) (modelList *models.ModelList, list []UserLoginLog, err error) {
 	// 获取总数
 	engine := utils.Engine_backstage
 	query := engine.Desc("id")
@@ -41,17 +41,16 @@ func (l *UserLoginLog) List(pageIndex, pageSize int, filter map[string]string) (
 	tempQuery := *query
 	count, err := tempQuery.Count(&UserLoginLog{})
 	if err != nil {
-		return nil, errors.NewSys(err)
+		return nil, nil, errors.NewSys(err)
 	}
 
 	// 获取分页
 	offset, modelList := l.Paging(pageIndex, pageSize, int(count))
 
 	// 获取列表数据
-	var list []UserLoginLog
 	err = query.Limit(modelList.PageSize, offset).Find(&list)
 	if err != nil {
-		return nil, errors.NewSys(err)
+		return nil, nil, errors.NewSys(err)
 	}
 	modelList.Items = list
 
