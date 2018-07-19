@@ -375,7 +375,7 @@ func (u *User) MyLeftMenu(ctx *gin.Context) ([]Node, error) {
 	// 判断是否超管
 	engine := utils.Engine_backstage
 	if utils.IsSuper(ctx) { // 超管，直接返回所有左侧菜单
-		engine.Where("type=1").And("states=1").And("menu_type=1").Find(&list)
+		engine.Where("type=1").And("states=1").And("menu_type=1").Desc("weight").Find(&list)
 	} else {
 		uid := utils.GetUid(ctx)
 		engine.SQL(fmt.Sprintf("SELECT n.*"+
@@ -386,7 +386,8 @@ func (u *User) MyLeftMenu(ctx *gin.Context) ([]Node, error) {
 			" WHERE u.uid=%d"+
 			" AND n.type=1"+
 			" AND n.states=1"+
-			" AND n.menu_type=1", userTable, roleUserTable, roleNodeTable, nodeTable, uid)).Find(&list)
+			" AND n.menu_type=1"+
+			" ORDER BY n.weight DESC", userTable, roleUserTable, roleNodeTable, nodeTable, uid)).Find(&list)
 	}
 
 	return list, nil
@@ -411,7 +412,7 @@ func (u *User) MyRightMenu(ctx *gin.Context, pid int) ([]Node, error) {
 	// 判断是否超管
 	engine := utils.Engine_backstage
 	if utils.IsSuper(ctx) { // 超管，直接返回所有左侧菜单
-		engine.Where("type=1").And("states=1").And("menu_type=2").And(fmt.Sprintf("full_id LIKE '%s%%'", parent.FullId)).Find(&list)
+		engine.Where("type=1").And("states=1").And("menu_type=2").And(fmt.Sprintf("full_id LIKE '%s%%'", parent.FullId)).Desc("weight").Find(&list)
 	} else {
 		uid := utils.GetUid(ctx)
 		engine.SQL(fmt.Sprintf("SELECT n.*"+
@@ -423,7 +424,8 @@ func (u *User) MyRightMenu(ctx *gin.Context, pid int) ([]Node, error) {
 			" AND n.type=1"+
 			" AND n.states=1"+
 			" AND n.menu_type=2"+
-			" AND n.full_id LIKE '%s%%'", userTable, roleUserTable, roleNodeTable, nodeTable, uid, parent.FullId)).Find(&list)
+			" AND n.full_id LIKE '%s%%'"+
+			" ORDER BY n.weight DESC", userTable, roleUserTable, roleNodeTable, nodeTable, uid, parent.FullId)).Find(&list)
 	}
 
 	return list, nil
