@@ -357,7 +357,7 @@ func (u *User) CheckPermission(ctx *gin.Context, uid int, api string) (bool, err
 		" JOIN %s rn ON rn.role_id=ru.role_id"+
 		" JOIN %s n ON n.id=rn.node_id"+
 		" JOIN %s na ON na.node_id=n.id"+
-		" WHERE u.uid=%d AND na.api='%s'", userTable, roleUserTable, roleNodeTable, nodeTable, nodeAPITable, uid, api)).Get(result)
+		" WHERE n.belong_super=0 AND u.uid=%d AND na.api='%s'", userTable, roleUserTable, roleNodeTable, nodeTable, nodeAPITable, uid, api)).Get(result)
 
 	if result.Cnt > 0 {
 		return true, nil
@@ -397,6 +397,7 @@ func (u *User) MyLeftMenu(ctx *gin.Context) ([]Node, error) {
 			" JOIN %s n ON n.id=rn.node_id"+
 			" WHERE u.uid=%d"+
 			" AND n.type=1"+
+			" AND n.belong_super=0"+
 			" AND n.states=1"+
 			" AND n.menu_type=1"+
 			" ORDER BY n.weight DESC", userTable, roleUserTable, roleNodeTable, nodeTable, uid)).Find(&list)
@@ -442,6 +443,7 @@ func (u *User) MyRightMenu(ctx *gin.Context, pid int) ([]Node, error) {
 			" JOIN %s n ON n.id=rn.node_id"+
 			" WHERE u.uid=%d"+
 			" AND n.type=1"+
+			" AND n.belong_super=0"+
 			" AND n.states=1"+
 			" AND n.menu_type=2"+
 			" AND n.full_id LIKE '%s%%'"+
