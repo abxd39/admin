@@ -449,8 +449,34 @@ func (a *AdminController) MyLeftMenu(ctx *gin.Context) {
 		return
 	}
 
+	// 重新组装数据
+	type NewItem struct {
+		Id       int    `json:"id"`
+		Pid      int    `json:"pid"`
+		Weight   int    `json:"weight"`
+		Title    string `json:"title"`
+		Depth    int    `json:"depth"`
+		MenuUrl  string `json:"menu_url"`
+		MenuIcon string `json:"menu_icon"`
+		FullId   string `json:"full_id"`
+	}
+
+	newList := make([]NewItem, len(list))
+	for k, v := range list {
+		newList[k] = NewItem{
+			Id:       v.Id,
+			Pid:      v.Pid,
+			Weight:   v.Weight,
+			Title:    v.Title,
+			Depth:    v.Depth,
+			MenuUrl:  v.MenuUrl,
+			MenuIcon: v.MenuIcon,
+			FullId:   v.FullId,
+		}
+	}
+
 	// 设置返回数据
-	a.Put(ctx, "list", list)
+	a.Put(ctx, "list", newList)
 
 	// 返回
 	a.RespOK(ctx)
@@ -473,8 +499,34 @@ func (a *AdminController) MyRightMenu(ctx *gin.Context) {
 		return
 	}
 
+	// 重新组装数据
+	type NewItem struct {
+		Id       int    `json:"id"`
+		Pid      int    `json:"pid"`
+		Weight   int    `json:"weight"`
+		Title    string `json:"title"`
+		Depth    int    `json:"depth"`
+		MenuUrl  string `json:"menu_url"`
+		MenuIcon string `json:"menu_icon"`
+		FullId   string `json:"full_id"`
+	}
+
+	newList := make([]NewItem, len(list))
+	for k, v := range list {
+		newList[k] = NewItem{
+			Id:       v.Id,
+			Pid:      v.Pid,
+			Weight:   v.Weight,
+			Title:    v.Title,
+			Depth:    v.Depth,
+			MenuUrl:  v.MenuUrl,
+			MenuIcon: v.MenuIcon,
+			FullId:   v.FullId,
+		}
+	}
+
 	// 设置返回数据
-	a.Put(ctx, "list", list)
+	a.Put(ctx, "list", newList)
 
 	// 返回
 	a.RespOK(ctx)
