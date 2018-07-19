@@ -9,18 +9,18 @@ import (
 // 权限节点
 type Node struct {
 	models.BaseModel `xorm:"-"`
-	Id               int    `xorm:"not null pk autoincr INT(11)" json:"id"`
-	Pid              int    `xorm:"not null default 0 comment('上级ID') INT(11)" json:"pid"`
-	Title            string `xorm:"not null default '' comment('标题') VARCHAR(36)" json:"title"`
-	Weight           int    `xorm:"not null default 0 comment('权重 逆序') INT(11)" json:"weight"`
-	States           int    `xorm:"not null default 1 comment('1 正常  0 否') TINYINT(4)" json:"states"`
-	Type             int    `xorm:"not null comment('权限类型，1 菜单，2 功能') TINYINT(1)" json:"type"`
-	Depth            int    `xorm:"not null comment('深度，从1开') INT(11)" json:"depth"`
-	MenuUrl          string `xorm:"not null default '' comment('菜单地址') VARCHAR(150)" json:"menu_url"`
-	MenuIcon         string `xorm:"not null default '' comment('菜单图标') VARCHAR(50)" json:"menu_icon"`
-	BelongSuper      int    `xorm:"not null default 0 comment('属于超管的权限，0 否，1 是') TINYINT(1)" json:"belong_super"`
-	DependId         string `xorm:"not null default '' comment('依赖ID，逗号分隔') VARCHAR(500)" json:"depend_id"`
-	FullId           string `xorm:"not null comment('全ID，逗号分隔，前后加逗号') VARCHAR(500)" json:"full_id"`
+	Id               int    `xorm:"id pk autoincr" json:"id"`
+	Pid              int    `xorm:"pid" json:"pid"`
+	Title            string `xorm:"title" json:"title"`
+	Weight           int    `xorm:"weight" json:"weight"`
+	States           int    `xorm:"states" json:"states"`
+	Type             int    `xorm:"type" json:"type"`
+	Depth            int    `xorm:"depth" json:"depth"`
+	MenuUrl          string `xorm:"menu_url" json:"menu_url"`
+	MenuIcon         string `xorm:"menu_icon" json:"menu_icon"`
+	BelongSuper      int    `xorm:"belong_super" json:"belong_super"`
+	DependId         string `xorm:"depend_id" json:"depend_id"`
+	FullId           string `xorm:"full_id" json:"full_id"`
 }
 
 // 表名

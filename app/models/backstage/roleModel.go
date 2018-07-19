@@ -12,10 +12,10 @@ import (
 // 用户组
 type Role struct {
 	models.BaseModel `xorm:"-"`
-	Id               int    `xorm:"not null pk autoincr INT(11)" json:"id"`
-	Name             string `xorm:"not null default '' VARCHAR(36)" json:"name"`
-	Desc             string `xorm:"not null VARCHAR(100)" json:"desc"`
-	People           int    `xorm:"not null default 0 comment('人数') INT(6)" json:"people"`
+	Id               int    `xorm:"id pk autoincr" json:"id"`
+	Name             string `xorm:"name" json:"name"`
+	Desc             string `xorm:"desc" json:"desc"`
+	People           int    `xorm:"people" json:"people"`
 }
 
 // 表名

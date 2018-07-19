@@ -15,17 +15,17 @@ import (
 // 管理员
 type User struct {
 	models.BaseModel `xorm:"-"`
-	Uid              int    `xorm:"not null pk autoincr INT(11)" json:"uid"`
-	Name             string `xorm:"not null comment('用户名') VARCHAR(20)" json:"name"`
-	NickName         string `xorm:"not null default '' comment('昵称') VARCHAR(60)" json:"nick_name"`
-	Pwd              string `xorm:"not null comment('用户登录密码') CHAR(32)" json:"-"`
-	Salt             string `xorm:"not null comment('密码加密') CHAR(5)" json:"-"`
-	States           int    `xorm:"not null default 1 comment('1正常  0 锁定') TINYINT(4)" json:"states"`
-	Remark           string `xorm:"not null default '' comment('备注') VARCHAR(36)" json:"remark"`
-	CreateTime       int64  `xorm:"not null comment('创建时间') INT(11)" json:"create_time"`
-	UpdateTime       int64  `xorm:"not null comment('修改时间') INT(11)" json:"update_time"`
-	LastLoginTime    int64  `xorm:"not null default 0 comment('上次登录时间') INT(11)" json:"last_login_time"`
-	IsSuper          int    `xorm:"not null default 0 comment('是否超管 0 否 1是') TINYINT(1)" json:"is_super"`
+	Uid              int    `xorm:"uid pk autoincr" json:"uid"`
+	Name             string `xorm:"name" json:"name"`
+	NickName         string `xorm:"nick_name" json:"nick_name"`
+	Pwd              string `xorm:"pwd" json:"-"`
+	Salt             string `xorm:"salt" json:"-"`
+	States           int    `xorm:"states" json:"states"`
+	Remark           string `xorm:"remark" json:"remark"`
+	CreateTime       int64  `xorm:"create_time" json:"create_time"`
+	UpdateTime       int64  `xorm:"update_time" json:"update_time"`
+	LastLoginTime    int64  `xorm:"last_login_time" json:"last_login_time"`
+	IsSuper          int    `xorm:"is_super" json:"is_super"`
 }
 
 // 表名
@@ -69,7 +69,7 @@ func (u *User) List(pageIndex, pageSize int, filter map[string]string) (modelLis
 	query := engine.Desc("uid")
 
 	// 筛选
-	query.Where("1=1")
+	query.Where("is_super=0") // 不显示超管
 	if v, ok := filter["phone"]; ok {
 		query.And("phone like '%?%'", v)
 	}

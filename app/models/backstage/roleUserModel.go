@@ -1,9 +1,9 @@
 package backstage
 
 type RoleUser struct {
-	Id     int `xorm:"not null pk autoincr INT(11)"`
-	RoleId int `xorm:"not null INT(11)"`
-	Uid    int `xorm:"not null INT(11)"`
+	Id     int `xorm:"id pk autoincr"`
+	RoleId int `xorm:"role_id"`
+	Uid    int `xorm:"uid"`
 }
 
 // 表名
