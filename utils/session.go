@@ -1,8 +1,8 @@
 package utils
 
 import (
+	"admin/constant"
 	"admin/errors"
-	"git.oschina.net/ystech/go-component/apiserver/constant"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/redis"
 	"github.com/gin-gonic/gin"
