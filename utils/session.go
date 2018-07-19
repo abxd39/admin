@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"admin/errors"
+	"git.oschina.net/ystech/go-component/apiserver/constant"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/redis"
 	"github.com/gin-gonic/gin"
@@ -36,13 +38,23 @@ func init() {
 }
 
 // 当前登录的管理员的id
-func GetUid(ctx *gin.Context) int {
+func GetUid(ctx *gin.Context) (int, error) {
 	session := sessions.Default(ctx)
-	return session.Get("uid").(int)
+	uidInterface := session.Get("uid")
+	if uidInterface == nil {
+		return 0, errors.NewNormal(constant.RESPONSE_CODE_SESSION_INVALID)
+	}
+
+	return uidInterface.(int), nil
 }
 
 // 当前登录管理员是否超管
-func IsSuper(ctx *gin.Context) bool {
+func IsSuper(ctx *gin.Context) (bool, error) {
 	session := sessions.Default(ctx)
-	return session.Get("is_super").(bool)
+	isSuperInterface := session.Get("is_super")
+	if isSuperInterface == nil {
+		return false, errors.NewNormal(constant.RESPONSE_CODE_SESSION_INVALID)
+	}
+
+	return isSuperInterface.(bool), nil
 }

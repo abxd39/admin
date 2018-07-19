@@ -330,7 +330,11 @@ func (u *User) Delete(uid int) error {
 // 检查管理员api权限
 func (u *User) CheckPermission(ctx *gin.Context, uid int, api string) (bool, error) {
 	// 判断是否超管
-	if utils.IsSuper(ctx) { // 超管，直接返回true
+	isSuper, err := utils.IsSuper(ctx)
+	if err != nil {
+		return false, err
+	}
+	if isSuper { // 超管，直接返回true
 		return true, nil
 	}
 
@@ -374,10 +378,18 @@ func (u *User) MyLeftMenu(ctx *gin.Context) ([]Node, error) {
 
 	// 判断是否超管
 	engine := utils.Engine_backstage
-	if utils.IsSuper(ctx) { // 超管，直接返回所有左侧菜单
+	isSuper, err := utils.IsSuper(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if isSuper { // 超管，直接返回所有左侧菜单
 		engine.Where("type=1").And("states=1").And("menu_type=1").Desc("weight").Find(&list)
 	} else {
-		uid := utils.GetUid(ctx)
+		uid, err := utils.GetUid(ctx)
+		if err != nil {
+			return nil, err
+		}
+
 		engine.SQL(fmt.Sprintf("SELECT n.*"+
 			" FROM %s u"+
 			" JOIN %s ru ON ru.uid=u.uid"+
@@ -411,10 +423,18 @@ func (u *User) MyRightMenu(ctx *gin.Context, pid int) ([]Node, error) {
 
 	// 判断是否超管
 	engine := utils.Engine_backstage
-	if utils.IsSuper(ctx) { // 超管，直接返回所有左侧菜单
+	isSuper, err := utils.IsSuper(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if isSuper { // 超管，直接返回所有左侧菜单
 		engine.Where("type=1").And("states=1").And("menu_type=2").And(fmt.Sprintf("full_id LIKE '%s%%'", parent.FullId)).Desc("weight").Find(&list)
 	} else {
-		uid := utils.GetUid(ctx)
+		uid, err := utils.GetUid(ctx)
+		if err != nil {
+			return nil, err
+		}
+
 		engine.SQL(fmt.Sprintf("SELECT n.*"+
 			" FROM %s u"+
 			" JOIN %s ru ON ru.uid=u.uid"+
