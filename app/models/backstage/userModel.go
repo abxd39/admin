@@ -128,6 +128,7 @@ func (u *User) Add(user *User, roleIds string) (uid int, err error) {
 
 	user.Pwd = utils.Md5(utils.Md5(user.Pwd) + salt) // md5两次，第二次带上salt
 	user.Salt = salt
+	user.States = 1
 	user.CreateTime = now
 	user.UpdateTime = now
 

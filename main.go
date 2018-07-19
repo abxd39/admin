@@ -8,7 +8,6 @@ import (
 	"admin/app/controller"
 	"admin/app/models/backstage"
 	"admin/constant"
-	"admin/errors"
 	"admin/utils"
 
 	"github.com/gin-contrib/sessions"
@@ -48,7 +47,7 @@ func CheckLogin() gin.HandlerFunc {
 			session := sessions.Default(ctx)
 			uidInterface := session.Get("uid")
 			if uidInterface == nil { // 不存在，未登录
-				new(controller.BaseController).RespErr(ctx, errors.NewNormal(constant.RESPONSE_CODE_SESSION_INVALID))
+				new(controller.BaseController).RespErr(ctx, constant.RESPONSE_CODE_SESSION_INVALID)
 				ctx.Abort()
 				return
 			}
@@ -59,22 +58,24 @@ func CheckLogin() gin.HandlerFunc {
 		// 2. 验证权限
 		// 无需验证权限的api
 		noNeedAuthAPIs := map[string]bool{
-			"admin/code":          true, // 值用不到
-			"admin/login":         true,
-			"admin/logout":        true,
 			"admin/my_left_menu":  true,
 			"admin/my_right_menu": true,
+		}
+
+		// 合并无需登录的接口，无需登录的接口肯定也无需验证权限
+		for k, v := range noNeedLoginAPIs {
+			noNeedAuthAPIs[k] = v
 		}
 
 		if _, ok := noNeedAuthAPIs[api]; !ok { // !ok
 			has, err := new(backstage.User).CheckPermission(ctx, uid, api)
 			if err != nil {
-				new(controller.BaseController).RespErr(ctx, errors.NewSys(err))
+				new(controller.BaseController).RespErr(ctx, err)
 				ctx.Abort()
 				return
 			}
 			if !has {
-				new(controller.BaseController).RespErr(ctx, errors.NewNormal(constant.RESPONSE_CODE_NO_API_PERMISSION))
+				new(controller.BaseController).RespErr(ctx, constant.RESPONSE_CODE_NO_API_PERMISSION)
 				ctx.Abort()
 				return
 			}
