@@ -31,11 +31,11 @@ func (l *UserLoginLog) List(pageIndex, pageSize int, filter map[string]string) (
 
 	// 筛选
 	query.Where("1=1")
-	if v, ok := filter["login_date"]; ok {
-		timeStart := utils.Date2Unix(fmt.Sprint(v, " 00:00:00"))
-		timeEnd := utils.Date2Unix(fmt.Sprint(v, " 23:59:59"))
-
-		query.And("login_time>=?", timeStart).And("login_time<=?", timeEnd)
+	if v, ok := filter["login_date_start"]; ok {
+		query.And("login_time>=?", utils.Date2Unix(v, utils.LAYOUT_DATE))
+	}
+	if v, ok := filter["login_date_end"]; ok {
+		query.And("login_time<=?", utils.Date2Unix(fmt.Sprint(v, " 23:59:59"), utils.LAYOUT_DATE_TIME))
 	}
 
 	tempQuery := *query

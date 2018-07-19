@@ -383,8 +383,12 @@ func (a *AdminController) ListLoginLog(ctx *gin.Context) {
 
 	// 筛选参数
 	filter := make(map[string]string)
-	if v, ok := a.GetParam(ctx, "login_date"); ok {
-		filter["login_date"] = v
+	if v, ok := a.GetParam(ctx, "login_date_start"); ok {
+		filter["login_date_start"] = v
+	}
+
+	if v, ok := a.GetParam(ctx, "login_date_end"); ok {
+		filter["login_date_end"] = v
 	}
 
 	// 调用model
@@ -419,7 +423,7 @@ func (a *AdminController) ListLoginLog(ctx *gin.Context) {
 					NickName:  v.NickName,
 					LoginIp:   v.LoginIp,
 					LoginTime: v.LoginTime,
-					Desc:      fmt.Sprintf("%s在%s时，登录%s。", v.NickName, utils.Unix2Date(v.LoginTime), state),
+					Desc:      fmt.Sprintf("%s在%s时，登录%s。", v.NickName, utils.Unix2Date(v.LoginTime, utils.LAYOUT_DATE_TIME), state),
 				}
 			}
 
