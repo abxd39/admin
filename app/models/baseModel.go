@@ -9,10 +9,10 @@ type BaseModel struct {
 	UserInfo
 }
 type UserInfo struct {
-	NickName string`json:"nick_name"`
-	Phone string `json:"phone"`
-	Email string `json:"email"`
-	Status int `json:"status"`
+	NickName  string `json:"nick_name"`
+	Phone     string `json:"phone"`
+	Email     string `json:"email"`
+	Status    int    `json:"status"`
 	TokenName string `json:"token_name"`
 }
 

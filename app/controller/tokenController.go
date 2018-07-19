@@ -3,9 +3,8 @@ package controller
 import (
 	"admin/app/models"
 	"admin/utils"
+	"errors"
 	"fmt"
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -107,12 +106,12 @@ func (this *TokenController) EvacuateOder(c *gin.Context) {
 
 func (this *TokenController) ChangeDetail(c *gin.Context) {
 	req := struct {
-		Page    int    `form:"page" json:"page" binding:"required"`
-		Rows    int    `form:"rows" json:"rows" `
-		Start_t string `form:"start_t" json:"start_t" `
-		Search  string `form:"search" json:"search" ` //刷选
-		Ad_id   int    `form:"ad_id" json:"ad_id" `   //交易方向 买 卖 划转
-		Status  int    `form:"status" json:"status" ` //用户状态
+		Page   int    `form:"page" json:"page" binding:"required"`
+		Rows   int    `form:"rows" json:"rows" `
+		Date   string `form:"start_t" json:"start_t" `
+		Search string `form:"search" json:"search" ` //刷选
+		Type   int    `form:"ad_id" json:"ad_id" `   //交易方向 买 卖 划转
+		Status int    `form:"status" json:"status" ` //用户状态
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
@@ -120,7 +119,103 @@ func (this *TokenController) ChangeDetail(c *gin.Context) {
 		this.RespErr(c, err)
 		return
 	}
+	//把货币Id转换为货币名称
+	tokenlist, err := new(models.Tokens).GetTokenList()
+	if err != nil {
+		this.RespErr(c, err)
+		return
+	}
 	//没写完
+	//在此分道扬镳
+	if req.Search != `` || req.Status != 0 {
+		list, err := new(models.UserGroup).GetAllUser(req.Page, req.Rows, req.Status, req.Search)
+		if err != nil {
+			this.RespErr(c, err)
+			return
+		}
+		value, Ok := list.Items.([]models.UserGroup)
+		if !Ok {
+			this.RespErr(c, errors.New("assert type UserGroup failed!!"))
+			return
+		}
+		uidlist := make([]uint64, 0)
+		for _, v := range value {
+			uidlist = append(uidlist, v.Uid)
+		}
+		monerylist, err := new(models.MoneyRecord).GetMoneyList(req.Page, req.Rows, uidlist)
+		if err != nil {
+			this.RespErr(c, err)
+			return
+		}
+		tokenValue, ok := monerylist.Items.([]models.MoneyRecord)
+		if !ok {
+			this.RespErr(c, errors.New("assert type MoneyRecord failed!!"))
+			return
+		}
+		for i, _ := range tokenValue {
+			for _, v := range value {
+				if int(v.Uid) == tokenValue[i].Uid {
+					tokenValue[i].NickName = v.NickName
+					tokenValue[i].Email = v.Email
+					tokenValue[i].Phone = v.Phone
+					tokenValue[i].Status = v.Status
+					break
+				}
+			}
+			for _, tv := range tokenlist {
+				if tv.Id == tokenValue[i].TokenId {
+					tokenValue[i].TokenName = tv.Name
+					break
+				}
+			}
+		}
+		this.Put(c, "list", tokenlist)
+		this.RespOK(c)
+		return
+	} else {
+
+		list,err:=new(models.MoneyRecord).GetMoneyListForDateOrType(req.Page,req.Rows,req.Type,req.Date)
+		if err!=nil{
+			this.RespErr(c,err)
+			return
+		}
+		uidList := make([]uint64, 0)
+		Value, ok := list.Items.([]models.MoneyRecord)
+		if !ok {
+			this.RespErr(c, err)
+			return
+		}
+		for _, v := range Value {
+			uidList = append(uidList, uint64(v.Uid))
+		}
+		ulist, err := new(models.UserGroup).GetUserListForUid(uidList)
+		if err != nil {
+			this.RespErr(c, err)
+			return
+		}
+		for i, _ := range Value {
+			for _, v := range ulist {
+				if Value[i].Uid == int(v.Uid) {
+					Value[i].NickName = v.NickName
+					Value[i].Phone = v.Phone
+					Value[i].Email = v.Email
+					Value[i].Status = v.Status
+					break
+				}
+			}
+			for _, vt := range tokenlist {
+				if vt.Id == Value[i].TokenId {
+					Value[i].TokenName = vt.Name
+					break
+				}
+
+			}
+
+		}
+		this.Put(c,"list",list)
+		this.RespOK(c)
+		return
+	}
 }
 
 func (this *TokenController) GetTokenCashList(c *gin.Context) {
@@ -162,7 +257,8 @@ func (this *TokenController) GetTokenDetail(c *gin.Context) {
 		this.RespErr(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"code": 0, "data": list, "msg": "成功"})
+	this.Put(c, "list", list)
+	this.RespOK(c)
 	return
 }
 
