@@ -35,6 +35,8 @@ func init() {
 		panic("unkown session.type")
 	}
 
+	// 设置属性
+	Store.Options(sessions.Options{MaxAge: 10 * 60}) // 超时时间，秒
 }
 
 // 当前登录的管理员的id
