@@ -6,8 +6,8 @@ import (
 
 type BaseModel struct {
 	Model
-	UserInfo
 }
+
 type UserInfo struct {
 	NickName  string `json:"nick_name"`
 	Phone     string `json:"phone"`

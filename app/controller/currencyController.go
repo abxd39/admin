@@ -20,7 +20,7 @@ func (this *CurrencyController) Router(r *gin.Engine) {
 		g.GET("/list", this.GetTradeList)                        //p4-2-0法币挂单管理
 		g.POST("/down_trade_order", this.DownTradeAds)           //p4-2-0法币挂单管理 下架交易单
 		g.GET("/tokens", this.GetTokensList)                     //获取 所有数据货币的名称及货币Id
-		g.GET("/order_list", this.GetOderList)                   //p4-2-1法币成交列表
+		g.GET("/order_list", this.GetOderList)                   //p4-2-1法币成交管理
 		g.GET("/total_balance", this.GetTotalCurrencyBalance)    //p2-3-1法币账户统计列表
 		g.GET("/user_detail", this.GetUserDetailList)            //p2-3-1-2法币账户资产展示
 		g.GET("/user_buysell", this.GetBuySellList)              //p2-3-1-1查看统计买入_卖出_划转
@@ -36,7 +36,7 @@ func (cu *CurrencyController) GetCurrencyChangeHistroy(c *gin.Context) {
 		Search string `form:"search" json:"search" ` //搜索的内容
 		Status int    `form:"status" json:"status" ` //用户账号状态
 		Date   string `form:"date" json:"date"`      //日期
-		chtype int    `form:"type" json:"type"`      // 买入 卖出 提币 充币 划转
+		Chtype int    `form:"type" json:"type"`      // 买入 卖出 提币 充币 划转
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
@@ -95,13 +95,13 @@ func (cu *CurrencyController) GetCurrencyChangeHistroy(c *gin.Context) {
 
 			}
 		}
-
-		cu.Put(c, "list", histroyValue)
+		histroyList.Items = histroyValue
+		cu.Put(c, "list", histroyList)
 		cu.RespOK(c)
 		return
 
 	} else {
-		list, err := new(models.UserCurrencyHistory).GetList(req.Page, req.Rows, req.chtype, req.Date)
+		list, err := new(models.UserCurrencyHistory).GetList(req.Page, req.Rows, req.Chtype, req.Date)
 		if err != nil {
 			cu.RespErr(c, err)
 			return
@@ -141,7 +141,8 @@ func (cu *CurrencyController) GetCurrencyChangeHistroy(c *gin.Context) {
 			}
 
 		}
-		cu.Put(c, "list", Value)
+		list.Items =Value
+		cu.Put(c, "list", list)
 		cu.RespOK(c)
 		return
 	}

@@ -2,11 +2,11 @@ package models
 
 import (
 	"admin/utils"
-	"fmt"
 )
 
 type MoneyRecord struct {
 	BaseModel   `xorm:"-"`
+	UserInfo    `xorm:"-"`
 	Id          int64  `xorm:"pk autoincr BIGINT(20)" json:"id"`
 	Uid         int    `xorm:"comment('用户ID') unique(hash_index) INT(11)" json:"uid"`
 	TokenId     int    `xorm:"comment('代币ID') INT(11)" json:"token_id"`
@@ -14,8 +14,12 @@ type MoneyRecord struct {
 	Type        int    `xorm:"comment('流水类型1区块2委托') INT(11)" json:"type"`
 	Opt         int    `xorm:"comment('操作方向1加2减') unique(hash_index) TINYINT(4)" json:"opt"`
 	Num         int64  `xorm:"comment('数量') BIGINT(20)" json:"num"`
-	surplus     int64  `xorm:"comment('余额') BIGINT(20)" json:"surplus"`
+	Surplus     int64  `xorm:"comment('余额') BIGINT(20)" json:"surplus"`
 	CreatedTime int64  `xorm:"comment('操作时间') BIGINT(20)" json:"created_time"`
+}
+
+func (m *MoneyRecord) TableName() string {
+	return "money_record"
 }
 
 func (m *MoneyRecord) GetMoneyList(page, rows int, uid []uint64) (*ModelList, error) {
@@ -39,16 +43,14 @@ func (m *MoneyRecord) GetMoneyList(page, rows int, uid []uint64) (*ModelList, er
 	return modelList, nil
 }
 
-func (m *MoneyRecord) GetMoneyListForDateOrType(page, rows, ty int, date string) (*ModelList, error) {
+func (m *MoneyRecord) GetMoneyListForDateOrType(page, rows, ty int, date uint64) (*ModelList, error) {
 	engine := utils.Engine_token
 	query := engine.Desc("id")
 	if ty != 0 {
-		query = query.Where("type=?", ty)
+		query = query.Where("opt=?", ty)
 	}
-	if date != `` {
-		sub := date[:11] + "23:59:59"
-		temp := fmt.Sprintf("created_time BETWEEN %s AND %s", date, sub)
-		query = query.Where(temp)
+	if date != 0 {
+		query = query.Where("created_time BETWEEN ? AND ?", date, date+86400)
 	}
 	tempQuery := *query
 	count, err := tempQuery.Count(&MoneyRecord{})

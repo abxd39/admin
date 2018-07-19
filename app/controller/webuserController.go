@@ -37,7 +37,7 @@ func (w *WebUserManageController) Router(r *gin.Engine) {
 func (w *WebUserManageController) SecondAffirm(c *gin.Context) {
 	req := struct {
 		Uid    int `form:"uid" json:"uid" binding:"required"`
-		status int `form:"status" json:"status" binding:"required"`
+		Status int `form:"status" json:"status" binding:"required"`
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
@@ -45,7 +45,7 @@ func (w *WebUserManageController) SecondAffirm(c *gin.Context) {
 		w.RespErr(c, err)
 		return
 	}
-	err = new(models.WebUser).SecondAffirmLimit(req.Uid, req.status)
+	err = new(models.WebUser).SecondAffirmLimit(req.Uid, req.Status)
 	if err != nil {
 		w.RespErr(c, err)
 		return
@@ -57,7 +57,7 @@ func (w *WebUserManageController) SecondAffirm(c *gin.Context) {
 func (w *WebUserManageController) FirstAffirm(c *gin.Context) {
 	req := struct {
 		Uid    int `form:"uid" json:"uid" binding:"required"`
-		status int `form:"status" json:"status" binding:"required"`
+		Status int `form:"status" json:"status" binding:"required"`
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
@@ -65,7 +65,7 @@ func (w *WebUserManageController) FirstAffirm(c *gin.Context) {
 		w.RespErr(c, err)
 		return
 	}
-	err = new(models.WebUser).FirstAffirmLimit(req.Uid, req.status)
+	err = new(models.WebUser).FirstAffirmLimit(req.Uid, req.Status)
 	if err != nil {
 		w.RespErr(c, err)
 		return

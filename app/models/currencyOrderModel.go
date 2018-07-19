@@ -2,7 +2,6 @@ package models
 
 import (
 	"admin/utils"
-	"database/sql"
 	"errors"
 	"fmt"
 )
@@ -28,8 +27,10 @@ type Order struct {
 	CancelType  uint32         `xorm:"not null default 0 comment('取消类型: 1卖方 2 买方') TINYINT(1)"   json:"cancel_type"`
 	CreatedTime string         `xorm:"not null comment('创建时间') DATETIME"  json:"created_time"`
 	UpdatedTime string         `xorm:"comment('修改时间')     DATETIME"               json:"updated_time"`
-	ConfirmTime sql.NullString `xorm:"default null comment('确认支付时间')  DATETIME"     json:"confirm_time"`
-	ReleaseTime sql.NullString `xorm:"default null comment('放行时间')     DATETIME"     json:"release_time"`
+	//ConfirmTime sql.NullString `xorm:"default null comment('确认支付时间')  DATETIME"     json:"confirm_time"`
+	//ReleaseTime sql.NullString `xorm:"default null comment('放行时间')     DATETIME"     json:"release_time"`
+	ConfirmTime string `xorm:"default null comment('确认支付时间')  DATETIME"     json:"confirm_time"`
+	ReleaseTime string `xorm:"default null comment('放行时间')     DATETIME"     json:"release_time"`
 }
 
 type OrderGroup struct {
@@ -179,7 +180,8 @@ func (this *Order) GetOrderList(Page, PageNum, AdType, States, TokenId int, Star
 	}
 	if StartTime != `` {
 		substr := StartTime[:11] + "23:59:59"
-		query = query.Where("created_time BETWEEN ? AND ? ", StartTime, substr)
+		temp:= fmt.Sprintf("created_time BETWEEN '%s' AND '%s' ", StartTime, substr)
+		query = query.Where(temp)
 	}
 	if search != `` {
 		temp := fmt.Sprintf(" concat(IFNULL(sell_name,''),IFNULL(buy_name,'')) LIKE '%%%s%%'  ", search)

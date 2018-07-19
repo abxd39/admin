@@ -87,10 +87,10 @@ func (a *ArticleList) GetArticleList(page, rows, tp, status int, title, st strin
 		temp := fmt.Sprintf(" concat(IFNULL(title,'')) LIKE '%%%s%%'  ", title)
 		query = query.Where(temp)
 	}
-	if len(st) != 0 {
-		//temp := fmt.Sprintf("concat(IFNULL(create_time,'')) LIKE '%%%s%%' ", title)
+	if st!= `` {
 		substr := st[:11] + "23:59:59"
-		query = query.Where("create_time BETWEEN ? AND ? ", st, substr)
+		temp:= fmt.Sprintf("create_time BETWEEN '%s' AND '%s' ", st, substr)
+		query = query.Where(temp)
 	}
 
 	TempQuery := *query

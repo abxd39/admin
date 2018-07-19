@@ -12,6 +12,8 @@ type ConfigQuenes struct {
 	Id                   int64  `xorm:"pk autoincr BIGINT(20)" jons:"id"`
 	TokenId              int    `xorm:"comment('交易币') unique(union_quene_id) INT(11)" jons:"token_id"`
 	TokenTradeId         int    `xorm:"comment('实际交易币') unique(union_quene_id) INT(11)" jons:"token_trade_id"`
+	BitCount             int    `xorm:"comment('小数位数') TINYINT(4)" json:"bit_count"`
+	MinOrderUnm          int64  `xorm:"comment('最小交易量') BIGINT(20)" json:"min_order_unm"`
 	Switch               int    `xorm:"comment('开关0关1开') TINYINT(4)" jons:"switch"`
 	Price                int64  `xorm:"comment('初始价格') BIGINT(20)" jons:"price"`
 	Scope                string `xorm:"comment('振幅') DECIMAL(6,2)" jons:"scope"`
@@ -35,7 +37,7 @@ type ConfigQuenes struct {
 
 type ConfigQuenesEx struct {
 	ConfigQuenes `xorm:"extends"`
-	IsModifyMark bool //是否允许修改状态
+	IsModifyMark bool `xorm:"-"`//是否允许修改状态
 }
 
 func (c *ConfigQuenesEx) TableName() string {
