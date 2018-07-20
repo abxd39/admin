@@ -384,11 +384,11 @@ func (a *AdminController) ListLoginLog(ctx *gin.Context) {
 
 	// 筛选参数
 	filter := make(map[string]string)
-	if v, ok := a.GetParam(ctx, "login_date_start"); ok {
+	if v := a.GetString(ctx, "login_date_start"); v != "" {
 		filter["login_date_start"] = v
 	}
 
-	if v, ok := a.GetParam(ctx, "login_date_end"); ok {
+	if v := a.GetString(ctx, "login_date_end"); v != "" {
 		filter["login_date_end"] = v
 	}
 

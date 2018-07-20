@@ -25,7 +25,6 @@ type Response struct {
 
 // controller
 type Controller struct {
-	resp Response
 }
 
 // 设置返回的数据，key-value
@@ -41,62 +40,56 @@ func (c *Controller) Put(ctx *gin.Context, key string, value interface{}) {
 }
 
 // 正确的响应
-func (c *Controller) RespOK(ctx *gin.Context, msg ...string) {
-	c.resp.Code = constant.RESPONSE_CODE_OK
-	c.resp.Msg = "成功"
-	c.resp.Data = ctx.Keys[SAVE_DATA_KEY]
+func (c *Controller) RespOK(ctx *gin.Context, msg ...string) { // todo 去掉msg参数
+	resp := &Response{
+		Code: constant.RESPONSE_CODE_OK,
+		Msg:  "成功",
+		Data: ctx.Keys[SAVE_DATA_KEY],
+	}
 
-	// 没有数据时，让data字段的json值为[]而非null
-	/*if c.resp.Data == nil {
-		c.resp.Data = []int{}
-	}*/
-
-	ctx.JSON(http.StatusOK, c.resp)
+	ctx.JSON(http.StatusOK, resp)
 }
 
 // 错误的响应
 func (c *Controller) RespErr(ctx *gin.Context, options ...interface{}) {
-	c.resp.Code = constant.RESPONSE_CODE_ERROR // 默认是常规错误
-	c.resp.Msg = ""
-	c.resp.Data = ctx.Keys[SAVE_DATA_KEY]
+	resp := &Response{
+		Code: constant.RESPONSE_CODE_ERROR, // 默认是常规错误
+		Msg:  "",
+		Data: ctx.Keys[SAVE_DATA_KEY],
+	}
 
 	// 继续确定code、msg
 	for _, v := range options {
 		switch opt := v.(type) {
 		case int:
-			c.resp.Code = opt // 当前指定code
+			resp.Code = opt // 当前指定code
 		case string:
-			c.resp.Msg = opt
+			resp.Msg = opt
 		case errors.SysErrorInterface: // 系统错误
-			c.resp.Code = constant.RESPONSE_CODE_SYSTEM // 设为系统错误code
+			resp.Code = constant.RESPONSE_CODE_SYSTEM // 设为系统错误code
 
 			if os.Getenv("API_ENV") == "prod" { // 生产环境不显示错误细节
-				c.resp.Msg = opt.Error()
+				resp.Msg = opt.Error()
 			} else { // 开发环境显示错误细节
-				c.resp.Msg = opt.String()
+				resp.Msg = opt.String()
 			}
 		case errors.NormalErrorInterface: // 常规错误
 			if opt.Status() != 0 { // 常规错误指定了code并且不为0
-				c.resp.Code = opt.Status()
+				resp.Code = opt.Status()
 			}
-			c.resp.Msg = opt.Error()
+			resp.Msg = opt.Error()
 		case error: // go错误
-			c.resp.Msg = opt.Error()
+			resp.Msg = opt.Error()
 		}
 	}
 
 	// 优先使用系统指定msg
-	sysMsg := constant.GetResponseMsg(c.resp.Code)
+	sysMsg := constant.GetResponseMsg(resp.Code)
 	if len(sysMsg) > 0 {
-		c.resp.Msg = sysMsg
+		resp.Msg = sysMsg
 	}
 
-	// 没有数据时，让data字段的json值为[]而非null
-	/*if c.resp.Data == nil {
-		c.resp.Data = []int{}
-	}*/
-
-	ctx.JSON(http.StatusOK, c.resp)
+	ctx.JSON(http.StatusOK, resp)
 }
 
 // 获取get、post提交的参数

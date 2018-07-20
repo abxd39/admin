@@ -18,11 +18,11 @@ func init() {
 
 	switch stype {
 	case "redis":
-		addr, err := Cfg.GetValue("session", "addr")
+		addr, err := Cfg.GetValue("redis", "addr")
 		if err != nil {
 			panic("utils.session:" + err.Error())
 		}
-		pwd, err := Cfg.GetValue("session", "pwd")
+		pwd, err := Cfg.GetValue("redis", "pwd")
 		if err != nil {
 			panic("utils.session:" + err.Error())
 		}
