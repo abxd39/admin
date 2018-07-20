@@ -8,3 +8,6 @@ admin.ini
 
 # 日志
 /log/*
+
+# ide
+/.idea
