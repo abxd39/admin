@@ -7,6 +7,7 @@ import (
 
 type UserCurrencyHistory struct {
 	BaseModel   `xorm:"-"`
+	UserInfo    `xorm:"-"`
 	Id          int    `xorm:"not null pk autoincr comment('ID') INT(10)" json:"id"`
 	Uid         int    `xorm:"not null default 0 INT(10)" json:"uid"`
 	OrderId     string `xorm:"not null default '' comment('订单ID') VARCHAR(64)" json:"order_id"`
@@ -24,12 +25,15 @@ type UserCurrencyHistory struct {
 func (u *UserCurrencyHistory) GetList(page, rows, ot int, date string) (*ModelList, error) {
 	engine := utils.Engine_currency
 	query := engine.Desc("id")
+	fmt.Println("000000000000000000000000000000000", ot)
 	if ot != 0 {
+
 		query = query.Where("operator=?", ot)
 	}
 	if date != `` {
 		sub := date[:11] + "23:59:59"
-		temp := fmt.Sprintf("created_time BETWEEN ? AND ?", date, sub)
+		temp := fmt.Sprintf("created_time BETWEEN '%s' AND '%s'", date, sub)
+		fmt.Println(temp)
 		query = query.Where(temp)
 	}
 	tempQuery := *query

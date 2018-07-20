@@ -113,12 +113,13 @@ func (b *Banner) GetBannerList(page, rows, status int, start_t, pName string) (*
 
 	}
 
-	if len(start_t) != 0 {
+	if start_t != `` {
 		fmt.Println("banner-2")
 
 		subst := start_t[:11] + "23:59:59"
 		fmt.Println(subst)
-		query = query.Where("upload_time  BETWEEN ? AND ? ", start_t, subst)
+		temp := fmt.Sprintf("upload_time  BETWEEN '%s' AND '%s' ", start_t, subst)
+		query = query.Where(temp)
 	}
 	if len(pName) != 0 {
 		fmt.Println("banner-3")

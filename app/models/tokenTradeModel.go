@@ -44,14 +44,15 @@ type Trade struct {
 
 func (this *EntrustDetail) IsExist(symbol string) (bool, error) {
 	engine := utils.Engine_token
-	query := engine.Desc("trade_id")
+	query := engine.Desc("entrust_id")
 	return query.Where("symbol=?", symbol).Exist(&EntrustDetail{})
 }
 
-func (this *EntrustDetail) EvacuateOder(uid, odid int) error {
+func (this *EntrustDetail) EvacuateOder(uid int, odid string) error {
 	engine := utils.Engine_token
-	query := engine.Desc("trade_id")
-	query = query.Where("uid=? AND trade_id =?", uid, odid)
+	//query := engine.Desc("")
+	temp := fmt.Sprintf("uid=%d AND entrust_id =%s", uid, odid)
+	query := engine.Where(temp)
 	TempQuery := *query
 	has, err := TempQuery.Exist(&EntrustDetail{})
 	if err != nil {
@@ -85,6 +86,9 @@ func (this *Trade) GetTokenRecordList(page, rows, trade_id, trade_duad, ad_id, u
 	}
 	if uid != 0 {
 		query = query.Where("uid=?", uid)
+	}
+	if start_t!=``{
+
 	}
 	tempQuery := *query
 

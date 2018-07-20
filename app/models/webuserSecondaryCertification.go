@@ -57,7 +57,7 @@ func (u *UserSecondaryCertificationGroup) GetSecondaryCertificationOfUid(uid int
 	if err != nil {
 		return nil, err
 	}
-	if us.SecurityAuth&utils.AUTH_TWO == 1 {
+	if us.SecurityAuth&utils.AUTH_TWO == utils.AUTH_TWO{
 		us.TwoVerifyMark = 1
 	}
 	return us, nil
@@ -71,8 +71,11 @@ func (u *UserSecondaryCertification) GetSecondaryCertificationList(page, rows, v
 	query = query.Join("INNER", "user", "user.uid=user_secondary_certification.uid")
 	query = query.Join("LEFT", "user_ex", "user_ex.uid = user.uid")
 	query = query.Cols("user_secondary_certification.uid", "user_secondary_certification.verify_count", "user_secondary_certification.verify_time", "user.security_auth", "user_secondary_certification.video_recording_digital", "user.email", "user.phone", "user.status", "user_ex.nick_name")
-	if verify_status != 0 {
-		query = query.Where("verify_status=?", verify_status)
+	if verify_status ==-1 {//刷选未认证
+		query = query.Where("user.security_auth & ? !=?", utils.AUTH_TWO,utils.AUTH_TWO)
+	}
+	if verify_status == utils.AUTH_TWO{
+		query = query.Where("user.security_auth & ? =?", utils.AUTH_TWO,utils.AUTH_TWO)
 	}
 	if user_status != 0 {
 		query = query.Where("status=?", user_status)
@@ -97,7 +100,7 @@ func (u *UserSecondaryCertification) GetSecondaryCertificationList(page, rows, v
 		return nil, err
 	}
 	for index, _ := range list {
-		if list[index].SecurityAuth&utils.AUTH_TWO == 1 {
+		if list[index].SecurityAuth&utils.AUTH_TWO == utils.AUTH_TWO {
 			list[index].TwoVerifyMark = 1
 		}
 	}

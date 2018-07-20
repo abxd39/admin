@@ -159,7 +159,8 @@ func (this *Ads) GetAdsList(page, rows, status, tokenid, tradeid, verify int, se
 	}
 	if date != `` {
 		subst := date[:11] + "23:59:59"
-		query = query.Where("created_time  BETWEEN ? AND ? ", date, subst)
+		temp := fmt.Sprintf("created_time  BETWEEN '%s' AND '%s' ", date, subst)
+		query = query.Where(temp)
 	}
 	tempQuery := *query
 	uidQuery := *query

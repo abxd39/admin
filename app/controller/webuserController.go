@@ -30,14 +30,36 @@ func (w *WebUserManageController) Router(r *gin.Engine) {
 		g.GET("/get_first_list", w.GetFirstList)                      //p2-4一级实名认证列表
 		g.POST("/first_affirm", w.FirstAffirm)                        //审核用户实名认证
 		g.POST("/second_affirm", w.SecondAffirm)                      //审核二级实名认证
+		g.POST("/trade_rule", w.SetTradeRule)                         //设置交易规则
+		g.GET("get_trade_rule",w.GetTradeRule)//获取交易规则
 
 	}
+}
+func (w *WebUserManageController) GetTradeRule(c *gin.Context) {
+	err:=new()
+}
+
+func (w *WebUserManageController) SetTradeRule(c *gin.Context) {
+	req := models.ConfigureTradeRule{}
+	err := c.ShouldBind(&req)
+	if err != nil {
+		utils.AdminLog.Errorln("param buind failed !!")
+		w.RespErr(c, err)
+		return
+	}
+	err = new(models.ConfigureTradeRule).AddTradeRule(req)
+	if err != nil {
+		w.RespErr(c, err)
+		return
+	}
+	w.RespOK(c)
+	return
 }
 
 func (w *WebUserManageController) SecondAffirm(c *gin.Context) {
 	req := struct {
 		Uid    int `form:"uid" json:"uid" binding:"required"`
-		status int `form:"status" json:"status" binding:"required"`
+		Status int `form:"status" json:"status" binding:"required"`
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
@@ -45,7 +67,7 @@ func (w *WebUserManageController) SecondAffirm(c *gin.Context) {
 		w.RespErr(c, err)
 		return
 	}
-	err = new(models.WebUser).SecondAffirmLimit(req.Uid, req.status)
+	err = new(models.WebUser).SecondAffirmLimit(req.Uid, req.Status)
 	if err != nil {
 		w.RespErr(c, err)
 		return
@@ -57,7 +79,7 @@ func (w *WebUserManageController) SecondAffirm(c *gin.Context) {
 func (w *WebUserManageController) FirstAffirm(c *gin.Context) {
 	req := struct {
 		Uid    int `form:"uid" json:"uid" binding:"required"`
-		status int `form:"status" json:"status" binding:"required"`
+		Status int `form:"status" json:"status" binding:"required"`
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
@@ -65,7 +87,7 @@ func (w *WebUserManageController) FirstAffirm(c *gin.Context) {
 		w.RespErr(c, err)
 		return
 	}
-	err = new(models.WebUser).FirstAffirmLimit(req.Uid, req.status)
+	err = new(models.WebUser).FirstAffirmLimit(req.Uid, req.Status)
 	if err != nil {
 		w.RespErr(c, err)
 		return
@@ -347,12 +369,12 @@ func (w *WebUserManageController) GetTotalUser(c *gin.Context) {
 
 func (w *WebUserManageController) GetWebUserList(c *gin.Context) {
 	req := struct {
-		Page           int    `form:"page" json:"page" binding:"required"`
-		Rows           int    `form:"rows" json:"rows" `
-		Search_content string `form:"search" json:"search" `
-		Date           int64  `form:"date" json:"date" `
-		Verify         int    `form:"verify" json:"verify" `
-		Status         int    `form:"status" json:"status" `
+		Page   int    `form:"page" json:"page" binding:"required"`
+		Rows   int    `form:"rows" json:"rows" `
+		Search string `form:"search" json:"search" `
+		Date   int64  `form:"date" json:"date" `
+		Verify int    `form:"verify" json:"verify" `
+		Status int    `form:"status" json:"status" `
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
@@ -360,13 +382,13 @@ func (w *WebUserManageController) GetWebUserList(c *gin.Context) {
 		w.RespErr(c, err)
 		return
 	}
-	reuslt, err := new(models.WebUser).UserList(req.Page, req.Rows, req.Verify, req.Status, req.Search_content, req.Date)
+	result, err := new(models.WebUser).UserList(req.Page, req.Rows, req.Verify, req.Status, req.Search, req.Date)
 	if err != nil {
 		w.RespErr(c, err)
 		return
 	}
-	fmt.Println("0.00.0.0.0.0.000000000000000", reuslt)
-	list, Ok := reuslt.Items.([]models.UserGroup)
+	fmt.Println("0.00.0.0.0.0.000000000000000", result)
+	list, Ok := result.Items.([]models.UserGroup)
 
 	fmt.Println("GetWebUserList-1")
 	if !Ok {
@@ -380,7 +402,7 @@ func (w *WebUserManageController) GetWebUserList(c *gin.Context) {
 		return
 	}
 	// 设置返回数据
-	w.Put(c, "list", reuslt)
+	w.Put(c, "list", result)
 	fmt.Println("GetWebUserList-3")
 	// 返回
 	w.RespOK(c)

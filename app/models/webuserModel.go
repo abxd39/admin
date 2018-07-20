@@ -95,10 +95,10 @@ func (w *WebUser) SecondAffirmLimit(uid, status int) error {
 		return errors.New("用户不存在！！")
 	}
 	if status == utils.AUTH_NIL {
-		wu.SecurityAuth = wu.SecurityAuth &^ wu.SecurityAuth
+		wu.SecurityAuth = wu.SecurityAuth &^ utils.AUTH_TWO
 	}
-	if status == utils.AUTH_FIRST {
-		wu.SecurityAuth = wu.SecurityAuth | utils.AUTH_FIRST // 16 为实名状态标识
+	if status == utils.AUTH_TWO {
+		wu.SecurityAuth = wu.SecurityAuth ^ utils.AUTH_TWO // 为实名状态标识
 	}
 	_, err = query.Update(&WebUser{
 		SecurityAuth: wu.SecurityAuth,
@@ -124,10 +124,10 @@ func (w *WebUser) FirstAffirmLimit(uid, status int) error {
 	}
 
 	if status == utils.AUTH_NIL {
-		wu.SecurityAuth = wu.SecurityAuth &^ wu.SecurityAuth
+		wu.SecurityAuth = wu.SecurityAuth &^ utils.AUTH_FIRST
 	}
 	if status == utils.AUTH_FIRST {
-		wu.SecurityAuth = wu.SecurityAuth | utils.AUTH_FIRST // 16 为实名状态标识
+		wu.SecurityAuth = wu.SecurityAuth ^ utils.AUTH_FIRST // 16 为实名状态标识
 	}
 	_, err = query.Update(&WebUser{
 		SecurityAuth: wu.SecurityAuth,
@@ -160,7 +160,7 @@ func (w *FirstDetail) GetFirstDetail(uid int) (*FirstDetail, error) {
 	if err != nil {
 		return nil, err
 	}
-	if u.SecurityAuth&utils.AUTH_FIRST == 1 {
+	if u.SecurityAuth&utils.AUTH_FIRST == utils.AUTH_FIRST {
 		u.VerifyMark = 1
 	}
 	return u, nil
@@ -175,9 +175,13 @@ func (w *WebUser) GetFirstList(page, rows, status, cstatus int, time uint64, sea
 	if status != 0 {
 		query = query.Where("`user`.`status`=?", status)
 	}
-	if cstatus != 0 {
-		query = query.Where("security_auth=?", cstatus)
+	if cstatus == -1 {//未通过
+		query = query.Where("security_auth & ? !=?", utils.AUTH_FIRST, utils.AUTH_FIRST)
 	}
+	if cstatus == utils.AUTH_FIRST{
+		query = query.Where("security_auth & ? =?", utils.AUTH_FIRST, utils.AUTH_FIRST)
+	}
+
 	if time != 0 {
 		//query = query.Where("")
 		query = query.Where("`user_ex`.`register_time` BETWEEN ? AND ? ", time, time+86400)
@@ -201,6 +205,11 @@ func (w *WebUser) GetFirstList(page, rows, status, cstatus int, time uint64, sea
 		return nil, err
 	}
 
+	for i, _ := range list {
+		if list[i].SecurityAuth&utils.AUTH_FIRST == utils.AUTH_FIRST {
+			list[i].RealNameVerifyMark = 1
+		}
+	}
 	modelList.Items = list
 	return modelList, nil
 }
@@ -351,7 +360,7 @@ func (w *WebUser) UserList(page, rows, verify, status int, search string, date i
 	//刷选条件为用户的验证方式
 	if verify != 0 {
 		//subsql := fmt.Sprintf("AND a.security_auth=%d ", verify)
-		query = query.Where("`user`.`security_auth`=? ", verify)
+		query = query.Where("`user`.`security_auth` & ? =? ",verify, verify)
 		//sql += subsql
 	}
 	//无条件刷选
@@ -398,7 +407,7 @@ func (w *WebUser) GetCurreryList(uid []uint64, verify int, search string) ([]Use
 	}
 	//认证 判段
 	for index, v := range list {
-		if v.SecurityAuth&utils.AUTH_TWO == 1 {
+		if v.SecurityAuth&utils.AUTH_TWO == utils.AUTH_TWO {
 			list[index].TWOVerifyMark = 1
 		}
 	}
@@ -417,7 +426,7 @@ func (w *WebUser) GetUserListForUid(uid []uint64) ([]UserGroup, error) {
 	}
 	//认证 判段
 	for index, v := range list {
-		if v.SecurityAuth&utils.AUTH_TWO == 1 {
+		if v.SecurityAuth&utils.AUTH_TWO == utils.AUTH_TWO {
 			list[index].TWOVerifyMark = 1
 		}
 	}

@@ -91,7 +91,7 @@ func (this *TokenController) AddCash(c *gin.Context) {
 func (this *TokenController) EvacuateOder(c *gin.Context) {
 	req := struct {
 		Uid      int `form:"uid" json:"uid" binding:"required"`
-		OerderId int `form:"oid" json:"oid" binding:"required"`
+		OerderId string `form:"oid" json:"oid" binding:"required"`
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
@@ -99,7 +99,11 @@ func (this *TokenController) EvacuateOder(c *gin.Context) {
 		this.RespErr(c, err)
 		return
 	}
-
+	err=new(models.EntrustDetail).EvacuateOder(req.Uid,req.OerderId)
+	if err!=nil{
+		this.RespErr(c,err)
+		return
+	}
 	this.RespOK(c)
 	return
 }
@@ -108,9 +112,9 @@ func (this *TokenController) ChangeDetail(c *gin.Context) {
 	req := struct {
 		Page   int    `form:"page" json:"page" binding:"required"`
 		Rows   int    `form:"rows" json:"rows" `
-		Date   string `form:"start_t" json:"start_t" `
+		Date   uint64 `form:"date" json:"date" `
 		Search string `form:"search" json:"search" ` //刷选
-		Type   int    `form:"ad_id" json:"ad_id" `   //交易方向 买 卖 划转
+		Type   int    `form:"type" json:"type" `   //交易方向 买 卖 划转
 		Status int    `form:"status" json:"status" ` //用户状态
 	}{}
 	err := c.ShouldBind(&req)
@@ -169,11 +173,12 @@ func (this *TokenController) ChangeDetail(c *gin.Context) {
 				}
 			}
 		}
-		this.Put(c, "list", tokenlist)
+		monerylist.Items = tokenValue
+		this.Put(c, "list", monerylist)
 		this.RespOK(c)
 		return
 	} else {
-
+		fmt.Println("1111111111111111111111111",err)
 		list,err:=new(models.MoneyRecord).GetMoneyListForDateOrType(req.Page,req.Rows,req.Type,req.Date)
 		if err!=nil{
 			this.RespErr(c,err)
@@ -212,6 +217,7 @@ func (this *TokenController) ChangeDetail(c *gin.Context) {
 			}
 
 		}
+		list.Items =Value
 		this.Put(c,"list",list)
 		this.RespOK(c)
 		return
