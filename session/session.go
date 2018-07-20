@@ -1,8 +1,10 @@
-package utils
+package session
 
 import (
 	"admin/constant"
 	"admin/errors"
+	"admin/utils"
+
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/redis"
 	"github.com/gin-gonic/gin"
@@ -11,18 +13,18 @@ import (
 var Store sessions.Store
 
 func init() {
-	stype, err := Cfg.GetValue("session", "type")
+	stype, err := utils.Cfg.GetValue("session", "type")
 	if err != nil {
 		panic("utils.session:" + err.Error())
 	}
 
 	switch stype {
 	case "redis":
-		addr, err := Cfg.GetValue("redis", "addr")
+		addr, err := utils.Cfg.GetValue("redis", "addr")
 		if err != nil {
 			panic("utils.session:" + err.Error())
 		}
-		pwd, err := Cfg.GetValue("redis", "pwd")
+		pwd, err := utils.Cfg.GetValue("redis", "pwd")
 		if err != nil {
 			panic("utils.session:" + err.Error())
 		}

@@ -2,15 +2,14 @@ package app
 
 import (
 	"admin/app/controller"
-	"admin/utils"
-
+	"admin/session"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
 
 func Router(r *gin.Engine) {
 	//session
-	r.Use(sessions.Sessions("mysession", utils.Store))
+	r.Use(sessions.Sessions("mysession", session.Store))
 
 	new(controller.PublicController).Router(r)
 	new(controller.TestController).Router(r)

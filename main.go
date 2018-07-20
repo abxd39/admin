@@ -5,6 +5,7 @@ import (
 
 	"admin/app"
 	"admin/middleware"
+	"admin/session"
 	"admin/utils"
 
 	"github.com/gin-contrib/sessions"
@@ -15,7 +16,7 @@ func main() {
 	r := gin.Default()
 
 	// session
-	r.Use(sessions.Sessions("mysession", utils.Store))
+	r.Use(sessions.Sessions("mysession", session.Store))
 
 	// custom middleware
 	r.Use(middleware.CheckLogin())
