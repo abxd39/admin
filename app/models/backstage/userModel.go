@@ -73,14 +73,14 @@ func (u *User) List(pageIndex, pageSize int, filter map[string]string) (modelLis
 	// 获取总数
 	engine := utils.Engine_backstage
 	query := engine.Desc("uid")
-	query.
-		Join("LEFT", new(RoleUser).TableName(), "role_user.uid=user.uid").
-		Join("LEFT", new(Role).TableName(), "role.id=role_user.role_id")
+	query.Alias("u").
+		Join("LEFT", []string{new(RoleUser).TableName(), "ru"}, "ru.uid=u.uid").
+		Join("LEFT", []string{new(Role).TableName(), "r"}, "r.id=ru.role_id")
 
 	// 筛选
-	query.Where("user.is_super=0") // 不显示超管
+	query.Where("u.is_super=0") // 不显示超管
 	if v, ok := filter["phone"]; ok {
-		query.And("user.phone like '%?%'", v)
+		query.And("u.phone like '%?%'", v)
 	}
 
 	tempQuery := *query
@@ -93,7 +93,7 @@ func (u *User) List(pageIndex, pageSize int, filter map[string]string) (modelLis
 	offset, modelList := u.Paging(pageIndex, pageSize, int(count))
 
 	// 获取列表数据
-	err = query.Select("user.*, GROUP_CONCAT(role.name) role_name").Limit(modelList.PageSize, offset).GroupBy("user.uid").Find(&list)
+	err = query.Select("u.*, GROUP_CONCAT(r.name) role_name").Limit(modelList.PageSize, offset).GroupBy("u.uid").Find(&list)
 	if err != nil {
 		return nil, nil, errors.NewSys(err)
 	}
