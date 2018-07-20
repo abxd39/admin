@@ -68,9 +68,7 @@ func init() {
 		panic(err)
 	}
 
-	dsource = "ccbk:ecrf981@@tcp(47.106.136.96:3306)/g_backstage?charset=utf8"
-	//dsource = "conn=ccbk:ecrf981@@tcp(47.106.136.96:3306)/g_common?charset=utf8"
-	Engine_backstage, err = xorm.NewEngine("mysql", dsource)
+	Engine_backstage, err = xorm.NewEngine("mysql", Cfg.MustValue("mysql", "backstage"))
 	if err != nil {
 		panic(err)
 	}
@@ -79,11 +77,12 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+
 	//redis初始化
 	client := redis.NewClient(&redis.Options{
-		Addr:     "47.106.136.96:6379",
-		Password: "ailaiduokeji657@@@", // no password set
-		DB:       0,                    // use default DB
+		Addr:     Cfg.MustValue("redis", "addr"),
+		Password: Cfg.MustValue("redis", "pwd"),
+		DB:       0, // use default DB
 	})
 
 	_, err = client.Ping().Result()
