@@ -98,7 +98,7 @@ func (w *WebUser) SecondAffirmLimit(uid, status int) error {
 		wu.SecurityAuth = wu.SecurityAuth &^ utils.AUTH_TWO
 	}
 	if status == utils.AUTH_TWO {
-		wu.SecurityAuth = wu.SecurityAuth | utils.AUTH_TWO // 为实名状态标识
+		wu.SecurityAuth = wu.SecurityAuth ^ utils.AUTH_TWO // 为实名状态标识
 	}
 	_, err = query.Update(&WebUser{
 		SecurityAuth: wu.SecurityAuth,
@@ -127,7 +127,7 @@ func (w *WebUser) FirstAffirmLimit(uid, status int) error {
 		wu.SecurityAuth = wu.SecurityAuth &^ utils.AUTH_FIRST
 	}
 	if status == utils.AUTH_FIRST {
-		wu.SecurityAuth = wu.SecurityAuth | utils.AUTH_FIRST // 16 为实名状态标识
+		wu.SecurityAuth = wu.SecurityAuth ^ utils.AUTH_FIRST // 16 为实名状态标识
 	}
 	_, err = query.Update(&WebUser{
 		SecurityAuth: wu.SecurityAuth,
@@ -360,7 +360,7 @@ func (w *WebUser) UserList(page, rows, verify, status int, search string, date i
 	//刷选条件为用户的验证方式
 	if verify != 0 {
 		//subsql := fmt.Sprintf("AND a.security_auth=%d ", verify)
-		query = query.Where("`user`.`security_auth`=? ", verify)
+		query = query.Where("`user`.`security_auth` & ? =? ",verify, verify)
 		//sql += subsql
 	}
 	//无条件刷选
