@@ -1,5 +1,10 @@
-/admin
+
 build.sh
 admin.ini
-admin.exe
-.gitignore
+
+# 可执行文件
+/admin.exe
+/admin
+
+# 日志
+/log/*
