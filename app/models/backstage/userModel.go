@@ -1,15 +1,17 @@
 package backstage
 
 import (
-	"admin/errors"
 	"fmt"
-
-	"admin/app/models"
-	"admin/utils"
-	"github.com/gin-gonic/gin"
 	"strconv"
 	"strings"
 	"time"
+
+	"admin/app/models"
+	"admin/errors"
+	"admin/session"
+	"admin/utils"
+
+	"github.com/gin-gonic/gin"
 )
 
 // 管理员
@@ -338,7 +340,7 @@ func (u *User) Delete(uid int) error {
 // 检查管理员api权限
 func (u *User) CheckPermission(ctx *gin.Context, uid int, api string) (bool, error) {
 	// 判断是否超管
-	isSuper, err := utils.IsSuper(ctx)
+	isSuper, err := session.IsSuper(ctx)
 	if err != nil {
 		return false, err
 	}
@@ -386,14 +388,14 @@ func (u *User) MyLeftMenu(ctx *gin.Context) ([]Node, error) {
 
 	// 判断是否超管
 	engine := utils.Engine_backstage
-	isSuper, err := utils.IsSuper(ctx)
+	isSuper, err := session.IsSuper(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if isSuper { // 超管，直接返回所有左侧菜单
 		engine.Where("type=1").And("states=1").And("menu_type=1").Desc("weight").Find(&list)
 	} else {
-		uid, err := utils.GetUid(ctx)
+		uid, err := session.GetUid(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -432,14 +434,14 @@ func (u *User) MyRightMenu(ctx *gin.Context, pid int) ([]Node, error) {
 
 	// 判断是否超管
 	engine := utils.Engine_backstage
-	isSuper, err := utils.IsSuper(ctx)
+	isSuper, err := session.IsSuper(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if isSuper { // 超管，直接返回所有左侧菜单
 		engine.Where("type=1").And("states=1").And("menu_type=2").And(fmt.Sprintf("full_id LIKE '%s%%'", parent.FullId)).Desc("weight").Find(&list)
 	} else {
-		uid, err := utils.GetUid(ctx)
+		uid, err := session.GetUid(ctx)
 		if err != nil {
 			return nil, err
 		}
