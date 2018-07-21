@@ -5,9 +5,11 @@ import (
 	"errors"
 	"fmt"
 	//google "code.google.com/a_game/src/models"
+	"strconv"
 )
 
 type UserEx struct {
+	BaseModel     `xorm:"-"`
 	Uid           int64  `xorm:"not null pk comment(' 用户ID') BIGINT(11)"`
 	NickName      string `xorm:"not null default '' comment('用户昵称') VARCHAR(64)"`
 	HeadSculpture string `xorm:"not null default '' comment('头像图片路径') VARCHAR(100)"`
@@ -19,6 +21,7 @@ type UserEx struct {
 	InviteId      int64  `xorm:"comment('邀请者id') BIGINT(11)"`
 	Invites       int    `xorm:"default 0 comment('邀请人数') INT(11)"`
 	AffirmCount   int    `xorm:"default 0 comment('实名认证的次数') TINYINT(4)"`
+	ChannelName   string `xorm:"not null default '' comment('邀请的渠道名称') VARCHAR(100)" json:"channel_name"`
 }
 
 type WebUser struct {
@@ -79,6 +82,114 @@ func (w *WebUser) TableName() string {
 
 func (w *UserGroup) TableName() string {
 	return "user"
+}
+
+type InviteGroup struct {
+	WebUser      `xorm:"extends"`
+	Account          string `xorm:"comment('账号') unique VARCHAR(64)"`
+	Email            string `xorm:"comment('邮箱') unique VARCHAR(128)"`
+	Phone            string `xorm:"comment('手机') unique VARCHAR(64)"`
+	Status           int    `xorm:"default 0 comment('用户状态，0正常，1冻结') INT(11)"`
+	InviteCount int
+}
+
+func (w *UserEx) TableName() string {
+	return "user_ex"
+}
+
+//邀请人列表
+func (w*UserEx)GetInviteInfoList(uid,page,rows int ,date uint64,name ,account string) (*ModelList,error){
+	engine := utils.Engine_common
+	query := engine.Desc("user_ex.uid")
+	query = query.Join("INNER", "user", "user.uid=user_ex.uid")
+	query =query.Cols("user.account","user_ex.register_time","user_ex.channel_name")
+	query =query.Where("`user_ex`.`invite_id`=?",uid)
+	if name!=``{
+		temp:=fmt.Sprintf("channer_name=%s",name)
+		query = query.Where(temp)
+	}
+	if account!=``{
+		temp:=fmt.Sprintf("user.account=%s",account)
+		query =query.Where(temp)
+	}
+	fmt.Println("刷选时间=",date)
+	if date!=0{
+		query = query.Where("`user_ex`.`register_time` BETWEEN ? AND ? ", date, date+86400)
+	}
+	tempQuery:=*query
+	count,err:=tempQuery.Count(&UserEx{})
+	if err!=nil{
+		return nil ,err
+	}
+	offset,modelList :=w.Paging(page,rows,int(count))
+	list:=make([]InviteGroup,0)
+	err=query.Limit(modelList.PageSize,offset).Find(&list)
+	if err!=nil{
+		return nil,err
+	}
+	modelList.Items =list
+	return  modelList,nil
+}
+
+//p2-5好友邀请
+
+func (w *WebUser) GetInViteList(page, rows int, search string) (*ModelList, error) {
+	engine := utils.Engine_common
+	query := engine.Desc("user.uid")
+	query = query.Join("INNER", "user_ex", "user_ex.uid=user.uid and user_ex.invite_id!=''")
+	if search != `` {
+		temp := fmt.Sprintf(" concat(IFNULL(`user`.`uid`,''),IFNULL(`user`.`phone`,''),IFNULL(`user_ex`.`nick_name`,''),IFNULL(`user`.`email`,'')) LIKE '%%%s%%'  ", search)
+		query = query.Where(temp)
+	}
+	temp := *query
+	count, err := temp.Where("`user_ex`.`invite_id`!=''").Count(&WebUser{})
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println("count=",count)
+
+	offset, modelList := w.Paging(page, rows, int(count))
+	list := make([]InviteGroup, 0)
+	err=query.Limit(modelList.PageSize, offset).Find(&list)
+	if err!=nil{
+		return nil,err
+	}
+
+	sql := "SELECT `user_ex`.`invite_id`, COUNT(*) AS counts FROM `user_ex` WHERE `user_ex`.`invite_id`!='' GROUP BY  `user_ex`.`invite_id` "
+	value, err := query.QueryString(sql)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, v := range value {
+		// v["counts"]
+		uid, _ := strconv.Atoi(v["uid"])
+		//if err!=nil{
+		//	continue
+		//}
+		count, _ := strconv.Atoi(v["counts"])
+		//if err!=nil{
+		//	continue
+		//}
+		//邀请的人数
+		for i,_:=range list{
+			if uint64(uid) == list[i].Uid {
+				list[i].InviteCount = count
+				break
+			}
+		}
+
+		fmt.Printf("%#v\n", v)
+		//for i,vv:=range v {
+		//
+		//}
+	}
+
+
+
+	modelList.Items = list
+	return modelList, nil
+
 }
 
 //二级认证审核
@@ -175,10 +286,10 @@ func (w *WebUser) GetFirstList(page, rows, status, cstatus int, time uint64, sea
 	if status != 0 {
 		query = query.Where("`user`.`status`=?", status)
 	}
-	if cstatus == -1 {//未通过
+	if cstatus == -1 { //未通过
 		query = query.Where("security_auth & ? !=?", utils.AUTH_FIRST, utils.AUTH_FIRST)
 	}
-	if cstatus == utils.AUTH_FIRST{
+	if cstatus == utils.AUTH_FIRST {
 		query = query.Where("security_auth & ? =?", utils.AUTH_FIRST, utils.AUTH_FIRST)
 	}
 
@@ -360,7 +471,7 @@ func (w *WebUser) UserList(page, rows, verify, status int, search string, date i
 	//刷选条件为用户的验证方式
 	if verify != 0 {
 		//subsql := fmt.Sprintf("AND a.security_auth=%d ", verify)
-		query = query.Where("`user`.`security_auth` & ? =? ",verify, verify)
+		query = query.Where("`user`.`security_auth` & ? =? ", verify, verify)
 		//sql += subsql
 	}
 	//无条件刷选
@@ -378,7 +489,23 @@ func (w *WebUser) UserList(page, rows, verify, status int, search string, date i
 		utils.AdminLog.Errorln(err.Error())
 		return nil, err
 	}
-
+	for _, v := range list {
+		if v.SecurityAuth&utils.AUTH_EMAIL == utils.AUTH_EMAIL {
+			v.EMAILVerifyMark = 1
+		}
+		if v.SecurityAuth&utils.AUTH_TWO == utils.AUTH_TWO {
+			v.TWOVerifyMark = 1
+		}
+		if v.SecurityAuth&utils.AUTH_FIRST == utils.AUTH_FIRST {
+			v.RealNameVerifyMark = 1
+		}
+		if v.SecurityAuth&utils.AUTH_GOOGLE == utils.AUTH_GOOGLE {
+			v.GoogleVerifyMark = 1
+		}
+		if v.SecurityAuth&utils.AUTH_PHONE == utils.AUTH_PHONE {
+			v.PhoneVerifyMark = 1
+		}
+	}
 	modelList.Items = list
 	return modelList, nil
 }

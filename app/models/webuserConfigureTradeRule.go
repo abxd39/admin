@@ -3,8 +3,8 @@ package models
 import (
 	"admin/utils"
 	"time"
-	"strconv"
 	"admin/errors"
+	"fmt"
 )
 
 type ConfigureTradeRule struct {
@@ -15,34 +15,33 @@ type ConfigureTradeRule struct {
 	OneTotal    int64 `xorm:"comment('一级认证总交易额上限限定') BIGINT(20)" json:"one_total"`
 	TwoTradeMax int64 `xorm:"comment('二级认证单笔最大交易额限定') BIGINT(20)" json:"two_trade_max"`
 	TwoTotal    int64 `xorm:"comment('二级认证总交易额上限限定') BIGINT(20)" json:"two_total"`
-	CreateDate  int   `xorm:"comment('创建时间') INT(11)" json:"create_date"`
-	UpdateDate  int   `xorm:"comment('修改时间') INT(11)" json:"update_date"`
+	CreateDate  int64   `xorm:"comment('创建时间') INT(11)" json:"create_date"`
+	UpdateDate  int64   `xorm:"comment('修改时间') INT(11)" json:"update_date"`
 }
 
 func (this *ConfigureTradeRule) AddTradeRule(c ConfigureTradeRule) error {
 	engine := utils.Engine_common
 	con := new(ConfigureTradeRule)
 	t:=time.Now()
-	timestamp := strconv.FormatInt(t.UTC().UnixNano(), 10)
-	value,err:=strconv.Atoi(timestamp)
-	if err!=nil{
-		return err
-	}
 	query :=engine.Where("id=1")
 	has, err := query.Get(con)
 	if err != nil {
 		return err
 	}
+	fmt.Println("models TWoTotal=",c.TwoTotal)
 	if !has {
-		query.InsertOne(&ConfigureTradeRule{
+		_,err:=query.InsertOne(&ConfigureTradeRule{
 			Cuid:c.Cuid,
 			Muid:c.Muid,
 			OneTradeMax:c.OneTradeMax,
 			OneTotal:c.OneTotal,
 			TwoTradeMax:c.TwoTradeMax,
 			TwoTotal:c.TwoTotal,
-			CreateDate:value,
+			CreateDate:t.Unix(),
 		})
+		if err!=nil{
+			return err
+		}
 	}else {
 		_,err:=query.Update(&ConfigureTradeRule{
 			Cuid:c.Cuid,
@@ -51,7 +50,7 @@ func (this *ConfigureTradeRule) AddTradeRule(c ConfigureTradeRule) error {
 			OneTotal:c.OneTotal,
 			TwoTradeMax:c.TwoTradeMax,
 			TwoTotal:c.TwoTotal,
-			UpdateDate:value,
+			UpdateDate:t.Unix(),
 		})
 		if err!=nil{
 			return err

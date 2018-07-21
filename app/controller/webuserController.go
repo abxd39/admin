@@ -4,8 +4,6 @@ import (
 	"admin/app/models"
 	"admin/utils"
 	"fmt"
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -31,23 +29,96 @@ func (w *WebUserManageController) Router(r *gin.Engine) {
 		g.POST("/first_affirm", w.FirstAffirm)                        //审核用户实名认证
 		g.POST("/second_affirm", w.SecondAffirm)                      //审核二级实名认证
 		g.POST("/trade_rule", w.SetTradeRule)                         //设置交易规则
-		g.GET("get_trade_rule",w.GetTradeRule)//获取交易规则
-
+		g.GET("/get_trade_rule", w.GetTradeRule)                      //获取交易规则
+		g.GET("/get_invite_list", w.GetInviteList)                     //获取 p2-5好友邀请
+		g.GET("/get_invite_info", w.GetInviteInfoList)                 //p2-5-1邀请人统计表
 	}
 }
-func (w *WebUserManageController) GetTradeRule(c *gin.Context) {
-	err:=new()
-}
 
-func (w *WebUserManageController) SetTradeRule(c *gin.Context) {
-	req := models.ConfigureTradeRule{}
+func (w *WebUserManageController) GetInviteInfoList(c *gin.Context) {
+	req := struct {
+		Uid     int    `form:"uid" json:"uid" binding:"required"`
+		Page    int    `form:"page" json:"page" binding:"required"`
+		Rows    int    `form:"rows" json:"rows" `
+		Date    uint64 `form:"date" json:"date" `       //日期
+		Name    string `form:"name" json:"name" `       //渠道名称
+		Account string `form:"account" json:"account" ` //刷选
+	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
 		utils.AdminLog.Errorln("param buind failed !!")
 		w.RespErr(c, err)
 		return
 	}
-	err = new(models.ConfigureTradeRule).AddTradeRule(req)
+	list,err:=new(models.UserEx).GetInviteInfoList(req.Uid,req.Page,req.Rows,req.Date,req.Name,req.Account)
+	if err!=nil{
+		w.RespErr(c,err)
+		return
+	}
+	w.Put(c,"list",list)
+	w.RespOK(c)
+	return
+}
+
+func (w *WebUserManageController) GetInviteList(c *gin.Context) {
+	req := struct {
+		Page   int    `form:"page" json:"page" binding:"required"`
+		Rows   int    `form:"rows" json:"rows" `
+		Date   uint64 `form:"time" json:"time" `     //日期
+		Status int    `form:"status" json:"status" ` //用户状态
+		Search string `form:"search" json:"search" ` //刷选
+	}{}
+	err := c.ShouldBind(&req)
+	if err != nil {
+		utils.AdminLog.Errorln("param buind failed !!")
+		w.RespErr(c, err)
+		return
+	}
+	list, err := new(models.UserGroup).GetInViteList(req.Page, req.Rows, req.Search)
+	if err != nil {
+		w.RespErr(c, err)
+		return
+	}
+	w.Put(c, "list", list)
+	w.RespOK(c)
+}
+
+func (w *WebUserManageController) GetTradeRule(c *gin.Context) {
+	result, err := new(models.ConfigureTradeRule).GetTradeRule()
+	if err != nil {
+		w.RespErr(c, err)
+		return
+	}
+	w.Put(c, "list", result)
+	w.RespOK(c)
+}
+
+func (w *WebUserManageController) SetTradeRule(c *gin.Context) {
+
+	req := struct {
+		Cuid        int   `form:"cuid" json:"cuid" `
+		Muid        int   `form:"muid" json:"muid" `
+		OneTradeMax int64 `form:"one_trade_max" json:"one_trade_max" `
+		OneTotal    int64 `form:"one_total" json:"one_total" `
+		TwoTotal    int64 `form:"two_total" json:"two_total" `
+		TwoTradeMax int64 `form:"two_trade_max" json:"two_trade_max" `
+	}{}
+	err := c.ShouldBind(&req)
+	if err != nil {
+		utils.AdminLog.Errorln("param buind failed !!")
+		w.RespErr(c, err)
+		return
+	}
+	fmt.Println("two_total=", req.TwoTotal)
+	param := models.ConfigureTradeRule{
+		Cuid:        req.Cuid,
+		Muid:        req.Muid,
+		OneTradeMax: req.OneTradeMax,
+		OneTotal:    req.OneTotal,
+		TwoTotal:    req.TwoTotal,
+		TwoTradeMax: req.TwoTradeMax,
+	}
+	err = new(models.ConfigureTradeRule).AddTradeRule(param)
 	if err != nil {
 		w.RespErr(c, err)
 		return
@@ -363,7 +434,8 @@ func (w *WebUserManageController) GetTotalUser(c *gin.Context) {
 		w.RespErr(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"code": 0, "data": "", "total": total, "msg": "成功"})
+	w.Put(c, "list", total)
+	w.RespOK(c)
 	return
 }
 
@@ -413,13 +485,13 @@ func (w *WebUserManageController) GetWebUserList(c *gin.Context) {
 func (w *WebUserManageController) VerifyOperator(list []models.UserGroup) []models.UserGroup {
 	for index, _ := range list {
 
-		if list[index].SecurityAuth&utils.AUTH_GOOGLE == 1 {
+		if list[index].SecurityAuth&utils.AUTH_GOOGLE == utils.AUTH_GOOGLE {
 			list[index].GoogleVerifyMark = 1
 		}
-		if list[index].SecurityAuth&utils.AUTH_TWO == 1 {
+		if list[index].SecurityAuth&utils.AUTH_TWO == utils.AUTH_TWO {
 			list[index].TWOVerifyMark = 1
 		}
-		if list[index].SecurityAuth&utils.AUTH_FIRST == 1 {
+		if list[index].SecurityAuth&utils.AUTH_FIRST == utils.AUTH_FIRST {
 			list[index].RealNameVerifyMark = 1
 		}
 
