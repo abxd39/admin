@@ -1,8 +1,5 @@
 #! /bin/sh
 
- dir=/F/project
-#dir=/Volumes/WorkHD/workspace/go
-
 target=admin
 CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o ${target}
 
