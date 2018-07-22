@@ -74,7 +74,7 @@ func (w *WebUserManageController) GetInviteList(c *gin.Context) {
 		w.RespErr(c, err)
 		return
 	}
-	list, err := new(models.UserGroup).GetInViteList(req.Page, req.Rows, req.Search)
+	list, err := new(models.UserEx).GetInViteList(req.Page, req.Rows, req.Search)
 	if err != nil {
 		w.RespErr(c, err)
 		return

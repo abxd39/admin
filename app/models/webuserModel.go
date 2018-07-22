@@ -85,7 +85,7 @@ func (w *UserGroup) TableName() string {
 }
 
 type InviteGroup struct {
-	WebUser      `xorm:"extends"`
+	UserEx      `xorm:"extends"`
 	Account          string `xorm:"comment('账号') unique VARCHAR(64)"`
 	Email            string `xorm:"comment('邮箱') unique VARCHAR(128)"`
 	Phone            string `xorm:"comment('手机') unique VARCHAR(64)"`
@@ -133,16 +133,16 @@ func (w*UserEx)GetInviteInfoList(uid,page,rows int ,date uint64,name ,account st
 
 //p2-5好友邀请
 
-func (w *WebUser) GetInViteList(page, rows int, search string) (*ModelList, error) {
+func (w *UserEx) GetInViteList(page, rows int, search string) (*ModelList, error) {
 	engine := utils.Engine_common
-	query := engine.Desc("user.uid")
-	query = query.Join("INNER", "user_ex", "user_ex.uid=user.uid and user_ex.invite_id!=''")
+	query := engine.Desc("user_ex.uid")
+	query = query.Join("INNER", "user", "user.uid=user_ex.uid ")
 	if search != `` {
-		temp := fmt.Sprintf(" concat(IFNULL(`user`.`uid`,''),IFNULL(`user`.`phone`,''),IFNULL(`user_ex`.`nick_name`,''),IFNULL(`user`.`email`,'')) LIKE '%%%s%%'  ", search)
+		temp := fmt.Sprintf(" concat(IFNULL(`user_ex`.`uid`,''),IFNULL(`user`.`phone`,''),IFNULL(`user_ex`.`nick_name`,''),IFNULL(`user`.`email`,'')) LIKE '%%%s%%'  ", search)
 		query = query.Where(temp)
 	}
 	temp := *query
-	count, err := temp.Where("`user_ex`.`invite_id`!=''").Count(&WebUser{})
+	count, err := temp.Where("`user_ex`.`invite_id`!=''").Count(&UserEx{})
 	if err != nil {
 		return nil, err
 	}
@@ -163,7 +163,7 @@ func (w *WebUser) GetInViteList(page, rows int, search string) (*ModelList, erro
 
 	for _, v := range value {
 		// v["counts"]
-		uid, _ := strconv.Atoi(v["uid"])
+		uid, _ := strconv.Atoi(v["invite_id"])
 		//if err!=nil{
 		//	continue
 		//}
@@ -173,7 +173,7 @@ func (w *WebUser) GetInViteList(page, rows int, search string) (*ModelList, erro
 		//}
 		//邀请的人数
 		for i,_:=range list{
-			if uint64(uid) == list[i].Uid {
+			if int64(uid) == list[i].Uid {
 				list[i].InviteCount = count
 				break
 			}
@@ -184,10 +184,14 @@ func (w *WebUser) GetInViteList(page, rows int, search string) (*ModelList, erro
 		//
 		//}
 	}
+	resultList := make([]InviteGroup, 0)
+	for _,vt:=range list{
+		if vt.InviteCount !=0{
+			resultList = append(resultList,vt)
+		}
+	}
 
-
-
-	modelList.Items = list
+	modelList.Items = resultList
 	return modelList, nil
 
 }
