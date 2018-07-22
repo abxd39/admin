@@ -19,6 +19,7 @@ func main() {
 	r.Use(sessions.Sessions("mysession", session.Store))
 
 	// custom middleware
+	r.Use(middleware.JsCors())
 	r.Use(middleware.CheckLogin())
 
 	app.Router(r)
