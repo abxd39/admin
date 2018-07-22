@@ -18,14 +18,14 @@ type UserToken struct {
 
 //资产
 type PersonalProperty struct {
-	BaseModel `xorm:"-"`
-	Uid       uint64
-	NickName  string
-	Phone     string
-	Email     string
-	Btc       float32 //折合比特币总数
-	Balance   float64 // 这和人民币总数
-	Status    int     //账号状态
+	UserToken `xorm:"extends"`
+	Uid       uint64 `xorm:"-"`
+	NickName  string `xorm:"-"`
+	Phone     string `xorm:"-"`
+	Email     string `xorm:"-"`
+	Btc       float32 `xorm:"-"`//折合比特币总数
+	Balance   float64 `xorm:"-"`// 这和人民币总数
+	Status    int     `xorm:"-"`//账号状态
 }
 
 // var Total []PersonalProperty
@@ -34,6 +34,9 @@ type PersonalProperty struct {
 // 	Total = make([]PersonalProperty, 0)
 // }
 
+func (t*PersonalProperty)TableName()string  {
+	return "user_token"
+}
 func (u *UserToken) GetTokenDetailOfUid(uid, token_id int) ([]UserToken, error) {
 	if uid < 0 {
 		return nil, errors.New("uid is illegal")

@@ -22,7 +22,7 @@ type Article struct {
 	Id            int    `xorm:"not null pk autoincr comment('自增ID') INT(10)"`
 	Title         string `xorm:"not null default '' comment('文章标题') VARCHAR(100)"`
 	Description   string `xorm:"not null default '' comment('描述') VARCHAR(1000)"`
-	Content       string `xorm:"not null comment('内容') TEXT"`
+	Content       string `xorm:"not null comment('内容') LONGTEXT"`
 	Covers        string `xorm:"not null default '' comment('封面图片') VARCHAR(1000)"`
 	ContentImages string `xorm:"not null comment('内容图片') TEXT"`
 	Type          int    `xorm:"not null default 1 comment('类型 1 业界新闻 2 公告 3 帮助手册') TINYINT(4)"`
@@ -64,7 +64,7 @@ func (a *ArticleList) TableName() string {
 }
 
 func (a *ArticleType) GetArticleType() ([]ArticleType, error) {
-	engine := utils.Engine_common
+	engine := utils.Engine_context
 	list := make([]ArticleType, 0)
 	err := engine.Find(&list)
 	if err != nil {
@@ -99,14 +99,14 @@ func (a *ArticleList) GetArticleList(page, rows, tp, status int, title, st strin
 		return nil, err
 	}
 	offset, modelList := a.Paging(page, rows, int(count))
-
+	fmt.Println("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",offset,modelList.PageSize)
 	u := make([]Article, 0)
 	err = query.Limit(modelList.PageSize, offset).Find(&u)
 	if err != nil {
 		utils.AdminLog.Errorln(err.Error())
 		return nil, err
 	}
-	list := make([]*ArticleList, 0)
+	list := make([]ArticleList, 0)
 	for _, v := range u {
 		ret := ArticleList{
 			Id:         v.Id,
@@ -119,7 +119,7 @@ func (a *ArticleList) GetArticleList(page, rows, tp, status int, title, st strin
 			Astatus:    v.Astatus,
 			Type:       v.Type,
 		}
-		list = append(list, &ret)
+		list = append(list, ret)
 	}
 
 	modelList.Items = list

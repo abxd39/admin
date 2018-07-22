@@ -24,7 +24,7 @@ func (this *CurrencyController) Router(r *gin.Engine) {
 		g.GET("/total_balance", this.GetTotalCurrencyBalance)    //p2-3-1法币账户统计列表
 		g.GET("/user_detail", this.GetUserDetailList)            //p2-3-1-2法币账户资产展示
 		g.GET("/user_buysell", this.GetBuySellList)              //p2-3-1-1查看统计买入_卖出_划转
-		g.GET("total", this.Total)                               //p2-3-0总财产列表
+		g.GET("/total", this.Total)                               //p2-3-0总财产列表
 		g.GET("/currency_change", this.GetCurrencyChangeHistroy) //p2-3-3法币账户变更详情
 		//g.GET("/")                                               //p2-3-0-0币数统计列表
 	}

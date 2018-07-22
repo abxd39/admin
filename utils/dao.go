@@ -21,8 +21,8 @@ func init() {
 	var err error
 
 	//mysql初始化
-	dsource := "ccbk:ecrf981@@tcp(47.106.136.96:3306)/g_currency?charset=utf8"
-	Engine_currency, err = xorm.NewEngine("mysql", dsource)
+	//dsource := "ccbk:ecrf981@@tcp(47.106.136.96:3306)/g_currency?charset=utf8"
+	Engine_currency, err = xorm.NewEngine("mysql", Cfg.MustValue("mysql", "currency"))
 	if err != nil {
 		panic(err)
 	}
@@ -32,8 +32,8 @@ func init() {
 		panic(err)
 	}
 
-	dsource = "root:current@tcp(47.106.136.96:3306)/g_token?charset=utf8"
-	Engine_token, err = xorm.NewEngine("mysql", dsource)
+	//dsource = "root:current@tcp(47.106.136.96:3306)/g_token?charset=utf8"
+	Engine_token, err = xorm.NewEngine("mysql", Cfg.MustValue("mysql", "token"))
 
 	if err != nil {
 		panic(err)
@@ -44,8 +44,8 @@ func init() {
 		panic(err)
 	}
 
-	dsource = "root:current@tcp(47.106.136.96:3306)/g_common?charset=utf8"
-	Engine_common, err = xorm.NewEngine("mysql", dsource)
+	//dsource = "root:current@tcp(47.106.136.96:3306)/g_common?charset=utf8"
+	Engine_common, err = xorm.NewEngine("mysql", Cfg.MustValue("mysql", "common"))
 	if err != nil {
 		panic(err)
 	}
@@ -55,9 +55,9 @@ func init() {
 		panic(err)
 	}
 	//context manage
-	dsource = "ccbk:ecrf981@@tcp(47.106.136.96:3306)/g_common?charset=utf8"
+	//dsource = "ccbk:ecrf981@@tcp(47.106.136.96:3306)/g_common?charset=utf8"
 	//dsource = "conn=ccbk:ecrf981@@tcp(47.106.136.96:3306)/g_common?charset=utf8"
-	Engine_context, err = xorm.NewEngine("mysql", dsource)
+	Engine_context, err = xorm.NewEngine("mysql", Cfg.MustValue("mysql", "context"))
 
 	if err != nil {
 		panic(err)
