@@ -68,3 +68,16 @@ func CheckLogin() gin.HandlerFunc {
 		ctx.Next()
 	}
 }
+
+// 前端跨域
+func JsCors() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		w := c.Writer
+		w.Header().Set("Access-Control-Allow-Origin", c.Request.Header.Get("Origin"))
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST")
+		w.Header().Add("Access-Control-Allow-Headers", "Content-Type")
+		w.Header().Add("Access-Control-Allow-Headers", "Access-Token")
+		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		c.Next()
+	}
+}
