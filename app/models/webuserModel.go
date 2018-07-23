@@ -4,8 +4,7 @@ import (
 	"admin/utils"
 	"errors"
 	"fmt"
-	//google "code.google.com/a_game/src/models"
-	"strconv"
+
 )
 
 type UserEx struct {
@@ -97,7 +96,7 @@ func (w *UserEx) TableName() string {
 	return "user_ex"
 }
 
-//邀请人列表
+//所有被邀请人列表
 func (w*UserEx)GetInviteInfoList(uid,page,rows int ,date uint64,name ,account string) (*ModelList,error){
 	engine := utils.Engine_common
 	query := engine.Desc("user_ex.uid")
@@ -131,67 +130,48 @@ func (w*UserEx)GetInviteInfoList(uid,page,rows int ,date uint64,name ,account st
 	return  modelList,nil
 }
 
-//p2-5好友邀请
+//p2-5好友邀请 ___ 有邀请用户注册的列表
 
 func (w *UserEx) GetInViteList(page, rows int, search string) (*ModelList, error) {
 	engine := utils.Engine_common
-	query := engine.Desc("user_ex.uid")
-	query = query.Join("INNER", "user", "user.uid=user_ex.uid ")
+	sql := " SELECT user.* FROM user_ex"+
+		" INNER JOIN (SELECT invite_id,COUNT(invite_id) cnt FROM user_ex GROUP BY invite_id) test"+
+		" ON user_ex.invite_id=test.invite_id"+
+		" INNER JOIN user ON user.uid=user_ex.invite_id"+
+		" WHERE user_ex.invite_id!=0 GROUP BY test.invite_id ORDER BY user_ex.uid DESC"
+
+	sql2 := " SELECT user.*,user_ex.*, test.cnt invite_count FROM user_ex"+
+		" INNER JOIN (SELECT invite_id,COUNT(invite_id) cnt FROM user_ex GROUP BY invite_id) test"+
+		" ON user_ex.invite_id=test.invite_id"+
+		" INNER JOIN user ON user.uid=user_ex.invite_id"+
+		" WHERE user_ex.invite_id!=0 GROUP BY test.invite_id ORDER BY user_ex.uid DESC LIMIT %d OFFSET %d"
+
+	query:=engine.SQL(sql)
+
+
+	type test struct {
+		Cnt int
+	}
+	var temp test
+	_,err :=engine.SQL( fmt.Sprintf("select count(a.uid) cnt FROM ( %s) a", sql)).Get(&temp)
+
 	if search != `` {
 		temp := fmt.Sprintf(" concat(IFNULL(`user_ex`.`uid`,''),IFNULL(`user`.`phone`,''),IFNULL(`user_ex`.`nick_name`,''),IFNULL(`user`.`email`,'')) LIKE '%%%s%%'  ", search)
-		query = query.Where(temp)
+		query = query.And(temp)
 	}
-	temp := *query
-	count, err := temp.Where("`user_ex`.`invite_id`!=''").Count(&UserEx{})
-	if err != nil {
-		return nil, err
-	}
-	fmt.Println("count=",count)
-
-	offset, modelList := w.Paging(page, rows, int(count))
-	list := make([]InviteGroup, 0)
-	err=query.Limit(modelList.PageSize, offset).Find(&list)
+	fmt.Println("cnt=",temp.Cnt)
+	fmt.Println("page=",page,"rows=",rows,"cnt=",temp.Cnt)
+	offset,modelList:=w.Paging(page,rows,temp.Cnt)
+	list:=make([]InviteGroup,0)
+	sql2 = fmt.Sprintf(sql2,modelList.PageSize,offset)
+	fmt.Println("sql2=",sql2)
+	err=query.SQL(sql2).Find(&list)
 	if err!=nil{
 		return nil,err
 	}
 
-	sql := "SELECT `user_ex`.`invite_id`, COUNT(*) AS counts FROM `user_ex` WHERE `user_ex`.`invite_id`!='' GROUP BY  `user_ex`.`invite_id` "
-	value, err := query.QueryString(sql)
-	if err != nil {
-		return nil, err
-	}
-
-	for _, v := range value {
-		// v["counts"]
-		uid, _ := strconv.Atoi(v["invite_id"])
-		//if err!=nil{
-		//	continue
-		//}
-		count, _ := strconv.Atoi(v["counts"])
-		//if err!=nil{
-		//	continue
-		//}
-		//邀请的人数
-		for i,_:=range list{
-			if int64(uid) == list[i].Uid {
-				list[i].InviteCount = count
-				break
-			}
-		}
-
-		fmt.Printf("%#v\n", v)
-		//for i,vv:=range v {
-		//
-		//}
-	}
-	resultList := make([]InviteGroup, 0)
-	for _,vt:=range list{
-		if vt.InviteCount !=0{
-			resultList = append(resultList,vt)
-		}
-	}
-
-	modelList.Items = resultList
+	fmt.Println("resultList=",list)
+	modelList.Items = list
 	return modelList, nil
 
 }

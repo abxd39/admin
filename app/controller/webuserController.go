@@ -81,6 +81,7 @@ func (w *WebUserManageController) GetInviteList(c *gin.Context) {
 	}
 	w.Put(c, "list", list)
 	w.RespOK(c)
+	return
 }
 
 func (w *WebUserManageController) GetTradeRule(c *gin.Context) {

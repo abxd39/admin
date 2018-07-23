@@ -22,7 +22,7 @@ type Article struct {
 	Id            int    `xorm:"not null pk autoincr comment('自增ID') INT(10)"`
 	Title         string `xorm:"not null default '' comment('文章标题') VARCHAR(100)"`
 	Description   string `xorm:"not null default '' comment('描述') VARCHAR(1000)"`
-	Content       string `xorm:"not null comment('内容') LONGTEXT"`
+	Content       string `xorm:"not null comment('内容') TEXT"`
 	Covers        string `xorm:"not null default '' comment('封面图片') VARCHAR(1000)"`
 	ContentImages string `xorm:"not null comment('内容图片') TEXT"`
 	Type          int    `xorm:"not null default 1 comment('类型 1 业界新闻 2 公告 3 帮助手册') TINYINT(4)"`
@@ -75,7 +75,7 @@ func (a *ArticleType) GetArticleType() ([]ArticleType, error) {
 
 func (a *ArticleList) GetArticleList(page, rows, tp, status int, title, st string) (*ModelList, error) {
 	fmt.Println("GetArticleList")
-	engine := utils.Engine_common
+	engine := utils.Engine_context
 	query := engine.Desc("id")
 	if tp != 0 {
 		query = query.Where("type=?", tp)
@@ -100,14 +100,18 @@ func (a *ArticleList) GetArticleList(page, rows, tp, status int, title, st strin
 	}
 	offset, modelList := a.Paging(page, rows, int(count))
 	fmt.Println("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",offset,modelList.PageSize)
-	u := make([]Article, 0)
+	u := make([]Article,count)
 	err = query.Limit(modelList.PageSize, offset).Find(&u)
 	if err != nil {
 		utils.AdminLog.Errorln(err.Error())
 		return nil, err
 	}
+	fmt.Println("111111111111111111111111111111111111",len(u))
 	list := make([]ArticleList, 0)
 	for _, v := range u {
+		if v.Id==0{
+			continue
+		}
 		ret := ArticleList{
 			Id:         v.Id,
 			Weight:     v.Weight,
@@ -129,7 +133,7 @@ func (a *ArticleList) GetArticleList(page, rows, tp, status int, title, st strin
 
 //上下架 文章
 func (a *Article) UpArticle(id, status int) error {
-	engine := utils.Engine_common
+	engine := utils.Engine_context
 	art := new(Article)
 	has, _ := engine.Exist(art)
 	if !has {
@@ -148,7 +152,7 @@ func (a *Article) UpArticle(id, status int) error {
 
 //获取文章
 func (a *Article) GetArticle(id int) (*Article, error) {
-	engine := utils.Engine_common
+	engine := utils.Engine_context
 	art := new(Article)
 	_, err := engine.Id(id).Get(art)
 	if err != nil {
@@ -159,7 +163,7 @@ func (a *Article) GetArticle(id int) (*Article, error) {
 
 //删除文章
 func (a *Article) DeleteArticle(id int) error {
-	engine := utils.Engine_common
+	engine := utils.Engine_context
 	has, _ := engine.Id(id).Exist(&Article{})
 	if !has {
 		return errors.New("文章不存在")
@@ -172,7 +176,7 @@ func (a *Article) DeleteArticle(id int) error {
 }
 
 func (a *Article) AddArticle(id int, u *Article) error {
-	engine := utils.Engine_common
+	engine := utils.Engine_context
 	if id != 0 {
 		fmt.Println("cccccc")
 		art := new(Article)

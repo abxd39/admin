@@ -133,7 +133,8 @@ func (a *AdminController) Login(ctx *gin.Context) {
 	//success
 	//fmt.Println("verify success")
 	//添加cooke 用户名
-
+	ctx.Request.Header.Add("Access-Control-Allow-Origin", "*")
+	ctx.Request.Header.Add("Access-Control-Allow-Credentials", "true")
 	session.Set("uid", uid)
 	session.Set("name", req.Phone)
 	session.Set("is_super", isSuper)
