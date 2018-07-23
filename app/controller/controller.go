@@ -68,7 +68,7 @@ func (c *Controller) RespErr(ctx *gin.Context, options ...interface{}) {
 		case errors.SysErrorInterface: // 系统错误
 			resp.Code = constant.RESPONSE_CODE_SYSTEM // 设为系统错误code
 
-			if os.Getenv("API_ENV") == "prod" { // 生产环境不显示错误细节
+			if os.Getenv("ADMIN_API_ENV") == "prod" { // 生产环境不显示错误细节
 				resp.Msg = opt.Error()
 			} else { // 开发环境显示错误细节
 				resp.Msg = opt.String()

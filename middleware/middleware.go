@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"os"
 	"strings"
 
 	"admin/app/controller"
@@ -72,12 +73,29 @@ func CheckLogin() gin.HandlerFunc {
 // 前端跨域
 func JsCors() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		w := c.Writer
-		w.Header().Set("Access-Control-Allow-Origin", c.Request.Header.Get("Origin"))
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST")
-		w.Header().Add("Access-Control-Allow-Headers", "Content-Type")
-		w.Header().Add("Access-Control-Allow-Headers", "Access-Token")
-		w.Header().Set("Access-Control-Allow-Credentials", "true")
+		requestOrigin := c.Request.Header.Get("Origin")
+
+		// 限制域名范围，不然所有人都可以跨域调接口
+		allowOrigins := map[string]bool{
+			"http://admin.sdun.io":  true, // 值用不到
+			"https://admin.sdun.io": true,
+		}
+		if os.Getenv("ADMIN_API_ENV") != "prod" {
+			allowOrigins["http://localhost:8888"] = true
+			allowOrigins["https://localhost:8888"] = true
+		}
+
+		// 判断范围
+		if _, ok := allowOrigins[requestOrigin]; ok {
+			// 设置跨域header
+			w := c.Writer
+			w.Header().Set("Access-Control-Allow-Origin", requestOrigin)
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST")
+			w.Header().Add("Access-Control-Allow-Headers", "Content-Type")
+			w.Header().Add("Access-Control-Allow-Headers", "Access-Token")
+			w.Header().Set("Access-Control-Allow-Credentials", "true")
+		}
+
 		c.Next()
 	}
 }

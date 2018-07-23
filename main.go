@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	"admin/app"
 	"admin/middleware"
@@ -13,6 +14,10 @@ import (
 )
 
 func main() {
+	if os.Getenv("ADMIN_API_ENV") == "" {
+		panic("环境变量ADMIN_API_ENV未设置")
+	}
+
 	r := gin.Default()
 
 	// session
