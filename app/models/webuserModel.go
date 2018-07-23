@@ -134,43 +134,46 @@ func (w*UserEx)GetInviteInfoList(uid,page,rows int ,date uint64,name ,account st
 
 func (w *UserEx) GetInViteList(page, rows int, search string) (*ModelList, error) {
 	engine := utils.Engine_common
-	sql := " SELECT user.* FROM user_ex"+
-		" INNER JOIN (SELECT invite_id,COUNT(invite_id) cnt FROM user_ex GROUP BY invite_id) test"+
-		" ON user_ex.invite_id=test.invite_id"+
+	countSql:= "SELECT user.*"
+	//	sql := " SELECT user.* FROM user_ex"+
+	//	" INNER JOIN (SELECT invite_id,COUNT(invite_id) cnt FROM user_ex GROUP BY invite_id) test"+
+	//	" ON user_ex.invite_id=test.invite_id"+
+	//	" INNER JOIN user ON user.uid=user_ex.invite_id"+
+	//	" WHERE user_ex.invite_id!=0 GROUP BY test.invite_id ORDER BY user_ex.uid DESC"
+	contentSql := "SELECT user_ex.*, test.cnt invite_count "
+	sql := " FROM user_ex"+
+		" INNER JOIN (SELECT uid,invite_id,COUNT(invite_id) cnt FROM user_ex GROUP BY invite_id) test"+
+		" ON user_ex.uid=test.uid"+
 		" INNER JOIN user ON user.uid=user_ex.invite_id"+
-		" WHERE user_ex.invite_id!=0 GROUP BY test.invite_id ORDER BY user_ex.uid DESC"
+		" WHERE user_ex.invite_id!=0 "
+		limitSql:=" GROUP BY test.invite_id ORDER BY user_ex.uid DESC LIMIT %d OFFSET %d"
 
-	sql2 := " SELECT user.*,user_ex.*, test.cnt invite_count FROM user_ex"+
-		" INNER JOIN (SELECT invite_id,COUNT(invite_id) cnt FROM user_ex GROUP BY invite_id) test"+
-		" ON user_ex.invite_id=test.invite_id"+
-		" INNER JOIN user ON user.uid=user_ex.invite_id"+
-		" WHERE user_ex.invite_id!=0 GROUP BY test.invite_id ORDER BY user_ex.uid DESC LIMIT %d OFFSET %d"
 
-	query:=engine.SQL(sql)
+	if search != `` {
+		temp := fmt.Sprintf("AND concat(IFNULL(`user_ex`.`uid`,''),IFNULL(`user`.`phone`,''),IFNULL(`user_ex`.`nick_name`,''),IFNULL(`user`.`email`,'')) LIKE '%%%s%%'  ", search)
+		sql +=temp
+	}
+	query:=engine.SQL(countSql+sql)
 
 
 	type test struct {
 		Cnt int
 	}
 	var temp test
-	_,err :=engine.SQL( fmt.Sprintf("select count(a.uid) cnt FROM ( %s) a", sql)).Get(&temp)
+	_,err :=engine.SQL( fmt.Sprintf("select count(a.uid) cnt FROM ( %s) a", countSql+sql)).Get(&temp)
 
-	if search != `` {
-		temp := fmt.Sprintf(" concat(IFNULL(`user_ex`.`uid`,''),IFNULL(`user`.`phone`,''),IFNULL(`user_ex`.`nick_name`,''),IFNULL(`user`.`email`,'')) LIKE '%%%s%%'  ", search)
-		query = query.And(temp)
-	}
 	fmt.Println("cnt=",temp.Cnt)
 	fmt.Println("page=",page,"rows=",rows,"cnt=",temp.Cnt)
 	offset,modelList:=w.Paging(page,rows,temp.Cnt)
 	list:=make([]InviteGroup,0)
-	sql2 = fmt.Sprintf(sql2,modelList.PageSize,offset)
-	fmt.Println("sql2=",sql2)
-	err=query.SQL(sql2).Find(&list)
+	limitSql = fmt.Sprintf(limitSql,modelList.PageSize,offset)
+	fmt.Println("sql2=",contentSql+sql+limitSql)
+	err=query.SQL(contentSql+sql+limitSql).Find(&list)
 	if err!=nil{
 		return nil,err
 	}
 
-	fmt.Println("resultList=",list)
+	//fmt.Println("resultList=",list)
 	modelList.Items = list
 	return modelList, nil
 

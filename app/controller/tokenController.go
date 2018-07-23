@@ -25,7 +25,50 @@ func (this *TokenController) Router(r *gin.Engine) {
 		g.GET("/modify_cash", this.ModifyCash)           //修改币兑
 		g.POST("/add_cash", this.AddCash)                //添加币兑
 		g.GET("/change_detail", this.ChangeDetail)       //p2-3-4币币账户变更详情
+		g.GET("/fee_list", this.GetFeeInfoList)          //p5-1-0-1币币交易手续费明细
+		g.GET("add_take_list", this.GetAddTakeList)      //p5-1-1-1提币手续费明细
 	}
+}
+
+//p5-1-1-1提币手续费明细
+func (this *TokenController) GetAddTakeList(c *gin.Context) {
+	req := struct {
+		Page     int    `form:"page" json:"page" binding:"required"`
+		Rows     int    `form:"rows" json:"rows" `
+		Token_id int    `form:"token_id" json:"token_id" ` //币种
+		Uid      int    `form:"uid" json:"uid" `
+		Date     uint64 `form:"date",json:"date"`
+	}{}
+	err := c.ShouldBind(&req)
+	if err != nil {
+		utils.AdminLog.Errorf(err.Error())
+		this.RespErr(c, err)
+		return
+	}
+}
+
+//p5-1-0-1币币交易手续费明细
+func (this *TokenController) GetFeeInfoList(c *gin.Context) {
+	req := struct {
+		Page int    `form:"page" json:"page" binding:"required"`
+		Rows int    `form:"rows" json:"rows" `
+		Opt  int    `form:"opt" json:"opt" ` //交易方向
+		Uid  int    `form:"uid" json:"uid" `
+		Date uint64 `form:"date",json:"date"`
+	}{}
+	err := c.ShouldBind(&req)
+	if err != nil {
+		utils.AdminLog.Errorf(err.Error())
+		this.RespErr(c, err)
+		return
+	}
+	list, err := new(models.Trade).GetFeeInfoList(req.Page, req.Rows, req.Uid, req.Opt, req.Date)
+	if err != nil {
+		this.RespErr(c, err)
+		return
+	}
+	this.Put(c, "list", list)
+	this.RespOK(c)
 }
 
 func (this *TokenController) DeleteCash(c *gin.Context) {
@@ -90,7 +133,7 @@ func (this *TokenController) AddCash(c *gin.Context) {
 
 func (this *TokenController) EvacuateOder(c *gin.Context) {
 	req := struct {
-		Uid      int `form:"uid" json:"uid" binding:"required"`
+		Uid      int    `form:"uid" json:"uid" binding:"required"`
 		OerderId string `form:"oid" json:"oid" binding:"required"`
 	}{}
 	err := c.ShouldBind(&req)
@@ -99,9 +142,9 @@ func (this *TokenController) EvacuateOder(c *gin.Context) {
 		this.RespErr(c, err)
 		return
 	}
-	err=new(models.EntrustDetail).EvacuateOder(req.Uid,req.OerderId)
-	if err!=nil{
-		this.RespErr(c,err)
+	err = new(models.EntrustDetail).EvacuateOder(req.Uid, req.OerderId)
+	if err != nil {
+		this.RespErr(c, err)
 		return
 	}
 	this.RespOK(c)
@@ -114,7 +157,7 @@ func (this *TokenController) ChangeDetail(c *gin.Context) {
 		Rows   int    `form:"rows" json:"rows" `
 		Date   uint64 `form:"date" json:"date" `
 		Search string `form:"search" json:"search" ` //刷选
-		Type   int    `form:"type" json:"type" `   //交易方向 买 卖 划转
+		Type   int    `form:"type" json:"type" `     //交易方向 买 卖 划转
 		Status int    `form:"status" json:"status" ` //用户状态
 	}{}
 	err := c.ShouldBind(&req)
@@ -178,10 +221,10 @@ func (this *TokenController) ChangeDetail(c *gin.Context) {
 		this.RespOK(c)
 		return
 	} else {
-		fmt.Println("1111111111111111111111111",err)
-		list,err:=new(models.MoneyRecord).GetMoneyListForDateOrType(req.Page,req.Rows,req.Type,req.Date)
-		if err!=nil{
-			this.RespErr(c,err)
+		fmt.Println("1111111111111111111111111", err)
+		list, err := new(models.MoneyRecord).GetMoneyListForDateOrType(req.Page, req.Rows, req.Type, req.Date)
+		if err != nil {
+			this.RespErr(c, err)
 			return
 		}
 		uidList := make([]uint64, 0)
@@ -217,8 +260,8 @@ func (this *TokenController) ChangeDetail(c *gin.Context) {
 			}
 
 		}
-		list.Items =Value
-		this.Put(c,"list",list)
+		list.Items = Value
+		this.Put(c, "list", list)
 		this.RespOK(c)
 		return
 	}
