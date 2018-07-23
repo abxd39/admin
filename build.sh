@@ -20,4 +20,4 @@ mv ./${target} ${dir}/bin/
 
 ssh root@39.108.186.82 "cd /data && ./del.sh"
 scp ${dir}/bin/${target} root@39.108.186.82:/data/
-ssh root@39.108.186.82 "cd /data && ./run.sh"
+ssh root@39.108.186.82 "export ADMIN_API_ENV=test && cd /data && ./run.sh"
