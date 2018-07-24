@@ -43,7 +43,6 @@ type Trade struct {
 	States       int    `xorm:"comment('0是挂单，1是部分成交,2成交， -1撤销') INT(11)"`
 }
 
-
 func (this *EntrustDetail) IsExist(symbol string) (bool, error) {
 	engine := utils.Engine_token
 	query := engine.Desc("entrust_id")
@@ -101,7 +100,7 @@ func (this *EntrustDetail) GetTokenOrderList(page, rows, ad_id, status, start_t,
 		return nil, err
 	}
 	offset, modelList := this.Paging(page, rows, int(count))
-	list := make([]EntrustDetail, 0)
+	list := make([]EntrustDetail, offset)
 	err = query.Limit(modelList.PageSize, offset).Find(&list)
 	if err != nil {
 		return nil, err
@@ -109,7 +108,6 @@ func (this *EntrustDetail) GetTokenOrderList(page, rows, ad_id, status, start_t,
 	modelList.Items = list
 	return modelList, nil
 }
-
 
 func (this *Trade) GetTokenRecordList(page, rows, trade_id, trade_duad, ad_id, uid int, start_t string) (*ModelList, error) {
 	engine := utils.Engine_token
@@ -127,7 +125,7 @@ func (this *Trade) GetTokenRecordList(page, rows, trade_id, trade_duad, ad_id, u
 	if uid != 0 {
 		query = query.Where("uid=?", uid)
 	}
-	if start_t!=``{
+	if start_t != `` {
 
 	}
 	tempQuery := *query
@@ -137,7 +135,7 @@ func (this *Trade) GetTokenRecordList(page, rows, trade_id, trade_duad, ad_id, u
 		return nil, err
 	}
 	offset, modelList := this.Paging(page, rows, int(count))
-	list := make([]Trade, 0)
+	list := make([]Trade, offset)
 	//fmt.Printf("$$$$$$$$$$$$$$$%#v\n", rows)
 	err = query.Limit(modelList.PageSize, offset).Find(&list)
 	if err != nil {
@@ -147,40 +145,42 @@ func (this *Trade) GetTokenRecordList(page, rows, trade_id, trade_duad, ad_id, u
 	return modelList, nil
 }
 
-
 //p5-1-0-1币币交易手续费明细
 /********************************
-* token_trade_id 兑币id
-* trade_type 交易方向 1 市价交易 2 限价交易
+* id 兑币id
+* trade_type 交易方向 1 卖 2买
 * search 筛选
-*/
-func (this *Trade) GetFeeInfoList(page,rows ,uid,opt int ,date uint64)(*ModelList,error){
+ */
+func (this *Trade) GetFeeInfoList(page, rows, uid, opt int, date uint64, name string) (*ModelList, error) {
 	engine := utils.Engine_token
-	query := engine.Desc("deal_time")
+	query :=engine.Desc("deal_time")
+	query = query.Join("left","config_token_cny","token_id = id")
 
-	if uid!=0{
-		query = query.Where("uid=?",uid)
+	if uid != 0 {
+		query = query.Where("uid=?", uid)
 	}
-	if date!=0{
-		query  =query.Where("deal_time BETWEEN ? AND ?",date,date+864000)
+	if date != 0 {
+		query = query.Where("deal_time BETWEEN ? AND ?", date, date+864000)
 	}
-	if opt!=0{
-		query = query.Where("opt=?",opt)
+	if opt != 0 {
+		query = query.Where("opt=?", opt)
 	}
-	ValuQuery:=*query
-	count,err:=query.Distinct("deal_time").Count(&Trade{})
-	if err!=nil{
-		return nil,err
+	if name != `` {
+		query = query.Where("token_name=?", name)
 	}
-	offset,mlist:=this.Paging(page,rows,int(count))
-	list:=make([]Trade,offset)
-	err=ValuQuery.Limit(mlist.PageSize,offset).Find(&list)
-	if err!=nil{
-		return  nil,err
+	ValuQuery := *query
+	count, err := query.Distinct("deal_time").Count(&Trade{})
+	if err != nil {
+		return nil, err
 	}
+	offset, mlist := this.Paging(page, rows, int(count))
+	list := make([]Trade, offset)
+	err = ValuQuery.Limit(mlist.PageSize, offset).Find(&list)
+	if err != nil {
+		return nil, err
+	}
+	//未完待续 折合成人民币
 	//fmt.Println("len=",len(list))
-	mlist.Items =list
-	return mlist,nil
+	mlist.Items = list
+	return mlist, nil
 }
-
-

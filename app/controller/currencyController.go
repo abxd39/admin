@@ -24,7 +24,7 @@ func (this *CurrencyController) Router(r *gin.Engine) {
 		g.GET("/total_balance", this.GetTotalCurrencyBalance)    //p2-3-1法币账户统计列表
 		g.GET("/user_detail", this.GetUserDetailList)            //p2-3-1-2法币账户资产展示
 		g.GET("/user_buysell", this.GetBuySellList)              //p2-3-1-1查看统计买入_卖出_划转
-		g.GET("/total", this.Total)                               //p2-3-0总财产列表
+		g.GET("/total", this.Total)                              //p2-3-0总财产列表
 		g.GET("/currency_change", this.GetCurrencyChangeHistroy) //p2-3-3法币账户变更详情
 		//g.GET("/")                                               //p2-3-0-0币数统计列表
 	}
@@ -62,7 +62,7 @@ func (cu *CurrencyController) GetCurrencyChangeHistroy(c *gin.Context) {
 			cu.RespErr(c, errors.New("assert type UserGroup failed!!"))
 			return
 		}
-		uidlist := make([]uint64, 0)
+		uidlist := make([]int64, 0)
 		for _, v := range value {
 			uidlist = append(uidlist, v.Uid)
 		}
@@ -141,7 +141,7 @@ func (cu *CurrencyController) GetCurrencyChangeHistroy(c *gin.Context) {
 			}
 
 		}
-		list.Items =Value
+		list.Items = Value
 		cu.Put(c, "list", list)
 		cu.RespOK(c)
 		return
@@ -167,7 +167,7 @@ func (cu *CurrencyController) Total(c *gin.Context) {
 	if err != nil {
 		cu.RespErr(c, err)
 	}
-	uidlist := make([]uint64, 0)
+	uidlist := make([]int64, 0)
 	value, OK := result.Items.([]models.UserGroup)
 	if !OK {
 		cu.RespErr(c, errors.New("assert [] userGroup failed!!"))
@@ -181,7 +181,7 @@ func (cu *CurrencyController) Total(c *gin.Context) {
 	currencylist, err := new(models.UserCurrency).GetAll(uidlist)
 	for i, _ := range value {
 		for _, v := range currencylist {
-			if value[i].Uid == v.Uid {
+			if value[i].Uid == int64(v.Uid) {
 				value[i].TotalCurrentCNY = v.Balance
 				value[i].LockCurrentCNY = v.Freeze
 				break

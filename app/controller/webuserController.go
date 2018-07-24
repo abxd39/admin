@@ -30,11 +30,12 @@ func (w *WebUserManageController) Router(r *gin.Engine) {
 		g.POST("/second_affirm", w.SecondAffirm)                      //审核二级实名认证
 		g.POST("/trade_rule", w.SetTradeRule)                         //设置交易规则
 		g.GET("/get_trade_rule", w.GetTradeRule)                      //获取交易规则
-		g.GET("/get_invite_list", w.GetInviteList)                     //获取 p2-5好友邀请
-		g.GET("/get_invite_info", w.GetInviteInfoList)                 //p2-5-1邀请人统计表
+		g.GET("/get_invite_list", w.GetInviteList)                     //获取 p2-5好友邀列表 被邀请人列表 邀请人—账号：18888888888
+		g.GET("/get_invite_info", w.GetInviteInfoList)                 //p2-5-1邀请人统计列表
 	}
 }
 
+//邀请人统计表—账号：18888888888
 func (w *WebUserManageController) GetInviteInfoList(c *gin.Context) {
 	req := struct {
 		Uid     int    `form:"uid" json:"uid" binding:"required"`
@@ -60,6 +61,7 @@ func (w *WebUserManageController) GetInviteInfoList(c *gin.Context) {
 	return
 }
 
+//被邀请人列表
 func (w *WebUserManageController) GetInviteList(c *gin.Context) {
 	req := struct {
 		Page   int    `form:"page" json:"page" binding:"required"`

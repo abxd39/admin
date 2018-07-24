@@ -4,7 +4,6 @@ import (
 	"admin/utils"
 	"errors"
 	"fmt"
-
 )
 
 type UserEx struct {
@@ -25,7 +24,7 @@ type UserEx struct {
 
 type WebUser struct {
 	BaseModel        `xorm:"-"`
-	Uid              uint64 `xorm:"not null pk autoincr comment('用户ID') BIGINT(11)"`
+	Uid              int64  `xorm:"not null pk autoincr comment('用户ID') BIGINT(11)"`
 	Account          string `xorm:"comment('账号') unique VARCHAR(64)"`
 	Pwd              string `xorm:"comment('密码') VARCHAR(255)"`
 	Country          string `xorm:"comment('地区号') VARCHAR(32)"`
@@ -39,9 +38,10 @@ type WebUser struct {
 	PayPwd           string `xorm:"comment('支付密码') VARCHAR(255)"`
 	NeedPwd          int    `xorm:"comment('免密设置1开启0关闭') TINYINT(1)"`
 	NeedPwdTime      int    `xorm:"comment('免密周期') INT(11)"`
-	Status           int    `xorm:"default 0 comment('用户状态，0正常，1冻结') INT(11)"`
+	Status           int    `xorm:"default 1 comment('用户状态，1正常，2冻结') INT(11)"`
 	SecurityAuth     int    `xorm:"comment('认证状态1110') TINYINT(8)"`
 	WhiteList        int    `xorm:"not null default 2 comment('用户白名单 1为白名单 免除交易手续费，2 需要缴纳交易手续费') TINYINT(4)"`
+	SetTardeMark     int    `xorm:"default 0 comment('交易密码是否设置状态') INT(8)"`
 }
 
 type UserGroup struct {
@@ -85,10 +85,10 @@ func (w *UserGroup) TableName() string {
 
 type InviteGroup struct {
 	UserEx      `xorm:"extends"`
-	Account          string `xorm:"comment('账号') unique VARCHAR(64)"`
-	Email            string `xorm:"comment('邮箱') unique VARCHAR(128)"`
-	Phone            string `xorm:"comment('手机') unique VARCHAR(64)"`
-	Status           int    `xorm:"default 0 comment('用户状态，0正常，1冻结') INT(11)"`
+	Account     string `xorm:"comment('账号') unique VARCHAR(64)"`
+	Email       string `xorm:"comment('邮箱') unique VARCHAR(128)"`
+	Phone       string `xorm:"comment('手机') unique VARCHAR(64)"`
+	Status      int    `xorm:"default 0 comment('用户状态，0正常，1冻结') INT(11)"`
 	InviteCount int
 }
 
@@ -96,81 +96,69 @@ func (w *UserEx) TableName() string {
 	return "user_ex"
 }
 
-//所有被邀请人列表
-func (w*UserEx)GetInviteInfoList(uid,page,rows int ,date uint64,name ,account string) (*ModelList,error){
+//邀请人统计表—账号：18888888888
+func (w *UserEx) GetInviteInfoList(uid, page, rows int, date uint64, name, account string) (*ModelList, error) {
 	engine := utils.Engine_common
 	query := engine.Desc("user_ex.uid")
-	query = query.Join("INNER", "user", "user.uid=user_ex.uid")
-	query =query.Cols("user.account","user_ex.register_time","user_ex.channel_name")
-	query =query.Where("`user_ex`.`invite_id`=?",uid)
-	if name!=``{
-		temp:=fmt.Sprintf("channer_name=%s",name)
+	query = query.Join("LEFT", "user", "user.uid=user_ex.uid")
+	query = query.Cols("user_ex.uid", "user.account", "user_ex.register_time", "user_ex.channel_name")
+	query = query.Where("`user_ex`.`invite_id`=?", uid)
+	if name != `` {
+		temp := fmt.Sprintf("channer_name=%s", name)
 		query = query.Where(temp)
 	}
-	if account!=``{
-		temp:=fmt.Sprintf("user.account=%s",account)
-		query =query.Where(temp)
+	if account != `` {
+		temp := fmt.Sprintf("user.account=%s", account)
+		query = query.Where(temp)
 	}
-	fmt.Println("刷选时间=",date)
-	if date!=0{
+	fmt.Println("刷选时间=", date)
+	if date != 0 {
 		query = query.Where("`user_ex`.`register_time` BETWEEN ? AND ? ", date, date+86400)
 	}
-	tempQuery:=*query
-	count,err:=tempQuery.Count(&UserEx{})
-	if err!=nil{
-		return nil ,err
+	tempQuery := *query
+	count, err := tempQuery.Count(&UserEx{})
+	if err != nil {
+		return nil, err
 	}
-	offset,modelList :=w.Paging(page,rows,int(count))
-	list:=make([]InviteGroup,0)
-	err=query.Limit(modelList.PageSize,offset).Find(&list)
-	if err!=nil{
-		return nil,err
+	offset, modelList := w.Paging(page, rows, int(count))
+	list := make([]InviteGroup, 0)
+	err = query.Limit(modelList.PageSize, offset).Find(&list)
+	if err != nil {
+		return nil, err
 	}
-	modelList.Items =list
-	return  modelList,nil
+	modelList.Items = list
+	return modelList, nil
 }
 
 //p2-5好友邀请 ___ 有邀请用户注册的列表
 
 func (w *UserEx) GetInViteList(page, rows int, search string) (*ModelList, error) {
 	engine := utils.Engine_common
-	countSql:= "SELECT user.*"
-	//	sql := " SELECT user.* FROM user_ex"+
-	//	" INNER JOIN (SELECT invite_id,COUNT(invite_id) cnt FROM user_ex GROUP BY invite_id) test"+
-	//	" ON user_ex.invite_id=test.invite_id"+
-	//	" INNER JOIN user ON user.uid=user_ex.invite_id"+
-	//	" WHERE user_ex.invite_id!=0 GROUP BY test.invite_id ORDER BY user_ex.uid DESC"
-	contentSql := "SELECT user_ex.*, test.cnt invite_count "
-	sql := " FROM user_ex"+
-		" INNER JOIN (SELECT uid,invite_id,COUNT(invite_id) cnt FROM user_ex GROUP BY invite_id) test"+
-		" ON user_ex.uid=test.uid"+
-		" INNER JOIN user ON user.uid=user_ex.invite_id"+
-		" WHERE user_ex.invite_id!=0 "
-		limitSql:=" GROUP BY test.invite_id ORDER BY user_ex.uid DESC LIMIT %d OFFSET %d"
-
+	countSql := "SELECT COUNT(*) cnt FROM (%s) newtable"
+	sql := "SELECT u.uid,u.`email`,u.`phone`,ue.`real_name`,ue.nick_name,ue.`invite_id`,u.`status`,tmp.cnt invite_count FROM (SELECT invite_id,COUNT(invite_id) cnt FROM user_ex GROUP BY invite_id) tmp JOIN user_ex ue ON ue.uid=tmp.invite_id JOIN `user` u ON u.uid=tmp.invite_id WHERE tmp.invite_id!=0"
+	limitSql := " LIMIT %d OFFSET %d "
 
 	if search != `` {
-		temp := fmt.Sprintf("AND concat(IFNULL(`user_ex`.`uid`,''),IFNULL(`user`.`phone`,''),IFNULL(`user_ex`.`nick_name`,''),IFNULL(`user`.`email`,'')) LIKE '%%%s%%'  ", search)
-		sql +=temp
+		temp := fmt.Sprintf(" AND CONCAT(IFNULL(`ue`.`uid`,''),IFNULL(`u`.`phone`,''),IFNULL(`ue`.`nick_name`,''),IFNULL(`u`.`email`,'')) LIKE '%%%s%%' ", search)
+		sql += temp
 	}
-	query:=engine.SQL(countSql+sql)
-
+	//query := engine.SQL(contentSql + sql)
 
 	type test struct {
 		Cnt int
 	}
 	var temp test
-	_,err :=engine.SQL( fmt.Sprintf("select count(a.uid) cnt FROM ( %s) a", countSql+sql)).Get(&temp)
+	_, err := engine.SQL(fmt.Sprintf(countSql,sql)).Get(&temp)
 
-	fmt.Println("cnt=",temp.Cnt)
-	fmt.Println("page=",page,"rows=",rows,"cnt=",temp.Cnt)
-	offset,modelList:=w.Paging(page,rows,temp.Cnt)
-	list:=make([]InviteGroup,0)
-	limitSql = fmt.Sprintf(limitSql,modelList.PageSize,offset)
-	fmt.Println("sql2=",contentSql+sql+limitSql)
-	err=query.SQL(contentSql+sql+limitSql).Find(&list)
-	if err!=nil{
-		return nil,err
+	fmt.Println("cnt=", temp.Cnt)
+	fmt.Println("page=", page, "rows=", rows, "cnt=", temp.Cnt)
+	offset, modelList := w.Paging(page, rows, temp.Cnt)
+	list := make([]InviteGroup, 0)
+	limitSql = fmt.Sprintf(limitSql, modelList.PageSize, offset)
+	fmt.Println("sql2=", sql+limitSql)
+	err = engine.SQL( sql + limitSql).Find(&list)
+	if err != nil {
+		return nil, err
 	}
 
 	//fmt.Println("resultList=",list)
@@ -270,6 +258,7 @@ func (w *WebUser) GetFirstList(page, rows, status, cstatus int, time uint64, sea
 	query := engine.Desc("user.uid")
 	query = query.Cols("user_ex.real_name", "user.uid", "user_ex.register_time", "user.phone", "user_ex.nick_name", "user.email", "user.security_auth", "user.status")
 	query = query.Join("INNER", "user_ex", "user_ex.uid=user.uid")
+	query = query.Where("user.set_tarde_mark=2")
 	if status != 0 {
 		query = query.Where("`user`.`status`=?", status)
 	}
@@ -498,7 +487,7 @@ func (w *WebUser) UserList(page, rows, verify, status int, search string, date i
 }
 
 //获取用户列表
-func (w *WebUser) GetCurreryList(uid []uint64, verify int, search string) ([]UserGroup, error) {
+func (w *WebUser) GetCurreryList(uid []int64, verify int, search string) ([]UserGroup, error) {
 	engine := utils.Engine_common
 
 	//数据查询

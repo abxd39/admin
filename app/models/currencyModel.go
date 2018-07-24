@@ -65,7 +65,7 @@ func (this *UserCurrency) GetCurrencyList(page, rows, uid, tokenid int) ([]UserC
 
 }
 
-func (this *UserCurrency) GetAll(uid []uint64) ([]UserCurrency, error) {
+func (this *UserCurrency) GetAll(uid []int64) ([]UserCurrency, error) {
 	engine := utils.Engine_currency
 	list := make([]UserCurrency, 0)
 	err := engine.In("uid", uid).Find(&list)

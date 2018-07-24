@@ -5,6 +5,7 @@ import (
 	"admin/utils"
 	"errors"
 	"fmt"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -26,7 +27,7 @@ func (this *TokenController) Router(r *gin.Engine) {
 		g.POST("/add_cash", this.AddCash)                //添加币兑
 		g.GET("/change_detail", this.ChangeDetail)       //p2-3-4币币账户变更详情
 		g.GET("/fee_list", this.GetFeeInfoList)          //p5-1-0-1币币交易手续费明细
-		g.GET("add_take_list", this.GetAddTakeList)      //p5-1-1-1提币手续费明细
+		g.GET("/add_take_list", this.GetAddTakeList)     //p5-1-1-1提币手续费明细
 	}
 }
 
@@ -45,6 +46,15 @@ func (this *TokenController) GetAddTakeList(c *gin.Context) {
 		this.RespErr(c, err)
 		return
 	}
+	list, err := new(models.TokenHistoryGroup).GetAddTakeList(req.Page, req.Rows, req.Token_id, req.Uid, req.Date)
+	if err != nil {
+		utils.AdminLog.Println(err.Error())
+		this.RespErr(c, err)
+		return
+	}
+	this.Put(c, "list", list)
+	this.RespOK(c)
+	return
 }
 
 //p5-1-0-1币币交易手续费明细
@@ -55,6 +65,7 @@ func (this *TokenController) GetFeeInfoList(c *gin.Context) {
 		Opt  int    `form:"opt" json:"opt" ` //交易方向
 		Uid  int    `form:"uid" json:"uid" `
 		Date uint64 `form:"date",json:"date"`
+		Name string `form:"name" json:"name"` //交易对名称 USDT/BTC
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
@@ -62,7 +73,7 @@ func (this *TokenController) GetFeeInfoList(c *gin.Context) {
 		this.RespErr(c, err)
 		return
 	}
-	list, err := new(models.Trade).GetFeeInfoList(req.Page, req.Rows, req.Uid, req.Opt, req.Date)
+	list, err := new(models.Trade).GetFeeInfoList(req.Page, req.Rows, req.Uid, req.Opt, req.Date, req.Name)
 	if err != nil {
 		this.RespErr(c, err)
 		return
@@ -185,7 +196,7 @@ func (this *TokenController) ChangeDetail(c *gin.Context) {
 			this.RespErr(c, errors.New("assert type UserGroup failed!!"))
 			return
 		}
-		uidlist := make([]uint64, 0)
+		uidlist := make([]int64, 0)
 		for _, v := range value {
 			uidlist = append(uidlist, v.Uid)
 		}

@@ -22,7 +22,7 @@ func (m *MoneyRecord) TableName() string {
 	return "money_record"
 }
 
-func (m *MoneyRecord) GetMoneyList(page, rows int, uid []uint64) (*ModelList, error) {
+func (m *MoneyRecord) GetMoneyList(page, rows int, uid []int64) (*ModelList, error) {
 	engine := utils.Engine_token
 	query := engine.Desc("id")
 	query = query.In("uid", uid)

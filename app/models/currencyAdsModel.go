@@ -10,7 +10,7 @@ import (
 type Ads struct {
 	BaseModel   `xorm:"-"`
 	Id          uint64 `xorm:"not null pk autoincr INT(10)" json:"id"`
-	Uid         uint64 `xorm:"INT(10)" json:"uid"`              // 用户ID
+	Uid         int64  `xorm:"INT(10)" json:"uid"`              // 用户ID
 	TypeId      uint32 `xorm:"TINYINT(1)" json:"type_id"`       // 类型:1出售 2购买
 	TokenId     uint32 `xorm:"INT(10)" json:"token_id"`         // 货币类型
 	TokenName   string `xorm:"VARBINARY(36)" json:"token_name"` // 货币名称
@@ -117,7 +117,7 @@ func (this *Ads) GetAdsList(page, rows, status, tokenid, tradeid, verify int, se
 	//挂单日期
 	if verify != 0 || status != 0 || search != `` {
 		ulist, err := new(UserGroup).UserList(page, rows, verify, status, search, 0)
-		uid := make([]uint64, 0)
+		uid := make([]int64, 0)
 		value, ok := ulist.Items.([]UserGroup)
 		if !ok {
 			return nil, errors.New("assert failed!!!")
@@ -189,7 +189,7 @@ func (this *Ads) GetAdsList(page, rows, status, tokenid, tradeid, verify int, se
 
 	//无条件判断
 
-	uid := make([]uint64, 0)
+	uid := make([]int64, 0)
 	for _, v := range uidList {
 		uid = append(uid, v.Uid)
 	}

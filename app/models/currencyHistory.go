@@ -51,7 +51,7 @@ func (u *UserCurrencyHistory) GetList(page, rows, ot int, date string) (*ModelLi
 	return modelList, nil
 }
 
-func (u *UserCurrencyHistory) GetListForUid(page, rows int, uid []uint64) (*ModelList, error) {
+func (u *UserCurrencyHistory) GetListForUid(page, rows int, uid []int64) (*ModelList, error) {
 	engine := utils.Engine_currency
 	query := engine.Desc("id")
 	query = query.In("uid", uid)
