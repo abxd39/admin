@@ -19,13 +19,13 @@ type UserToken struct {
 //资产
 type PersonalProperty struct {
 	UserToken `xorm:"extends"`
-	Uid       uint64 `xorm:"-"`
-	NickName  string `xorm:"-"`
-	Phone     string `xorm:"-"`
-	Email     string `xorm:"-"`
-	Btc       float32 `xorm:"-"`//折合比特币总数
-	Balance   float64 `xorm:"-"`// 这和人民币总数
-	Status    int     `xorm:"-"`//账号状态
+	Uid       uint64  `xorm:"-"`
+	NickName  string  `xorm:"-"`
+	Phone     string  `xorm:"-"`
+	Email     string  `xorm:"-"`
+	Btc       float32 `xorm:"-"` //折合比特币总数
+	Balance   float64 `xorm:"-"` // 这和人民币总数
+	Status    int     `xorm:"-"` //账号状态
 }
 
 // var Total []PersonalProperty
@@ -34,7 +34,7 @@ type PersonalProperty struct {
 // 	Total = make([]PersonalProperty, 0)
 // }
 
-func (t*PersonalProperty)TableName()string  {
+func (t *PersonalProperty) TableName() string {
 	return "user_token"
 }
 func (u *UserToken) GetTokenDetailOfUid(uid, token_id int) ([]UserToken, error) {
@@ -60,7 +60,7 @@ func (t *PersonalProperty) TotalUserBalance(page, rows, status int, search strin
 		if err != nil {
 			return nil, err
 		}
-		var uid []uint64
+		var uid []int64
 		userlist, Ok := list.Items.([]UserGroup)
 		if !Ok {
 			return nil, errors.New("assert failed!!")
@@ -87,7 +87,7 @@ func (t *PersonalProperty) TotalUserBalance(page, rows, status int, search strin
 		for index, _ := range tokenlist {
 
 			for _, ob := range userlist {
-				if tokenlist[index].Uid == ob.Uid {
+				if tokenlist[index].Uid == uint64(ob.Uid) {
 					tokenlist[index].Email = ob.Email
 					tokenlist[index].NickName = ob.NickName
 					tokenlist[index].Phone = ob.Phone
@@ -135,7 +135,7 @@ func (t *PersonalProperty) TotalUserBalance(page, rows, status int, search strin
 
 	for i, _ := range tokenlist {
 		for _, value := range ulist {
-			if tokenlist[i].Uid == value.Uid {
+			if tokenlist[i].Uid == uint64(value.Uid) {
 				tokenlist[i].Phone = value.Phone
 				tokenlist[i].NickName = value.NickName
 				tokenlist[i].Email = value.Email

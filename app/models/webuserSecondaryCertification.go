@@ -69,7 +69,7 @@ func (u *UserSecondaryCertification) GetSecondaryCertificationList(page, rows, v
 	engine := utils.Engine_common
 	query := engine.Desc("id")
 	query = query.Join("INNER", "user", "user.uid=user_secondary_certification.uid")
-	query = query.Join("LEFT", "user_ex", "user_ex.uid = user.uid")
+	query = query.Join("LEFT", "user_ex", "user_ex.uid = user.uid AND user.set_tarde_mark=4")
 	query = query.Cols("user_secondary_certification.uid", "user_secondary_certification.verify_count", "user_secondary_certification.verify_time", "user.security_auth", "user_secondary_certification.video_recording_digital", "user.email", "user.phone", "user.status", "user_ex.nick_name")
 	if verify_status ==-1 {//刷选未认证
 		query = query.Where("user.security_auth & ? !=?", utils.AUTH_TWO,utils.AUTH_TWO)
