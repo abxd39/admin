@@ -79,6 +79,9 @@ func JsCors() gin.HandlerFunc {
 		allowOrigins := map[string]bool{
 			"http://admin.sdun.io":  true, // 值用不到
 			"https://admin.sdun.io": true,
+
+			"http://admin.untpro.com":  true,
+			"https://admin.untpro.com": true,
 		}
 		if os.Getenv("ADMIN_API_ENV") != "prod" {
 			allowOrigins["http://localhost:8888"] = true
