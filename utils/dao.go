@@ -14,6 +14,7 @@ var Engine_token *xorm.Engine
 var Engine_common *xorm.Engine
 var Engine_context *xorm.Engine
 var Engine_backstage *xorm.Engine
+var Engine_wallet *xorm.Engine
 var Redis *redis.Client
 var AliClient *oss.Client
 
@@ -77,7 +78,15 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-
+	//dsource := Cfg.MustValue("mysql", "wallet_conn")
+	Engine_wallet, err = xorm.NewEngine("mysql", Cfg.MustValue("mysql", "wallet"))
+	if err != nil {
+		panic(err)
+	}
+	err = Engine_wallet.Ping()
+	if err != nil {
+		panic(err)
+	}
 	//redis初始化
 	client := redis.NewClient(&redis.Options{
 		Addr:     Cfg.MustValue("redis", "addr"),

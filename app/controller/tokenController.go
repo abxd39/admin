@@ -31,6 +31,7 @@ func (this *TokenController) Router(r *gin.Engine) {
 		g.GET("/total_trade", this.GetTradeTotalList)    //p5-1-0币币交易手续费汇总
 		//提币 充币管理
 		g.GET("/io_token_list", this.GetTokenInList)
+		g.POST("/opt_token",this.OptTakeToken)
 
 	}
 }

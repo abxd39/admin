@@ -18,7 +18,7 @@ func (t *CommonTokens) TableName() string {
 
 //获取数字货币id及名称
 func (t *CommonTokens) GetTokenList() ([]CommonTokens, error) {
-	engine := utils.Engine_currency
+	engine := utils.Engine_common
 	list := make([]CommonTokens, 0)
 	err := engine.Find(&list)
 	if err != nil {

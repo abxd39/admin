@@ -87,6 +87,7 @@ func (u *UserSecondaryCertification) GetSecondaryCertificationList(page, rows, v
 		temp := fmt.Sprintf(" concat(IFNULL(`user`.`uid`,''),IFNULL(`user`.`phone`,''),IFNULL(`user_ex`.`nick_name`,''),IFNULL(`user`.`email`,'')) LIKE '%%%s%%'  ", search)
 		query = query.Where(temp)
 	}
+	query =query.Where("set_tarde_mark & 4=4")
 	tempquery := *query
 	count, err := tempquery.Count(&UserSecondaryCertificationGroup{})
 	if err != nil {

@@ -45,7 +45,7 @@ func (cu *CurrencyController) GetCurrencyChangeHistroy(c *gin.Context) {
 		return
 	}
 	//把货币Id转换为货币名称
-	tokenlist, err := new(models.Tokens).GetTokenList()
+	tokenlist, err := new(models.CommonTokens).GetTokenList()
 	if err != nil {
 		cu.RespErr(c, err)
 		return
@@ -88,7 +88,7 @@ func (cu *CurrencyController) GetCurrencyChangeHistroy(c *gin.Context) {
 				}
 			}
 			for _, vt := range tokenlist {
-				if vt.Id == histroyValue[i].TokenId {
+				if int(vt.Id) == histroyValue[i].TokenId {
 					histroyValue[i].TokenName = vt.Name
 					break
 				}
@@ -133,7 +133,7 @@ func (cu *CurrencyController) GetCurrencyChangeHistroy(c *gin.Context) {
 				}
 			}
 			for _, vt := range tokenlist {
-				if vt.Id == Value[i].TokenId {
+				if int(vt.Id) == Value[i].TokenId {
 					Value[i].TokenName = vt.Name
 					break
 				}

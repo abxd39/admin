@@ -32,7 +32,7 @@ func (this *TokenHistory) GetAddTakeList(page, rows, tid, uid int, date uint64) 
 	fmt.Println("p5-1-1-1提币手续费明细")
 	engine := utils.Engine_token
 	query := engine.Desc("token_history.id")
-	query = query.Join("LEFT","tokens","tokens.id=token_history.token_id")
+	query = query.Join("LEFT","g_common.tokens t","t.id=token_history.token_id")
 	if tid != 0 {
 		query = query.Where("token_id=?", tid)
 	}
@@ -40,7 +40,7 @@ func (this *TokenHistory) GetAddTakeList(page, rows, tid, uid int, date uint64) 
 		query = query.Where("uid=?", uid)
 	}
 	if date != 0 {
-		query = query.Where("check_time BETWEEN ? AND ?", date, date+864000)
+		query = query.Where("check_time BETWEEN '?' AND '?'", date, date+864000)
 	}
 	countQuery:=*query
 	count,err:=countQuery.Count(&TokenHistory{})

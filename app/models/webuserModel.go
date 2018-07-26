@@ -258,7 +258,7 @@ func (w *WebUser) GetFirstList(page, rows, status, cstatus int, time uint64, sea
 	query := engine.Desc("user.uid")
 	query = query.Cols("user_ex.real_name", "user.uid", "user_ex.register_time", "user.phone", "user_ex.nick_name", "user.email", "user.security_auth", "user.status")
 	query = query.Join("INNER", "user_ex", "user_ex.uid=user.uid")
-	query = query.Where("user.set_tarde_mark=2")
+	query = query.Where("user.set_tarde_mark &2 =2")
 	if status != 0 {
 		query = query.Where("`user`.`status`=?", status)
 	}

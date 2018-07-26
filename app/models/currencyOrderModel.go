@@ -9,24 +9,24 @@ import (
 // 订单表
 type Order struct {
 	BaseModel   `xorm:"-"`
-	Id          uint64         `xorm:"not null pk autoincr comment('ID')  INT(10)"  json:"id"`
-	OrderId     string         `xorm:"not null pk comment('订单ID') INT(10)"   json:"order_id"` // hash( type_id, 6( user_id, + 时间秒）
-	AdId        uint64         `xorm:"not null default 0 comment('广告ID') index INT(10)"  json:"ad_id"`
-	AdType      uint32         `xorm:"not null default 0 comment('广告类型:1出售 2购买') TINYINT(1)"  json:"ad_type"`
-	Price       int64          `xorm:"not null default 0 comment('价格') BIGINT(64)"   json:"price"`
-	Num         int64          `xorm:"not null default 0 comment('数量') BIGINT(64)"   json:"num"`
-	TokenId     uint64         `xorm:"not null default 0 comment('货币类型') INT(10)"       json:"token_id"`
-	PayId       string         `xorm:"not null default 0 comment('支付类型') VARCHAR(64)"       json:"pay_id"`
-	SellId      uint64         `xorm:"not null default 0 comment('卖家id') INT(10)"         json:"sell_id"`
-	SellName    string         `xorm:"not null default '' comment('卖家昵称') VARCHAR(64)"  json:"sell_name"`
-	BuyId       uint64         `xorm:"not null default 0 comment('买家id') INT(10)"    json:"buy_id"`
-	BuyName     string         `xorm:"not null default '' comment('买家昵称') VARCHAR(64)"   json:"buy_name"`
-	Fee         int64          `xorm:"not null default 0 comment('手续费用') BIGINT(64)"  json:"fee"`
-	States      uint32         `xorm:"not null default 0 comment('订单状态: 0删除 1待支付 2待放行(已支付) 3确认支付(已完成) 4取消') TINYINT(1)"   json:"states"`
-	PayStatus   uint32         `xorm:"not null default 0 comment('支付状态: 1待支付 2待放行(已支付) 3确认支付(已完成)') TINYINT(1)"  json:"pay_status"`
-	CancelType  uint32         `xorm:"not null default 0 comment('取消类型: 1卖方 2 买方') TINYINT(1)"   json:"cancel_type"`
-	CreatedTime string         `xorm:"not null comment('创建时间') DATETIME"  json:"created_time"`
-	UpdatedTime string         `xorm:"comment('修改时间')     DATETIME"               json:"updated_time"`
+	Id          uint64 `xorm:"not null pk autoincr comment('ID')  INT(10)"  json:"id"`
+	OrderId     string `xorm:"not null pk comment('订单ID') INT(10)"   json:"order_id"` // hash( type_id, 6( user_id, + 时间秒）
+	AdId        uint64 `xorm:"not null default 0 comment('广告ID') index INT(10)"  json:"ad_id"`
+	AdType      uint32 `xorm:"not null default 0 comment('广告类型:1出售 2购买') TINYINT(1)"  json:"ad_type"`
+	Price       int64  `xorm:"not null default 0 comment('价格') BIGINT(64)"   json:"price"`
+	Num         int64  `xorm:"not null default 0 comment('数量') BIGINT(64)"   json:"num"`
+	TokenId     uint64 `xorm:"not null default 0 comment('货币类型') INT(10)"       json:"token_id"`
+	PayId       string `xorm:"not null default 0 comment('支付类型') VARCHAR(64)"       json:"pay_id"`
+	SellId      uint64 `xorm:"not null default 0 comment('卖家id') INT(10)"         json:"sell_id"`
+	SellName    string `xorm:"not null default '' comment('卖家昵称') VARCHAR(64)"  json:"sell_name"`
+	BuyId       uint64 `xorm:"not null default 0 comment('买家id') INT(10)"    json:"buy_id"`
+	BuyName     string `xorm:"not null default '' comment('买家昵称') VARCHAR(64)"   json:"buy_name"`
+	Fee         int64  `xorm:"not null default 0 comment('手续费用') BIGINT(64)"  json:"fee"`
+	States      uint32 `xorm:"not null default 0 comment('订单状态: 0删除 1待支付 2待放行(已支付) 3确认支付(已完成) 4取消') TINYINT(1)"   json:"states"`
+	PayStatus   uint32 `xorm:"not null default 0 comment('支付状态: 1待支付 2待放行(已支付) 3确认支付(已完成)') TINYINT(1)"  json:"pay_status"`
+	CancelType  uint32 `xorm:"not null default 0 comment('取消类型: 1卖方 2 买方') TINYINT(1)"   json:"cancel_type"`
+	CreatedTime string `xorm:"not null comment('创建时间') DATETIME"  json:"created_time"`
+	UpdatedTime string `xorm:"comment('修改时间')     DATETIME"               json:"updated_time"`
 	//ConfirmTime sql.NullString `xorm:"default null comment('确认支付时间')  DATETIME"     json:"confirm_time"`
 	//ReleaseTime sql.NullString `xorm:"default null comment('放行时间')     DATETIME"     json:"release_time"`
 	ConfirmTime string `xorm:"default null comment('确认支付时间')  DATETIME"     json:"confirm_time"`
@@ -83,14 +83,14 @@ func (this *Order) GetOrderListOfUid(page, rows, uid, token_id int) (*ModelList,
 	buyCountQuery := buyQuery
 	sellCountQuery := sellQuery
 	//查询所有币种名称及Id
-	reslt, err := new(Tokens).GetTokenList()
+	reslt, err := new(CommonTokens).GetTokenList()
 	if err != nil {
 		return nil, err
 	}
 	for index, tokenid := range list {
 		//根据token_id 查找货币名称
 		for _, value := range reslt {
-			if value.Id == int(tokenid.TokenId) {
+			if value.Id == uint32(tokenid.TokenId) {
 				list[index].TokenName = value.Name
 				break
 			}
@@ -180,7 +180,7 @@ func (this *Order) GetOrderList(Page, PageNum, AdType, States, TokenId int, Star
 	}
 	if StartTime != `` {
 		substr := StartTime[:11] + "23:59:59"
-		temp:= fmt.Sprintf("created_time BETWEEN '%s' AND '%s' ", StartTime, substr)
+		temp := fmt.Sprintf("created_time BETWEEN '%s' AND '%s' ", StartTime, substr)
 		query = query.Where(temp)
 	}
 	if search != `` {
