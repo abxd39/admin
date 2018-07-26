@@ -321,7 +321,7 @@ func (cu *CurrencyController) GetTradeList(c *gin.Context) {
 }
 
 func (cu *CurrencyController) GetTokensList(c *gin.Context) {
-	list, err := new(models.Tokens).GetTokenList()
+	list, err := new(models.CommonTokens).GetTokenList()
 	if err != nil {
 		cu.RespErr(c, err)
 		return

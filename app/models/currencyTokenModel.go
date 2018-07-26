@@ -4,20 +4,22 @@ import (
 	"admin/utils"
 )
 
-type Tokens struct {
-	Id     int    `xorm:"not null pk autoincr INT(10)"`
-	Name   string `xorm:"not null default '' comment('虚拟货币名称') VARCHAR(20)"`
-	CnName string `xorm:"not null default '' comment('虚拟货币中文名称') VARCHAR(20)"`
+
+// 货币类型表
+type CommonTokens struct {
+	Id   uint32 `xorm:"not null pk autoincr INT(10)" json:"id"`
+	Name string `xorm:"VARBINARY(20)" json:"cn_name"` // 货币中文名
+	Mark string `xorm:"VARBINARY(20)" json:"name"`    // 货币标识
 }
 
-func (t *Tokens) TableName() string {
+func (t *CommonTokens) TableName() string {
 	return "tokens"
 }
 
 //获取数字货币id及名称
-func (t *Tokens) GetTokenList() ([]Tokens, error) {
+func (t *CommonTokens) GetTokenList() ([]CommonTokens, error) {
 	engine := utils.Engine_currency
-	list := make([]Tokens, 0)
+	list := make([]CommonTokens, 0)
 	err := engine.Find(&list)
 	if err != nil {
 		return nil, err

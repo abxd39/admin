@@ -28,7 +28,81 @@ func (this *TokenController) Router(r *gin.Engine) {
 		g.GET("/change_detail", this.ChangeDetail)       //p2-3-4币币账户变更详情
 		g.GET("/fee_list", this.GetFeeInfoList)          //p5-1-0-1币币交易手续费明细
 		g.GET("/add_take_list", this.GetAddTakeList)     //p5-1-1-1提币手续费明细
+		g.GET("/total_trade", this.GetTradeTotalList)    //p5-1-0币币交易手续费汇总
+		//提币 充币管理
+		g.GET("/io_token_list", this.GetTokenInList)
+
 	}
+}
+func (this *TokenController) GetTokenInList(c *gin.Context) {
+	req := struct {
+		Page    int    `form:"page" json:"page" binding:"required"`
+		Rows    int    `form:"rows" json:"rows" `
+		Ustatus int    `form:"ustatus" json:"ustatus" ` // 用户状态
+		Status  int    `form:"status" json:"status" `   //提币状态
+		TokenId int    `form:"tokenId" json:"tokenId" ` //货币id
+		Opt     int    `form:"opt" json:"opt" `         //操作方向
+		Search  string `form:"search" json:"search" `   //筛选
+		Date    string `form:"date",json:"date"`        //日期
+	}{}
+	err := c.ShouldBind(&req)
+	if err != nil {
+		utils.AdminLog.Errorf(err.Error())
+		this.RespErr(c, err)
+		return
+	}
+	list,err:=new(models.TokenInout).GetTokenInList(req.Page,req.Rows,req.Ustatus,req.Status,req.TokenId,req.Opt,req.Search,req.Date)
+	if err!=nil{
+		utils.AdminLog.Println(err.Error())
+		this.RespErr(c, err)
+		return
+	}
+	this.Put(c, "list", list)
+	this.RespOK(c)
+	return
+}
+
+func (this*TokenController)OptTakeToken(c*gin.Context)  {
+	req := struct {
+		Id int    `form:"id" json:"id" binding:"required"`
+		Uid int    `form:"uid" json:"uid" binding:"required"`
+	}{}
+	err := c.ShouldBind(&req)
+	if err != nil {
+		utils.AdminLog.Errorf(err.Error())
+		this.RespErr(c, err)
+		return
+	}
+	err=new(models.TokenInout).OptTakeToken(req.Id,req.Uid)
+	if err!=nil{
+		this.RespErr(c,err)
+		return
+	}
+	this.RespOK(c)
+	return
+}
+
+func (this *TokenController) GetTradeTotalList(c *gin.Context) {
+	req := struct {
+		Page int    `form:"page" json:"page" binding:"required"`
+		Rows int    `form:"rows" json:"rows" `
+		Date uint64 `form:"date",json:"date"` //日期
+	}{}
+	err := c.ShouldBind(&req)
+	if err != nil {
+		utils.AdminLog.Errorf(err.Error())
+		this.RespErr(c, err)
+		return
+	}
+	list, err := new(models.Trade).TotalTotalTradeList(req.Page, req.Rows, req.Date)
+	if err != nil {
+		utils.AdminLog.Println(err.Error())
+		this.RespErr(c, err)
+		return
+	}
+	this.Put(c, "list", list)
+	this.RespOK(c)
+	return
 }
 
 //p5-1-1-1提币手续费明细
@@ -178,7 +252,7 @@ func (this *TokenController) ChangeDetail(c *gin.Context) {
 		return
 	}
 	//把货币Id转换为货币名称
-	tokenlist, err := new(models.Tokens).GetTokenList()
+	tokenlist, err := new(models.CommonTokens).GetTokenList()
 	if err != nil {
 		this.RespErr(c, err)
 		return
@@ -221,7 +295,7 @@ func (this *TokenController) ChangeDetail(c *gin.Context) {
 				}
 			}
 			for _, tv := range tokenlist {
-				if tv.Id == tokenValue[i].TokenId {
+				if int(tv.Id) == tokenValue[i].TokenId {
 					tokenValue[i].TokenName = tv.Name
 					break
 				}
@@ -263,7 +337,7 @@ func (this *TokenController) ChangeDetail(c *gin.Context) {
 				}
 			}
 			for _, vt := range tokenlist {
-				if vt.Id == Value[i].TokenId {
+				if int(vt.Id) == Value[i].TokenId {
 					Value[i].TokenName = vt.Name
 					break
 				}

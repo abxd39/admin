@@ -2,28 +2,10 @@ package models
 
 import (
 	"admin/utils"
-	"errors"
+	"strconv"
+	"runtime"
 	"fmt"
 )
-
-//bibi委托表
-type EntrustDetail struct {
-	BaseModel   `xorm:"-"`
-	EntrustId   string `xorm:"not null pk comment('委托记录表（委托管理）') VARCHAR(64)"`
-	Uid         int64  `xorm:"not null comment('用户id') BIGINT(32)"`
-	Symbol      string `xorm:"comment('队列') VARCHAR(64)"`
-	TokenId     int    `xorm:"not null comment('货币id') INT(32)"`
-	AllNum      int64  `xorm:"not null comment('总数量') BIGINT(20)"`
-	SurplusNum  int64  `xorm:"not null comment('剩余数量') BIGINT(20)"`
-	Price       int64  `xorm:"not null comment('实际平均价格(卖出价格）') BIGINT(20)"`
-	Opt         int    `xorm:"not null comment('类型 卖出单1 还是买入单0') TINYINT(4)"`
-	Type        int    `xorm:"comment('交易类型') TINYINT(4)"`
-	OnPrice     int64  `xorm:"not null comment('委托价格(挂单价格全价格 卖出价格是扣除手续费的）') BIGINT(20)"`
-	Fee         int64  `xorm:"not null comment('手续费比例') BIGINT(20)"`
-	States      int    `xorm:"not null comment('0是挂单，1是部分成交,2成交， 3撤销') TINYINT(4)"`
-	CreatedTime int64  `xorm:"not null comment('添加时间') BIGINT(10)"`
-	Mount       int64  `xorm:"comment('总金额') BIGINT(20)"`
-}
 
 //bibi 交易表
 type Trade struct {
@@ -36,77 +18,106 @@ type Trade struct {
 	TokenName    string `xorm:"not null comment('交易对 名称 例如USDT/BTC') VARCHAR(10)"`
 	Price        int64  `xorm:"comment('价格') BIGINT(20)"`
 	Num          int64  `xorm:"comment('数量') BIGINT(20)"`
-	Money        int64  `xorm:"BIGINT(20)"`
 	Fee          int64  `xorm:"comment('手续费') BIGINT(20)"`
 	Opt          int    `xorm:"comment(' buy  1或sell 2') index unique(uni_reade_no) TINYINT(4)"`
 	DealTime     int64  `xorm:"comment('成交时间') BIGINT(11)"`
 	States       int    `xorm:"comment('0是挂单，1是部分成交,2成交， -1撤销') INT(11)"`
 }
 
-func (this *EntrustDetail) IsExist(symbol string) (bool, error) {
-	engine := utils.Engine_token
-	query := engine.Desc("entrust_id")
-	return query.Where("symbol=?", symbol).Exist(&EntrustDetail{})
+type TradeEx struct {
+	Trade          `xorm:"extends"`
+	ConfigTokenCny `xorm:"extends"`
+	TotalCny       string //交易总额
+	FeeCny         string //交易手续费
 }
 
-func (this *EntrustDetail) EvacuateOder(uid int, odid string) error {
-	engine := utils.Engine_token
-	//query := engine.Desc("")
-	temp := fmt.Sprintf("uid=%d AND entrust_id =%s", uid, odid)
-	query := engine.Where(temp)
-	TempQuery := *query
-	has, err := TempQuery.Exist(&EntrustDetail{})
-	if err != nil {
-		return err
-	}
-	if !has {
-		return errors.New("订单不存在！！")
-	}
-	_, err = query.Update(&EntrustDetail{
-		States: -1,
-	})
-	if err != nil {
-		return err
-	}
-	return nil
-
+type TotalTradeCNY struct {
+	Date  int64 //日期
+	Buy   uint64 //买入总额
+	Sell  uint64 //卖出总额
+	Total uint64 // 买卖总金额
 }
 
-func (this *EntrustDetail) GetTokenOrderList(page, rows, ad_id, status, start_t, uid int, symbo, trade_id string) (*ModelList, error) {
+func (t *TradeEx) TableName() string {
+	return "trade"
+}
+
+func (t *TotalTradeCNY) TableName() string {
+	return "trade"
+}
+
+func (this *Trade) TotalTotalTradeList(page, rows int, date uint64) (*ModelList, error) {
+	funcName,file,line,ok := runtime.Caller(0)
+	if ok {
+		fmt.Println("func name: " + runtime.FuncForPC(funcName).Name())
+		fmt.Printf("file: %s, line: %d\n",file,line)
+	}
 	engine := utils.Engine_token
-	//
-	query := engine.Desc("entrust_id")
-	if trade_id != `` {
-		query = query.Where("entrust_id=?", trade_id)
-	}
-	if symbo != `` {
-		query = query.Where("symbol=?", symbo)
-	}
-	if ad_id != 0 {
-		query = query.Where("opt=?", ad_id)
-	}
-	if status != 0 {
-		query = query.Where("states=?", status)
-	}
-	if start_t != 0 {
-		query = query.Where("created_time  BETWEEN ? AND ? ", start_t, start_t+86400)
-	}
-	if uid != 0 {
-		query = query.Where("uid=?", uid)
+	query := engine.Desc("deal_time")
+	query = query.Join("left", "config_token_cny p", "trade.token_id = p.token_id")
+	query = query.GroupBy("deal_time")
+	if date != 0 {
+		temp := date / 1000
+		query = query.Where("left(deal_time,7)=?", temp)
 	}
 	tempQuery := *query
-	count, err := tempQuery.Count(&EntrustDetail{})
+	buyQuery := *query
+	sellQuery := *query
+	count, err := tempQuery.Count(&Trade{})
 	if err != nil {
 		return nil, err
 	}
-	offset, modelList := this.Paging(page, rows, int(count))
-	list := make([]EntrustDetail, offset)
-	err = query.Limit(modelList.PageSize, offset).Find(&list)
+	offset, mList := this.Paging(page, rows, int(count))
+	//买入总额
+	buyList := make([]TradeEx, 0)
+	err = buyQuery.Where("opt=1").Limit(mList.PageSize, offset).Find(&buyList)
 	if err != nil {
 		return nil, err
 	}
-	modelList.Items = list
-	return modelList, nil
+	//卖出总额
+	sellList := make([]TradeEx, 0)
+	err = sellQuery.Where("opt=2").Limit(mList.PageSize, offset).Find(&sellList)
+	//var totalBuy uint64
+	//var totalSell uint64
+	//买卖总金额
+	totalDateList := make([]map[int64]*TotalTradeCNY, 0)
+	dateMap := make(map[int64]*TotalTradeCNY, 0)
+	for _, v := range buyList {
+		key := v.DealTime / 1000
+		for i, _ := range totalDateList {
+			if _, ok := totalDateList[i][key]; !ok {
+				dateMap[key] = &TotalTradeCNY{Date:v.DealTime}
+				totalDateList = append(totalDateList, dateMap)
+			}
+			strBuy := this.Int64MulInt64By8BitString(v.Num, v.ConfigTokenCny.Price)
+			buy, err := strconv.ParseUint(strBuy, 10, 64)
+			if err != nil {
+				continue
+			}
+			totalDateList[i][key].Buy+=buy
+
+		}
+
+	}
+
+	for _, v := range sellList {
+		key := v.DealTime / 1000
+		for i, _ := range totalDateList {
+			if _, ok := totalDateList[i][key]; !ok {
+				dateMap[key] = &TotalTradeCNY{Date: v.DealTime}
+				totalDateList = append(totalDateList, dateMap)
+			}
+			strSell := this.Int64MulInt64By8BitString(v.Num, v.ConfigTokenCny.Price)
+			sell, err := strconv.ParseUint(strSell, 10, 64)
+			if err != nil {
+				continue
+			}
+			totalDateList[i][key].Sell+=sell
+		}
+
+	}
+
+	return nil, nil
 }
 
 func (this *Trade) GetTokenRecordList(page, rows, trade_id, trade_duad, ad_id, uid int, start_t string) (*ModelList, error) {
@@ -153,8 +164,8 @@ func (this *Trade) GetTokenRecordList(page, rows, trade_id, trade_duad, ad_id, u
  */
 func (this *Trade) GetFeeInfoList(page, rows, uid, opt int, date uint64, name string) (*ModelList, error) {
 	engine := utils.Engine_token
-	query :=engine.Desc("deal_time")
-	query = query.Join("left","config_token_cny","token_id = id")
+	query := engine.Desc("deal_time")
+	query = query.Join("left", "config_token_cny p", "trade.token_id = p.token_id")
 
 	if uid != 0 {
 		query = query.Where("uid=?", uid)
@@ -174,13 +185,17 @@ func (this *Trade) GetFeeInfoList(page, rows, uid, opt int, date uint64, name st
 		return nil, err
 	}
 	offset, mlist := this.Paging(page, rows, int(count))
-	list := make([]Trade, offset)
+	list := make([]TradeEx, offset)
 	err = ValuQuery.Limit(mlist.PageSize, offset).Find(&list)
 	if err != nil {
 		return nil, err
 	}
 	//未完待续 折合成人民币
 	//fmt.Println("len=",len(list))
+	for i, v := range list {
+		list[i].TotalCny = this.Int64MulInt64By8BitString(v.ConfigTokenCny.Price, v.Num)
+		list[i].FeeCny = this.Int64MulInt64By8BitString(v.ConfigTokenCny.Price, v.Fee)
+	}
 	mlist.Items = list
 	return mlist, nil
 }

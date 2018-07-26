@@ -31,3 +31,14 @@ func (b *BaseModel) Int64DivInt64By8Bit(da int64, db int64) int64 {
 	num := dd.Div(dp).Round(8).Coefficient().Int64()
 	return num
 }
+
+func (*BaseModel)Int64MulInt64By8BitString(a int64, b int64) string {
+	dd := decimal.New(a, 0)
+	dp := decimal.New(b, 0)
+	m := dd.Mul(dp)
+	d := decimal.New(100000000, 0)
+	n := m.Div(d)
+
+	r := n.Div(decimal.New(100000000, 0))
+	return r.String()
+}
