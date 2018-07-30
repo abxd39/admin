@@ -297,6 +297,45 @@ func (u *User) Update(uid int, params map[string]interface{}) error {
 	return nil
 }
 
+// 更新自己，当前登录的管理员
+func (u *User) UpdateMe(ctx *gin.Context, params map[string]interface{}) error {
+	uid, err := session.GetUid(ctx)
+	if err != nil {
+		return err
+	}
+
+	// 验证管理员是否存在
+	engine := utils.Engine_backstage
+	user := User{}
+	has, err := engine.Id(uid).Get(&user)
+	if err != nil {
+		return errors.NewSys(err)
+	}
+	if !has {
+		return errors.NewNormal("管理员不存在或已删除")
+	}
+
+	// 整理数据
+	userData := make(map[string]interface{})
+	if v, ok := params["pwd"]; ok {
+		// 先修改密码前检查老密码是否正确
+		if user.Pwd != utils.Md5(utils.Md5(params["old_pwd"].(string))+user.Salt) {
+			return errors.NewNormal("原密码错误")
+		}
+
+		// 生成新密码s
+		userData["pwd"] = utils.Md5(utils.Md5(v.(string)) + user.Salt)
+	}
+
+	// 开始更新
+	_, err = engine.Table(u).ID(uid).Update(userData)
+	if err != nil {
+		return errors.NewSys(err)
+	}
+
+	return nil
+}
+
 // 删除管理员
 func (u *User) Delete(uid int) error {
 	// 验证用户组是否存在
