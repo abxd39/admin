@@ -45,6 +45,7 @@ func CheckLogin() gin.HandlerFunc {
 		noNeedAuthAPIs := map[string]bool{
 			"admin/my_left_menu":  true,
 			"admin/my_right_menu": true,
+			"admin/update_me":     true,
 		}
 
 		// 合并无需登录的接口，无需登录的接口肯定也无需验证权限

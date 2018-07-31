@@ -35,6 +35,7 @@ func (a *AdminController) Router(e *gin.Engine) {
 		group.POST("/delete_login_log", a.DeleteLoginLog)
 		group.GET("/my_left_menu", a.MyLeftMenu)
 		group.GET("/my_right_menu", a.MyRightMenu)
+		group.POST("/update_me", a.UpdateMe)
 	}
 }
 
@@ -540,6 +541,44 @@ func (a *AdminController) MyRightMenu(ctx *gin.Context) {
 
 	// 设置返回数据
 	a.Put(ctx, "list", newList)
+
+	// 返回
+	a.RespOK(ctx)
+	return
+}
+
+// 更新本人资料
+func (a *AdminController) UpdateMe(ctx *gin.Context) {
+	params := make(map[string]interface{})
+
+	if pwd, ok := a.GetParam(ctx, "pwd"); ok {
+		oldPwd, _ := a.GetParam(ctx, "old_pwd")
+		if oldPwd == "" {
+			a.RespErr(ctx, "请输入原密码")
+			return
+		}
+
+		if matched, err := regexp.MatchString(`^[a-zA-Z0-9~!@#$%^&*_\-=+:;|,.?]{6,20}$`, pwd); err != nil || !matched {
+			a.RespErr(ctx, "密码格式错误，6-20个字符")
+			return
+		}
+
+		rePwd, _ := a.GetParam(ctx, "re_pwd")
+		if rePwd != pwd {
+			a.RespErr(ctx, "两次输入的密码不一致")
+			return
+		}
+
+		params["old_pwd"] = oldPwd
+		params["pwd"] = pwd
+	}
+
+	// 调用models
+	err := new(bk.User).UpdateMe(ctx, params)
+	if err != nil {
+		a.RespErr(ctx, err)
+		return
+	}
 
 	// 返回
 	a.RespOK(ctx)
