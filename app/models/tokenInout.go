@@ -7,21 +7,24 @@ import (
 )
 
 //冲提币明细流水表
+
 type TokenInout struct {
 	BaseModel   `xorm:"-"`
 	Id          int    `xorm:"not null pk autoincr comment('自增id') INT(11)"`
-	Uid         int64  `xorm:"not null comment('用户id') INT(11)"`
+	Uid         int    `xorm:"not null comment('用户id') INT(11)"`
 	Opt         int    `xorm:"not null comment('操作方向 1 充币 2 提币') TINYINT(4)"`
 	Txhash      string `xorm:"not null comment('交易hash') VARCHAR(200)"`
 	From        string `xorm:"not null comment('打款方') VARCHAR(42)"`
 	To          string `xorm:"not null comment('收款方') VARCHAR(42)"`
-	Amount      int64  `xorm:"not null comment('金额') BIGINT(20)"`
-	Fee         int64  `xorm:"not null comment('提币手续费') BIGINT(20)"`
+	Amount      int64  `xorm:"not null comment('金额(数量)') BIGINT(20)"`
+	Fee         int64  `xorm:"not null comment('提币手续费(数量)') BIGINT(20)"`
+	AmountCny   int64  `xorm:"not null comment('提币数量折合cny') BIGINT(20)"`
+	FeeCny      int64  `xorm:"not null comment('手续费折合cny') BIGINT(20)"`
 	Value       string `xorm:"not null comment('原始16进制转账数据') VARCHAR(32)"`
 	Chainid     int    `xorm:"not null comment('链id') INT(11)"`
 	Contract    string `xorm:"not null default '' comment('合约地址') VARCHAR(42)"`
 	Tokenid     int    `xorm:"not null comment('币种id') INT(11)"`
-	States      int    `xorm:"not null comment('充提币状态 1正在充提币 对应操作状态为 撤销，2 已完成，3已取消') TINYINT(1)"`
+	States      int    `xorm:"not null comment('人充提币状态 1正在提币，2 已完成，3提币已取消，4提币失败') TINYINT(1)"`
 	TokenName   string `xorm:"not null comment('币种名称') VARCHAR(10)"`
 	CreatedTime string `xorm:"not null default 'CURRENT_TIMESTAMP' comment('创建时间 提币创建时间') TIMESTAMP"`
 	DoneTime    string `xorm:"not null default '0000-00-00 00:00:00' comment('充币到账时间') TIMESTAMP"`
@@ -38,6 +41,104 @@ type TokenInoutGroup struct {
 
 func (t *TokenInoutGroup) TableName() string {
 	return "token_inout"
+}
+
+//日提币 每个用户提币信息
+func (t *TokenInout) GetTotalInfoList(page, rows, tid, opt int, date, search string) (*ModelList, error) {
+	enginge := utils.Engine_wallet
+	//SELECT t.time,t.token_name,t.total,t.uid
+	sql1 := " FROM (SELECT DATE_FORMAT(created_time,'%Y%m%d') DAY,created_time time ,opt,SUM(amount) total ,tokenid,token_name name,uid FROM token_inout "
+	sql := fmt.Sprintf("WHERE %d", opt)
+	if tid != 0 {
+		tmp := fmt.Sprintf(" AND tokenid=%d", tid)
+		sql += tmp
+	}
+	//sql:=fmt.Sprintf("  opt= %d AND tokenid=%d GROUP BY DAY, uid)t WHERE t.day=",opt,tid)
+	//刷选
+	if search != `` {
+		tmp := fmt.Sprintf(" AND uid=%s", search)
+		sql += tmp
+	}
+	sql += " GROUP BY DAY, uid)t WHERE t.day="
+	sql = sql1 + sql
+	if date != `` {
+		sub := date[:8]
+		sql = sql + sub
+	}
+
+	type Count struct {
+		Count int
+	}
+	count := new(Count)
+	sqlCount := "select count(*) count " + sql
+	fmt.Println(sqlCount)
+	_, err := enginge.SQL(sqlCount).Get(count)
+	if err != nil {
+		return nil, err
+	}
+	offset, mList := t.Paging(page, rows, int(count.Count))
+	type Return struct {
+		Day   int
+		Uid   int
+		Total uint64 //提币总数
+		Name  string //货币名称
+	}
+	limitSql := fmt.Sprintf(" limit %d offset %d ", mList.PageSize, offset)
+	list := make([]Return, 0)
+	contentSql := "SELECT t.time,t.name,t.total,t.uid ,t.day" + sql + limitSql
+	fmt.Println(contentSql)
+	err = enginge.SQL(contentSql).Find(&list)
+	if err != nil {
+		return nil, err
+	}
+	mList.Items = list
+	return mList, nil
+}
+
+//日提币汇总
+func (t *TokenInout) GetTotalList(page, rows, tokenId, opt int, date string) (*ModelList, error) {
+	engine := utils.Engine_wallet
+	sql1 := "FROM (SELECT DATE_FORMAT(created_time,'%Y%m%d') DAY,id,opt,SUM(amount) total,token_name name,tokenid tid FROM token_inout WHERE "
+	sql := fmt.Sprintf("opt= %d GROUP BY DAY, tokenid) t ", opt)
+	sql = sql1 + sql
+	limitSql := " limit %d offset %d"
+	search := "where t.id>0"
+	if tokenId != 0 {
+		temp := fmt.Sprintf(" AND t.tid=%d", tokenId)
+		search += temp
+	}
+	if date != `` {
+		sub := date[:8]
+		fmt.Println("date=", sub, "len(date) =", len(sub))
+		temp := " AND t.day=" + sub
+		search += temp
+	}
+	type Count struct {
+		Count int
+	}
+	count := new(Count)
+	query := "SELECT COUNT(*) count  " + sql + search
+	//fmt.Println("query=",query)
+	_, err := engine.SQL(query).Get(count)
+	if err != nil {
+		return nil, err
+	}
+	fmt.Println("count=", count.Count)
+	type Return struct {
+		Day   int    //日期
+		Total uint64 //提币总量
+		Name  string // 货币名称
+		Tid   int    //货币id
+	}
+	offset, mList := t.Paging(page, rows, int(count.Count))
+	limitSql = fmt.Sprintf(limitSql, mList.PageSize, offset)
+	list := make([]Return, 0)
+	sql += search + limitSql
+	queryContent := "SELECT * " + sql
+	//fmt.Println(queryContent)
+	engine.SQL(queryContent).Find(&list)
+	mList.Items = list
+	return mList, nil
 }
 
 //提币 充币 p3-1-0 充币 提币管理
@@ -74,7 +175,7 @@ func (t *TokenInout) GetTokenInList(page, rows, uStatus, status, tokenId, opt in
 		//
 		for i, _ := range list {
 			for _, v := range value {
-				if list[i].Uid == v.Uid {
+				if list[i].Uid == int(v.Uid) {
 					list[i].NickName = v.NickName
 					list[i].Phone = v.Phone
 					list[i].Email = v.Email
@@ -126,7 +227,7 @@ func (t *TokenInout) GetTokenInList(page, rows, uStatus, status, tokenId, opt in
 		}
 		for i, _ := range list {
 			for _, v := range uList {
-				if v.Uid == list[i].Uid {
+				if int(v.Uid) == list[i].Uid {
 					list[i].TokenName = v.NickName
 					list[i].Phone = v.Phone
 					list[i].Email = v.Email

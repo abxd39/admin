@@ -16,6 +16,7 @@ type UserInfo struct {
 	TokenName string `json:"token_name"`
 }
 
+
 func (b *BaseModel) Int64MulInt64By8Bit(ma int64, mb int64) int64 {
 	dd := decimal.New(ma, 0)
 	dp := decimal.New(mb, 0)

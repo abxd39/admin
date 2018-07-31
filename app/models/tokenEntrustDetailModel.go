@@ -66,9 +66,13 @@ func (this *EntrustDetail) GetTokenOrderList(page, rows, ad_id, status, start_t,
 	if ad_id != 0 {
 		query = query.Where("opt=?", ad_id)
 	}
-	if status != 0 {
+	if status !=-1 && status!=0 {
 		query = query.Where("states=?", status)
+	}else {
+		//-1 标识刷选未成交的订单
+		query =query.Where("states=?", 0)
 	}
+
 	if start_t != 0 {
 		query = query.Where("created_time  BETWEEN ? AND ? ", start_t, start_t+86400)
 	}

@@ -17,7 +17,7 @@ func (this *TokenController) Router(r *gin.Engine) {
 	g := r.Group("/token")
 	{
 		g.GET("/list", this.GetTokenOderList)            //bibi p4-1-0 币币委托管理 挂单信息
-		g.POST("evacuate_order", this.EvacuateOder)      // p4-1-0 币币委托管理 挂单信息 撤单
+		g.POST("/evacuate_order", this.EvacuateOder)     // p4-1-0 币币委托管理 挂单信息 撤单
 		g.GET("/record_list", this.GetRecordList)        //bibi p4-1-1 成交记录
 		g.GET("/total_balance", this.GetTokenBalance)    //bibi p2-3-2币币账户统计列表
 		g.GET("/user_token_detail", this.GetTokenDetail) //p2-3-2-1查看币币账户资产
@@ -30,11 +30,118 @@ func (this *TokenController) Router(r *gin.Engine) {
 		g.GET("/add_take_list", this.GetAddTakeList)     //p5-1-1-1提币手续费明细
 		g.GET("/total_trade", this.GetTradeTotalList)    //p5-1-0币币交易手续费汇总
 		//提币 充币管理
-		g.GET("/io_token_list", this.GetTokenInList)
-		g.POST("/opt_token",this.OptTakeToken)
+		g.GET("/io_token_list", this.GetTokenInList) //
+		g.POST("/opt_token", this.OptTakeToken)      //
+		//日提币充币汇总
+		g.GET("/total_token_list", this.GetTotalTokenList) //
+		g.GET("/total_token_info_list", this.GetTotalTokenInfoList)
 
+		//g.GET("/in_token_list",this.GetInTokenList)
+		//g.GET("/in_token_info_list",this.GetInTokenInfoList)
+		//日划转汇总
+		//币币交易手续费汇总
+		g.GET("/token_order_fee_total", this.GetOderFeeTotalList)
+		//提币手续费汇总表
+		g.GET("/token_inout_daily_sheet",this.GetTokenInOutDailySheetList)
 	}
 }
+//提币手续费汇总表
+func (this*TokenController)GetTokenInOutDailySheetList(c*gin.Context)  {
+	req := struct {
+		Page int    `form:"page" json:"page" binding:"required"`
+		Rows int    `form:"rows" json:"rows" `
+		Date string `form:"date",json:"date"` //日期
+		TokenId int `form:"tid",json:"tid"`
+	}{}
+	err := c.ShouldBind(&req)
+	if err != nil {
+		utils.AdminLog.Errorf(err.Error())
+		this.RespErr(c, err)
+		return
+	}
+	list,err:=new(models.WalletInoutDailySheet).GetInOutDailSheetList(req.Page,req.Rows,req.TokenId,req.Date)
+	if err!=nil{
+		this.RespErr(c,err)
+		return
+	}
+	this.Put(c,"list",list)
+	this.RespOK(c)
+	return
+}
+
+//币币交易手续费汇总
+func (this *TokenController) GetOderFeeTotalList(c *gin.Context) {
+	req := struct {
+		Page int    `form:"page" json:"page" binding:"required"`
+		Rows int    `form:"rows" json:"rows" `
+		Date uint64 `form:"date",json:"date"` //日期
+	}{}
+	err := c.ShouldBind(&req)
+	if err != nil {
+		utils.AdminLog.Errorf(err.Error())
+		this.RespErr(c, err)
+		return
+	}
+	list, data, err := new(models.TokenFeeDailySheet).GetDailySheetList(req.Page, req.Rows, req.Date)
+	if err != nil {
+		this.RespErr(c, err)
+		return
+	}
+	this.Put(c, "data", data)
+	this.Put(c, "list", list)
+	this.RespOK(c)
+	return
+}
+
+//冲提币汇总
+func (this *TokenController) GetTotalTokenList(c *gin.Context) {
+	req := struct {
+		Opt     int    `form:"opt" json:"opt" binding:"required"` //1充 2 提币
+		Page    int    `form:"page" json:"page" binding:"required"`
+		Rows    int    `form:"rows" json:"rows" `
+		TokenId int    `form:"tokenId" json:"tokenId" ` //货币id
+		Date    string `form:"date",json:"date"`        //日期
+	}{}
+	err := c.ShouldBind(&req)
+	if err != nil {
+		utils.AdminLog.Errorf(err.Error())
+		this.RespErr(c, err)
+		return
+	}
+	list, err := new(models.TokenInout).GetTotalList(req.Page, req.Rows, req.TokenId, req.Opt, req.Date)
+	if err != nil {
+		this.RespErr(c, err)
+		return
+	}
+	this.Put(c, "list", list)
+	this.RespOK(c)
+}
+
+func (this *TokenController) GetTotalTokenInfoList(c *gin.Context) {
+	req := struct {
+		Opt     int    `form:"opt" json:"opt" binding:"required"` //1充 2 提币
+		Page    int    `form:"page" json:"page" binding:"required"`
+		Rows    int    `form:"rows" json:"rows" `
+		TokenId int    `form:"tokenId" json:"tokenId" `              //货币id
+		Date    string `form:"date",json:"date"  binding:"required"` //日期
+		Search  string `form:"search",json:"search"`                 //输入uid 搜索
+	}{}
+	err := c.ShouldBind(&req)
+	if err != nil {
+		utils.AdminLog.Errorf(err.Error())
+		this.RespErr(c, err)
+		return
+	}
+	list, err := new(models.TokenInout).GetTotalInfoList(req.Page, req.Rows, req.TokenId, req.Opt, req.Date, req.Search)
+	if err != nil {
+		this.RespErr(c, err)
+		return
+	}
+	this.Put(c, "list", list)
+	this.RespOK(c)
+}
+
+//充提币管理
 func (this *TokenController) GetTokenInList(c *gin.Context) {
 	req := struct {
 		Page    int    `form:"page" json:"page" binding:"required"`
@@ -42,7 +149,7 @@ func (this *TokenController) GetTokenInList(c *gin.Context) {
 		Ustatus int    `form:"ustatus" json:"ustatus" ` // 用户状态
 		Status  int    `form:"status" json:"status" `   //提币状态
 		TokenId int    `form:"tokenId" json:"tokenId" ` //货币id
-		Opt     int    `form:"opt" json:"opt" `         //操作方向
+		Opt     int    `form:"opt" json:"opt"  `        //操作方向
 		Search  string `form:"search" json:"search" `   //筛选
 		Date    string `form:"date",json:"date"`        //日期
 	}{}
@@ -52,8 +159,8 @@ func (this *TokenController) GetTokenInList(c *gin.Context) {
 		this.RespErr(c, err)
 		return
 	}
-	list,err:=new(models.TokenInout).GetTokenInList(req.Page,req.Rows,req.Ustatus,req.Status,req.TokenId,req.Opt,req.Search,req.Date)
-	if err!=nil{
+	list, err := new(models.TokenInout).GetTokenInList(req.Page, req.Rows, req.Ustatus, req.Status, req.TokenId, req.Opt, req.Search, req.Date)
+	if err != nil {
 		utils.AdminLog.Println(err.Error())
 		this.RespErr(c, err)
 		return
@@ -63,10 +170,10 @@ func (this *TokenController) GetTokenInList(c *gin.Context) {
 	return
 }
 
-func (this*TokenController)OptTakeToken(c*gin.Context)  {
+func (this *TokenController) OptTakeToken(c *gin.Context) {
 	req := struct {
-		Id int    `form:"id" json:"id" binding:"required"`
-		Uid int    `form:"uid" json:"uid" binding:"required"`
+		Id  int `form:"id" json:"id" binding:"required"`
+		Uid int `form:"uid" json:"uid" binding:"required"`
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
@@ -74,9 +181,9 @@ func (this*TokenController)OptTakeToken(c*gin.Context)  {
 		this.RespErr(c, err)
 		return
 	}
-	err=new(models.TokenInout).OptTakeToken(req.Id,req.Uid)
-	if err!=nil{
-		this.RespErr(c,err)
+	err = new(models.TokenInout).OptTakeToken(req.Id, req.Uid)
+	if err != nil {
+		this.RespErr(c, err)
 		return
 	}
 	this.RespOK(c)
@@ -228,6 +335,7 @@ func (this *TokenController) EvacuateOder(c *gin.Context) {
 		this.RespErr(c, err)
 		return
 	}
+	//new(models.WalletInoutDailySheet).BoottimeTimingSettlement()
 	err = new(models.EntrustDetail).EvacuateOder(req.Uid, req.OerderId)
 	if err != nil {
 		this.RespErr(c, err)
@@ -426,13 +534,12 @@ func (this *TokenController) GetTokenBalance(c *gin.Context) {
 //bibi 成交记录
 func (this *TokenController) GetRecordList(c *gin.Context) {
 	req := struct {
-		Page       int    `form:"page" json:"page" binding:"required"`
-		Page_num   int    `form:"rows" json:"rows" `
-		Uid        int    `form:"uid" json:"uid" `
-		Trade_id   int    `form:"trade_id" json:"trade_id" ` //交易类型id 市价交易or 限价交易
-		Start_t    string `form:"start_t" json:"start_t" `
-		Trade_duad int    `form:"trade_duad" json:"trade_duad" ` //交易对
-		Ad_id      int    `form:"ad_id" json:"ad_id" `           //买卖方向
+		Page     int    `form:"page" json:"page" binding:"required"`
+		Page_num int    `form:"rows" json:"rows" `
+		Uid      int    `form:"uid" json:"uid" `
+		Date     uint64 `form:"date" json:"date" `
+		Name     string `form:"name" json:"name" ` //交易对
+		Opt      int    `form:"opt" json:"opt" `   //买卖方向
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
@@ -440,7 +547,8 @@ func (this *TokenController) GetRecordList(c *gin.Context) {
 		this.RespErr(c, err)
 		return
 	}
-	list, err := new(models.Trade).GetTokenRecordList(req.Page, req.Page_num, req.Trade_id, req.Trade_duad, req.Ad_id, req.Uid, req.Start_t)
+	fmt.Println("start_t=", req.Date)
+	list, err := new(models.Trade).GetTokenRecordList(req.Page, req.Page_num, req.Opt, req.Uid, req.Date, req.Name)
 	if err != nil {
 		this.RespErr(c, err)
 		return

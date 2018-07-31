@@ -83,6 +83,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+	Engine_wallet.ShowSQL(true)
 	err = Engine_wallet.Ping()
 	if err != nil {
 		panic(err)

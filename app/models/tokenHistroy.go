@@ -40,7 +40,7 @@ func (this *TokenHistory) GetAddTakeList(page, rows, tid, uid int, date uint64) 
 		query = query.Where("uid=?", uid)
 	}
 	if date != 0 {
-		query = query.Where("check_time BETWEEN '?' AND '?'", date, date+864000)
+		query = query.Where("check_time BETWEEN ? AND ?", date, date+864000)
 	}
 	countQuery:=*query
 	count,err:=countQuery.Count(&TokenHistory{})

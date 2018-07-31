@@ -15,17 +15,20 @@ type UserCurrencyHistory struct {
 	Num         int64  `xorm:"not null default 0 comment('数量') BIGINT(64)" json:"num"`
 	Fee         int64  `xorm:"not null default 0 comment('手续费用') BIGINT(64)" json:"fee"`
 	Surplus     int64  `xorm:"comment('账户余额') BIGINT(64)" json:"surplus"`
-	Operator    int    `xorm:"not null default 0 comment('操作类型 1订单转入 2订单转出 3充币 4提币 5冻结') TINYINT(2)" json:"operator"`
+	Operator    int    `xorm:"not null default 0 comment('操作类型 操作类型 1订单转入 2订单转出 3币币划转到法币 4法币划转到币币 5冻结') TINYINT(2)" json:"operator"`
 	Address     string `xorm:"not null default '' comment('提币地址') VARCHAR(255)" json:"address"`
 	States      int    `xorm:"not null default 0 comment('订单状态: 0删除 1待支付 2待放行(已支付) 3确认支付(已完成) 4取消') TINYINT(2)" json:"states"`
 	CreatedTime string `xorm:"not null comment('创建时间') DATETIME" json:"created_time"`
 	UpdatedTime string `xorm:"comment('修改间') DATETIME" json:"updated_time"`
 }
 
+
+
+
 func (u *UserCurrencyHistory) GetList(page, rows, ot int, date string) (*ModelList, error) {
 	engine := utils.Engine_currency
 	query := engine.Desc("id")
-	fmt.Println("000000000000000000000000000000000", ot)
+	//fmt.Println("000000000000000000000000000000000", ot)
 	if ot != 0 {
 
 		query = query.Where("operator=?", ot)
@@ -33,7 +36,7 @@ func (u *UserCurrencyHistory) GetList(page, rows, ot int, date string) (*ModelLi
 	if date != `` {
 		sub := date[:11] + "23:59:59"
 		temp := fmt.Sprintf("created_time BETWEEN '%s' AND '%s'", date, sub)
-		fmt.Println(temp)
+		//fmt.Println(temp)
 		query = query.Where(temp)
 	}
 	tempQuery := *query

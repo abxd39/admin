@@ -27,8 +27,16 @@ func (this *CurrencyController) Router(r *gin.Engine) {
 		g.GET("/total", this.Total)                              //p2-3-0总财产列表
 		g.GET("/currency_change", this.GetCurrencyChangeHistroy) //p2-3-3法币账户变更详情
 		//g.GET("/")                                               //p2-3-0-0币数统计列表
+		//划转到币币账户货币数量日统计
+		g.GET("layoff_list",this.GetLayOffList)
 	}
 }
+
+func (cu *CurrencyController) GetLayOffList(c *gin.Context) {
+
+}
+
+
 func (cu *CurrencyController) GetCurrencyChangeHistroy(c *gin.Context) {
 	req := struct {
 		Page   int    `form:"page" json:"page" binding:"required"`

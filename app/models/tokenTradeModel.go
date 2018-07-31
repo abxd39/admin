@@ -24,6 +24,7 @@ type Trade struct {
 	States       int    `xorm:"comment('0是挂单，1是部分成交,2成交， -1撤销') INT(11)"`
 }
 
+
 type TradeEx struct {
 	Trade          `xorm:"extends"`
 	ConfigTokenCny `xorm:"extends"`
@@ -120,24 +121,21 @@ func (this *Trade) TotalTotalTradeList(page, rows int, date uint64) (*ModelList,
 	return nil, nil
 }
 
-func (this *Trade) GetTokenRecordList(page, rows, trade_id, trade_duad, ad_id, uid int, start_t string) (*ModelList, error) {
+func (this *Trade) GetTokenRecordList(page, rows,  opt, uid int,date uint64, name  string) (*ModelList, error) {
 	engine := utils.Engine_token
 
 	query := engine.Desc("uid")
-	if trade_id != 0 {
-		query = query.Where("trade_id=?", trade_id)
+	if name != `` {
+		query = query.Where("token_name=?", name) //交易对
 	}
-	if trade_duad != 0 {
-		query = query.Where("token_trade_id=?", trade_duad) //交易对
-	}
-	if ad_id != 0 {
-		query = query.Where("opt=?", ad_id) //交易方向
+	if opt != 0 {
+		query = query.Where("opt=?", opt) //交易方向
 	}
 	if uid != 0 {
 		query = query.Where("uid=?", uid)
 	}
-	if start_t != `` {
-
+	if date != 0 {
+		query =query.Where("deal_time BETWEEN ? AND ? ",date,date+86400)
 	}
 	tempQuery := *query
 
@@ -199,3 +197,5 @@ func (this *Trade) GetFeeInfoList(page, rows, uid, opt int, date uint64, name st
 	mlist.Items = list
 	return mlist, nil
 }
+
+
