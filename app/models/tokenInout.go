@@ -4,6 +4,7 @@ import (
 	"admin/errors"
 	"admin/utils"
 	"fmt"
+	"time"
 )
 
 //冲提币明细流水表
@@ -41,6 +42,23 @@ type TokenInoutGroup struct {
 
 func (t *TokenInoutGroup) TableName() string {
 	return "token_inout"
+}
+
+
+//仪表盘 日提币手续费
+func (t*TokenInout)GetOutTokenFee()(float64,error)  {
+	engine:=utils.Engine_wallet
+	current:=time.Now().Format("2006-01-02 15:04:05")
+	sql:=fmt.Sprintf("SELECT SUM(t.fee)FROM (SELECT SUBSTRING(done_time,1,10)days,fee_cny fee FROM g_wallet.`token_inout` WHERE states=2)t WHERE t.days='%s'",current[:10])
+	fee:=&struct {
+		Fee float64
+	}{}
+	_,err:=engine.SQL(sql).Get(fee)
+	if err!=nil{
+		utils.AdminLog.Println(err.Error())
+		return 0,err
+	}
+	return fee.Fee,nil
 }
 
 //日提币 每个用户提币信息

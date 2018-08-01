@@ -4,6 +4,7 @@ import (
 	"admin/utils"
 	"errors"
 	"fmt"
+	"time"
 )
 
 type UserEx struct {
@@ -379,18 +380,51 @@ func (w *WebUser) ModifyUserStatus(uid, status int) error {
 
 func (w *WebUser) GetTotalUser() (int, int, int, error) {
 	engine := utils.Engine_common
-	u := new(WebUser)
-	count, err := engine.Count(u)
+	Count := &struct {
+		TotalCount  int
+		TodayCount  int
+		UpDayCount  int
+		UpWeekCount int
+	}{}
+
+	_, err := engine.SQL("select count(*) total_count from g_common.user_ex").Get(Count)
 	if err != nil {
 		return 0, 0, 0, err
 	}
 	//获取当前时间
-	//current:=time.Now().Unix()//当前时间戳
-
+	current := time.Now().Unix() //当前时间戳
+	currentDay := time.Now().Format("2006-01-02 15:04:05")
+	//ExampleParseInLocation()
 	//叫上日 涨幅
-
+	//24*3600 =
+	currentDay = fmt.Sprintf("u.days='%s'", currentDay[:10])
+	_, err = engine.SQL("SELECT COUNT(*) today_count FROM (SELECT FROM_UNIXTIME(register_time,'%Y-%m-%d')days FROM g_common.user_ex ) u WHERE " + currentDay).Get(Count)
+	upDayUnix := current - 86400
+	tm := time.Unix(upDayUnix, 0)
+	upDaySql := tm.Format("2006-01-02 15:04:05")
+	upDaySql = fmt.Sprintf("u.days='%s'", upDaySql[:10])
+	_, err = engine.SQL("SELECT COUNT(*) up_day_count FROM (SELECT FROM_UNIXTIME(register_time,'%Y-%m-%d')days FROM g_common.user_ex ) u WHERE " + upDaySql).Get(Count)
+	if err != nil {
+		return 0, 0, 0, err
+	}
 	//叫上周同日 涨幅
-	return int(count), 0, 0, nil
+	upWeekUnix := current - 86400*7
+	tw := time.Unix(upWeekUnix, 0)
+	upWeekStr := tw.Format("2006-01-02 15:04:05")
+	upWeekStr = fmt.Sprintf("u.days='%s'", upWeekStr[:10])
+	_, err = engine.SQL("SELECT COUNT(*) up_week_count FROM (SELECT FROM_UNIXTIME(register_time,'%Y-%m-%d')days FROM g_common.user_ex ) u WHERE " + upWeekStr).Get(Count)
+	if err != nil {
+		return 0, 0, 0, err
+	}
+	upDay := Count.TodayCount - Count.UpDayCount
+	if upDay <= 0 {
+		upDay = 0
+	}
+	upWeek := Count.TodayCount - Count.UpWeekCount
+	if upWeek <= 0 {
+		upWeek = 0
+	}
+	return Count.TotalCount, upDay, upWeek, nil
 }
 
 func (w *WebUser) GetAllUser(page, rows, status int, search string) (*ModelList, error) {
@@ -493,7 +527,7 @@ func (w *WebUser) UserList(page, rows, verify, status int, search string, date i
 }
 
 //获取用户列表
-func (w *WebUser) GetCurreryList(uid []int64, verify int, search string) ([]UserGroup, error) {
+func (w *WebUser) GetCurrencyList(uid []int64, verify int, search string) ([]UserGroup, error) {
 	engine := utils.Engine_common
 
 	//数据查询

@@ -3,6 +3,8 @@ package models
 import (
 	"admin/utils"
 	"strconv"
+	"fmt"
+	"time"
 )
 
 //bibi 交易表
@@ -20,6 +22,8 @@ type Trade struct {
 	Opt          int    `xorm:"comment(' buy  1或sell 2') index unique(uni_reade_no) TINYINT(4)"`
 	DealTime     int64  `xorm:"comment('成交时间') BIGINT(11)"`
 	States       int    `xorm:"comment('0是挂单，1是部分成交,2成交， -1撤销') INT(11)"`
+	FeeCny        int64 `xorm:"comment( '手续费折合CNY') BIGINT(20)"`
+	TotalCny      int64 `xorm:"comment( '总交易额折合CNY') BIGINT(20)"`
 }
 
 type TradeEx struct {
@@ -189,4 +193,21 @@ func (this *Trade) GetFeeInfoList(page, rows, uid, opt int, date uint64, name st
 	}
 	mlist.Items = list
 	return mlist, nil
+}
+
+//获取单日bibi交易手续费
+func (this *Trade)GetTodayFee()(uint64,error)  {
+	engine:=utils.Engine_token
+	sql:="SELECT fee FROM (SELECT FROM_UNIXTIME(deal_time,'%Y-%m-%d')days,SUM(fee_cny) fee FROM g_token.trade where states=2  ) t WHERE "
+	current:=time.Now().Format("2006-01-02 15:04:05")
+	current =fmt.Sprintf(" t.days='%s'", current[:10])
+	fee:=&struct {
+		Fee uint64
+	}{}
+
+	_,err:=engine.SQL(sql+current).Get(fee)
+	if err!=nil{
+		return 0,err
+	}
+	return fee.Fee,nil
 }

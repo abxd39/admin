@@ -4,6 +4,8 @@ import (
 	"admin/utils"
 	"errors"
 	"fmt"
+	"strconv"
+	"time"
 )
 
 // 订单表
@@ -208,4 +210,32 @@ func (this *Order) GetOrderList(Page, PageNum, AdType, States, TokenId int, Star
 	modelList.Items = list
 	return modelList, nil
 
+}
+
+
+//法币交易手续费 ---> 注：仪表盘 买卖都需要加起来。 获取当天的。
+func (this*Order)GetOrderDayFee()(float64,error){
+	engine:=utils.Engine_currency
+	current:=time.Now().Format("2006-01-02 15:04:05")
+	sql:=fmt.Sprintf("SELECT m.fee fee,c.price price FROM (SELECT t.days,t.fee,t.token_id FROM (SELECT SUBSTRING(confirm_time,1,10) days,fee,token_id FROM g_currency.`order` WHERE pay_status=3) t  WHERE t.days ='%s' GROUP BY t.token_id) m JOIN  g_token.`config_token_cny` c ON m.token_id= c.token_id",current[:10])
+	type fee struct {
+		Fee int64
+		Price int64
+	}
+	list:=make([]fee,0)
+	err:=engine.SQL(sql).Find(&list)
+	if err!=nil{
+		return 0,err
+	}
+	var total float64
+	for _,v:=range list{
+		result:=this.Int64MulInt64By8BitString(v.Fee,v.Price)
+		float,err := strconv.ParseFloat(result,64)
+		if err!=nil{
+			utils.AdminLog.Println(err.Error())
+			continue
+		}
+		total+=float
+	}
+	return total,nil
 }

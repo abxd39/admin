@@ -195,7 +195,7 @@ func (this *Ads) GetAdsList(page, rows, status, tokenid, tradeid, verify int, se
 	}
 	fmt.Println("uidList", len(uid))
 	//跨库查询 用户资料
-	ulist, err := new(UserGroup).GetCurreryList(uid, verify, search)
+	ulist, err := new(UserGroup).GetCurrencyList(uid, verify, search)
 	if err != nil {
 		return nil, err
 	}

@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
+	"time"
 )
 
 type TokenController struct {
@@ -41,8 +42,43 @@ func (this *TokenController) Router(r *gin.Engine) {
 		g.GET("/token_order_fee_total", this.GetOderFeeTotalList)
 		//提币手续费汇总表
 		g.GET("/token_inout_daily_sheet",this.GetTokenInOutDailySheetList)
+		//仪表盘
+		//手续费走势图
+		g.GET("/fee_trend_map",this.GetFeeTrendMap)
 	}
 }
+func (this*TokenController) GetFeeTrendMap(c*gin.Context)  {
+	//手续费 注：当天
+	//币币交易手续费
+	tokenFee,err:=new(models.Trade).GetTodayFee()
+	if err!=nil{
+		this.RespErr(c,err)
+		return
+	}
+	fmt.Println("---------------->0")
+	//法币交易手续费
+	currencyTotalFee,err:=new(models.Order).GetOrderDayFee()
+	if err!=nil{
+		this.RespErr(c,err)
+		return
+	}
+	fmt.Println("---------------->1")
+	//提币手续费
+	outTokenFee,err:=new(models.TokenInout).GetOutTokenFee()
+	if err!=nil{
+		this.RespErr(c,err)
+		return
+	}
+	fmt.Println("---------------->2")
+	this.Put(c,"tFee",tokenFee)
+	this.Put(c,"cFee",currencyTotalFee)
+	this.Put(c,"oFee",outTokenFee)
+	date:=fmt.Sprintf("%02d%02d",time.Now().Month(),time.Now().Day())
+	this.Put(c,"date",date)
+	this.RespOK(c)
+	return
+}
+
 //提币手续费汇总表
 func (this*TokenController)GetTokenInOutDailySheetList(c*gin.Context)  {
 	req := struct {
