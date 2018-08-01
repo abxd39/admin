@@ -417,13 +417,9 @@ func (w *WebUser) GetTotalUser() (int, int, int, error) {
 		return 0, 0, 0, err
 	}
 	upDay := Count.TodayCount - Count.UpDayCount
-	if upDay <= 0 {
-		upDay = 0
-	}
+
 	upWeek := Count.TodayCount - Count.UpWeekCount
-	if upWeek <= 0 {
-		upWeek = 0
-	}
+
 	return Count.TotalCount, upDay, upWeek, nil
 }
 

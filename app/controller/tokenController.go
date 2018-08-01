@@ -70,8 +70,8 @@ func (this*TokenController) GetFeeTrendMap(c*gin.Context)  {
 		return
 	}
 	fmt.Println("---------------->2")
-	this.Put(c,"tFee",tokenFee)
-	this.Put(c,"cFee",currencyTotalFee)
+	//this.Put(c,"tFee",)
+	this.Put(c,"tradeFee",currencyTotalFee+tokenFee)
 	this.Put(c,"oFee",outTokenFee)
 	date:=fmt.Sprintf("%02d%02d",time.Now().Month(),time.Now().Day())
 	this.Put(c,"date",date)
