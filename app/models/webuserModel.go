@@ -148,7 +148,7 @@ func (w *UserEx) GetInViteList(page, rows int, search string) (*ModelList, error
 		Cnt int
 	}
 	var temp test
-	_, err := engine.SQL(fmt.Sprintf(countSql,sql)).Get(&temp)
+	_, err := engine.SQL(fmt.Sprintf(countSql, sql)).Get(&temp)
 
 	fmt.Println("cnt=", temp.Cnt)
 	fmt.Println("page=", page, "rows=", rows, "cnt=", temp.Cnt)
@@ -156,7 +156,7 @@ func (w *UserEx) GetInViteList(page, rows int, search string) (*ModelList, error
 	list := make([]InviteGroup, 0)
 	limitSql = fmt.Sprintf(limitSql, modelList.PageSize, offset)
 	fmt.Println("sql2=", sql+limitSql)
-	err = engine.SQL( sql + limitSql).Find(&list)
+	err = engine.SQL(sql + limitSql).Find(&list)
 	if err != nil {
 		return nil, err
 	}
@@ -377,14 +377,20 @@ func (w *WebUser) ModifyUserStatus(uid, status int) error {
 	return nil
 }
 
-func (w *WebUser) GetTotalUser() (int, error) {
+func (w *WebUser) GetTotalUser() (int, int, int, error) {
 	engine := utils.Engine_common
 	u := new(WebUser)
 	count, err := engine.Count(u)
 	if err != nil {
-		return 0, err
+		return 0, 0, 0, err
 	}
-	return int(count), nil
+	//获取当前时间
+	//current:=time.Now().Unix()//当前时间戳
+
+	//叫上日 涨幅
+
+	//叫上周同日 涨幅
+	return int(count), 0, 0, nil
 }
 
 func (w *WebUser) GetAllUser(page, rows, status int, search string) (*ModelList, error) {

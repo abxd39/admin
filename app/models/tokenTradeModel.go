@@ -3,8 +3,6 @@ package models
 import (
 	"admin/utils"
 	"strconv"
-	"runtime"
-	"fmt"
 )
 
 //bibi 交易表
@@ -24,7 +22,6 @@ type Trade struct {
 	States       int    `xorm:"comment('0是挂单，1是部分成交,2成交， -1撤销') INT(11)"`
 }
 
-
 type TradeEx struct {
 	Trade          `xorm:"extends"`
 	ConfigTokenCny `xorm:"extends"`
@@ -33,7 +30,7 @@ type TradeEx struct {
 }
 
 type TotalTradeCNY struct {
-	Date  int64 //日期
+	Date  int64  //日期
 	Buy   uint64 //买入总额
 	Sell  uint64 //卖出总额
 	Total uint64 // 买卖总金额
@@ -48,11 +45,7 @@ func (t *TotalTradeCNY) TableName() string {
 }
 
 func (this *Trade) TotalTotalTradeList(page, rows int, date uint64) (*ModelList, error) {
-	funcName,file,line,ok := runtime.Caller(0)
-	if ok {
-		fmt.Println("func name: " + runtime.FuncForPC(funcName).Name())
-		fmt.Printf("file: %s, line: %d\n",file,line)
-	}
+
 	engine := utils.Engine_token
 	query := engine.Desc("deal_time")
 	query = query.Join("left", "config_token_cny p", "trade.token_id = p.token_id")
@@ -87,7 +80,7 @@ func (this *Trade) TotalTotalTradeList(page, rows int, date uint64) (*ModelList,
 		key := v.DealTime / 1000
 		for i, _ := range totalDateList {
 			if _, ok := totalDateList[i][key]; !ok {
-				dateMap[key] = &TotalTradeCNY{Date:v.DealTime}
+				dateMap[key] = &TotalTradeCNY{Date: v.DealTime}
 				totalDateList = append(totalDateList, dateMap)
 			}
 			strBuy := this.Int64MulInt64By8BitString(v.Num, v.ConfigTokenCny.Price)
@@ -95,7 +88,7 @@ func (this *Trade) TotalTotalTradeList(page, rows int, date uint64) (*ModelList,
 			if err != nil {
 				continue
 			}
-			totalDateList[i][key].Buy+=buy
+			totalDateList[i][key].Buy += buy
 
 		}
 
@@ -113,7 +106,7 @@ func (this *Trade) TotalTotalTradeList(page, rows int, date uint64) (*ModelList,
 			if err != nil {
 				continue
 			}
-			totalDateList[i][key].Sell+=sell
+			totalDateList[i][key].Sell += sell
 		}
 
 	}
@@ -121,7 +114,7 @@ func (this *Trade) TotalTotalTradeList(page, rows int, date uint64) (*ModelList,
 	return nil, nil
 }
 
-func (this *Trade) GetTokenRecordList(page, rows,  opt, uid int,date uint64, name  string) (*ModelList, error) {
+func (this *Trade) GetTokenRecordList(page, rows, opt, uid int, date uint64, name string) (*ModelList, error) {
 	engine := utils.Engine_token
 
 	query := engine.Desc("uid")
@@ -135,7 +128,7 @@ func (this *Trade) GetTokenRecordList(page, rows,  opt, uid int,date uint64, nam
 		query = query.Where("uid=?", uid)
 	}
 	if date != 0 {
-		query =query.Where("deal_time BETWEEN ? AND ? ",date,date+86400)
+		query = query.Where("deal_time BETWEEN ? AND ? ", date, date+86400)
 	}
 	tempQuery := *query
 
@@ -169,7 +162,7 @@ func (this *Trade) GetFeeInfoList(page, rows, uid, opt int, date uint64, name st
 		query = query.Where("uid=?", uid)
 	}
 	if date != 0 {
-		query = query.Where("deal_time BETWEEN ? AND ?", date, date+864000)
+		query = query.Where("deal_time BETWEEN ? AND ?", date, date+86400)
 	}
 	if opt != 0 {
 		query = query.Where("opt=?", opt)
@@ -197,5 +190,3 @@ func (this *Trade) GetFeeInfoList(page, rows, uid, opt int, date uint64, name st
 	mlist.Items = list
 	return mlist, nil
 }
-
-

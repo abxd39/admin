@@ -31,6 +31,7 @@ func main() {
 	app.Router(r)
 	//启动定时器
 	go new(models.TokenFeeDailySheet).BoottimeTimingSettlement()
+	go new(models.WalletInoutDailySheet).BoottimeTimingSettlement()
 	r.Run(fmt.Sprintf(":%d", utils.Cfg.MustInt("http", "port")))
 }
 

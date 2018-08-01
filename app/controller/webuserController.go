@@ -4,6 +4,7 @@ import (
 	"admin/app/models"
 	"admin/utils"
 	"fmt"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -18,7 +19,7 @@ func (w *WebUserManageController) Router(r *gin.Engine) {
 		g.GET("/total_user", w.GetTotalUser)                          //获取用户平台注册用户总数
 		g.GET("/total_property", w.GetTotalProperty)                  //总资产统计列表
 		g.GET("/login_log", w.GetLoginList)                           //用户登录日志
-		g.GET("/seconde_certification", w.GetSecodeCertificationList) //获取二级认证列表
+		g.GET("/seconde_certification", w.GetSecondCertificationList) //获取二级认证列表
 		g.POST("/modeify_user_status", w.ModifyUserStatus)            //修改用户状态
 		g.POST("/addwhite_list", w.AddWhiteList)                      //增加删除白名单
 		g.GET("/user_whitelist", w.WhiteUserList)                     //白名单用户列表
@@ -30,8 +31,8 @@ func (w *WebUserManageController) Router(r *gin.Engine) {
 		g.POST("/second_affirm", w.SecondAffirm)                      //审核二级实名认证
 		g.POST("/trade_rule", w.SetTradeRule)                         //设置交易规则
 		g.GET("/get_trade_rule", w.GetTradeRule)                      //获取交易规则
-		g.GET("/get_invite_list", w.GetInviteList)                     //获取 p2-5好友邀列表 被邀请人列表 邀请人—账号：18888888888
-		g.GET("/get_invite_info", w.GetInviteInfoList)                 //p2-5-1邀请人统计列表
+		g.GET("/get_invite_list", w.GetInviteList)                    //获取 p2-5好友邀列表 被邀请人列表 邀请人—账号：18888888888
+		g.GET("/get_invite_info", w.GetInviteInfoList)                //p2-5-1邀请人统计列表
 	}
 }
 
@@ -51,12 +52,12 @@ func (w *WebUserManageController) GetInviteInfoList(c *gin.Context) {
 		w.RespErr(c, err)
 		return
 	}
-	list,err:=new(models.UserEx).GetInviteInfoList(req.Uid,req.Page,req.Rows,req.Date,req.Name,req.Account)
-	if err!=nil{
-		w.RespErr(c,err)
+	list, err := new(models.UserEx).GetInviteInfoList(req.Uid, req.Page, req.Rows, req.Date, req.Name, req.Account)
+	if err != nil {
+		w.RespErr(c, err)
 		return
 	}
-	w.Put(c,"list",list)
+	w.Put(c, "list", list)
 	w.RespOK(c)
 	return
 }
@@ -310,7 +311,7 @@ func (w *WebUserManageController) ModifyUserStatus(c *gin.Context) {
 	return
 }
 
-func (w *WebUserManageController) GetSecodeCertificationList(c *gin.Context) {
+func (w *WebUserManageController) GetSecondCertificationList(c *gin.Context) {
 	req := struct {
 		Page         int    `form:"page" json:"page" binding:"required"`
 		Rows         int    `form:"rows" json:"rows" `
@@ -432,12 +433,14 @@ func (w *WebUserManageController) GetTotalProperty(c *gin.Context) {
 
 func (w *WebUserManageController) GetTotalUser(c *gin.Context) {
 	//fmt.Printf("list param %#v\n", req)
-	total, err := new(models.WebUser).GetTotalUser()
+	total, upday, upweek, err := new(models.WebUser).GetTotalUser()
 	if err != nil {
 		w.RespErr(c, err)
 		return
 	}
-	w.Put(c, "list", total)
+	w.Put(c, "upweek", upweek)
+	w.Put(c, "upday", upday)
+	w.Put(c, "total", total)
 	w.RespOK(c)
 	return
 }

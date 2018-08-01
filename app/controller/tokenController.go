@@ -36,8 +36,6 @@ func (this *TokenController) Router(r *gin.Engine) {
 		g.GET("/total_token_list", this.GetTotalTokenList) //
 		g.GET("/total_token_info_list", this.GetTotalTokenInfoList)
 
-		//g.GET("/in_token_list",this.GetInTokenList)
-		//g.GET("/in_token_info_list",this.GetInTokenInfoList)
 		//日划转汇总
 		//币币交易手续费汇总
 		g.GET("/token_order_fee_total", this.GetOderFeeTotalList)
@@ -478,6 +476,7 @@ func (this *TokenController) GetTokenCashList(c *gin.Context) {
 		this.RespErr(c, err)
 		return
 	}
+	fmt.Println("121212")
 	this.Put(c, "list", list)
 	this.RespOK(c, "成功")
 	return
