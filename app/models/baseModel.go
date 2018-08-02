@@ -43,3 +43,9 @@ func (*BaseModel)Int64MulInt64By8BitString(a int64, b int64) string {
 	r := n.Div(decimal.New(100000000, 0))
 	return r.String()
 }
+
+func (*BaseModel)Float64ToInt64By8Bit(s float64) int64 {
+	d := decimal.NewFromFloat(s)
+	l := d.Round(8).Coefficient().Int64()
+	return l
+}

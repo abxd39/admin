@@ -187,8 +187,10 @@ func (w *WebUser) SecondAffirmLimit(uid, status int) error {
 	if status == utils.AUTH_TWO {
 		wu.SecurityAuth = wu.SecurityAuth ^ utils.AUTH_TWO // 为实名状态标识
 	}
+	wu.SetTardeMark = wu.SetTardeMark &^ 4
 	_, err = query.Update(&WebUser{
 		SecurityAuth: wu.SecurityAuth,
+		SetTardeMark:wu.SetTardeMark,
 	})
 	if err != nil {
 		return err
@@ -216,8 +218,11 @@ func (w *WebUser) FirstAffirmLimit(uid, status int) error {
 	if status == utils.AUTH_FIRST {
 		wu.SecurityAuth = wu.SecurityAuth ^ utils.AUTH_FIRST // 16 为实名状态标识
 	}
+	//删除 申请状态
+	wu.SecurityAuth = wu.SecurityAuth &^2
 	_, err = query.Update(&WebUser{
 		SecurityAuth: wu.SecurityAuth,
+		SetTardeMark:wu.SetTardeMark,
 	})
 	if err != nil {
 		return err

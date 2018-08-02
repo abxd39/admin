@@ -55,21 +55,21 @@ func (this*TokenController) GetFeeTrendMap(c*gin.Context)  {
 		this.RespErr(c,err)
 		return
 	}
-	fmt.Println("---------------->0")
+	//fmt.Println("---------------->0")
 	//法币交易手续费
 	currencyTotalFee,err:=new(models.Order).GetOrderDayFee()
 	if err!=nil{
 		this.RespErr(c,err)
 		return
 	}
-	fmt.Println("---------------->1")
+	//fmt.Println("---------------->1")
 	//提币手续费
 	outTokenFee,err:=new(models.TokenInout).GetOutTokenFee()
 	if err!=nil{
 		this.RespErr(c,err)
 		return
 	}
-	fmt.Println("---------------->2")
+	//fmt.Println("---------------->2")
 	//this.Put(c,"tFee",)
 	this.Put(c,"tradeFee",currencyTotalFee+tokenFee)
 	this.Put(c,"oFee",outTokenFee)
