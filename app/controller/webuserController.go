@@ -33,7 +33,96 @@ func (w *WebUserManageController) Router(r *gin.Engine) {
 		g.GET("/get_trade_rule", w.GetTradeRule)                      //获取交易规则
 		g.GET("/get_invite_list", w.GetInviteList)                    //获取 p2-5好友邀列表 被邀请人列表 邀请人—账号：18888888888
 		g.GET("/get_invite_info", w.GetInviteInfoList)                //p2-5-1邀请人统计列表
+
+		//用户系统设置
+		g.POST("/token_system_add", w.TokenSystemAdd)
+		g.GET("/delete_system",w.DeleteSystem)
+		g.GET("/get_system",w.GetSystem)
+		g.GET("/get_system_list",w.GetSystemList)
 	}
+}
+
+func (w *WebUserManageController) DeleteSystem(c *gin.Context) {
+	req := struct {
+		Id   int    `form:"id" json:"id" binding:"required"`
+	}{}
+	err := c.ShouldBind(&req)
+	if err != nil {
+		utils.AdminLog.Errorln("param buind failed !!")
+		w.RespErr(c, err)
+		return
+	}
+
+	err=new(models.Tokens).DeleteSystem(req.Id)
+	if err!=nil{
+		w.RespErr(c,err)
+		return
+	}
+	w.RespOK(c)
+}
+
+// 获取单条记录
+func (w *WebUserManageController) GetSystem(c *gin.Context) {
+	req := struct {
+		Id   int    `form:"id" json:"id" binding:"required"`
+	}{}
+	err := c.ShouldBind(&req)
+	if err != nil {
+		utils.AdminLog.Errorln("param buind failed !!")
+		w.RespErr(c, err)
+		return
+	}
+	result ,err:=new(models.Tokens).GetSystem(req.Id)
+	if err!=nil{
+		w.RespErr(c,err)
+		return
+	}
+	w.Put(c,"data",result)
+	w.RespOK(c)
+}
+//系统设置 获取列表
+func (w *WebUserManageController) GetSystemList(c *gin.Context) {
+	req := struct {
+		Page   int    `form:"page" json:"page" binding:"required"`
+		Rows   int    `form:"rows" json:"rows" `
+		Status int    `form:"status" json:"status"`//是否可交易状态
+		In     int    `form:"in" json:"in"`
+		Out    int    `form:"out" json:"out"`
+		Name   string `form :"name" json:"name"`
+	}{}
+	err := c.ShouldBind(&req)
+	if err != nil {
+		utils.AdminLog.Errorln("param buind failed !!")
+		w.RespErr(c, err)
+		return
+	}
+	list,err:=new(models.Tokens).GetSystemList(req.Page,req.Rows,req.Status,req.In,req.Out,req.Name)
+	if err!=nil{
+		w.RespErr(c,err)
+		return
+	}
+	w.Put(c,"list",list)
+	w.RespOK(c)
+	return
+}
+
+//系统设置 币种配置
+func (w *WebUserManageController) TokenSystemAdd(c *gin.Context) {
+	// 获取参数
+	var req models.Tokens
+	err := c.ShouldBind(&req)
+	if err != nil {
+		utils.AdminLog.Errorf(err.Error())
+		w.RespErr(c, err)
+		return
+	}
+	err = new(models.Tokens).TokensSystemAdd(req)
+	if err != nil {
+		w.RespErr(c, err)
+		return
+	}
+	w.RespOK(c)
+	return
 }
 
 //邀请人统计表—账号：18888888888

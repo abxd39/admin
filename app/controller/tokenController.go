@@ -46,22 +46,11 @@ func (this *TokenController) Router(r *gin.Engine) {
 		//仪表盘
 		//手续费走势图
 		g.GET("/fee_trend_map", this.GetFeeTrendMap)
+
 	}
 }
 
-//系统设置 币种配置
-func (this *TokenController) OperatorTokenSystemSet(c *gin.Context) {
-	// 获取参数
-	var req models.Tokens
-	err := c.ShouldBind(&req)
-	if err != nil {
-		utils.AdminLog.Errorf(err.Error())
-		this.RespErr(c, err)
-		return
-	}
 
-	return
-}
 
 func (this *TokenController) GetFeeTrendMap(c *gin.Context) {
 	//手续费 注：当天
