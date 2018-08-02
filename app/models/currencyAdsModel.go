@@ -83,19 +83,18 @@ func (this *Ads) DownTradeAds(id, uid int) error {
 	engine := utils.Engine_currency
 	query := engine.Desc("id")
 	query = query.Where("id=? AND uid=?", id, uid)
-	UpUery := *query
 	has, err := query.Exist(&Ads{})
 	if err != nil {
-		fmt.Println("0.0.0.0.0.0.0.0.00.0.0.")
+		//fmt.Println("0.0.0.0.0.0.0.0.00.0.0.")
 		return err
 	}
 	if !has {
 		return errors.New(" 订单不存在！！")
 	}
-	_, err = UpUery.Update(&Ads{
-		States: 2, //2 下架 1 上架
-	})
+	//sql:=fmt.Sprintf()
+	_, err = engine.Exec("UPDATE g_currency.`ads` a SET a.`states`=0 WHERE a.`id`=? AND a.`uid` =?",id,uid)
 	if err != nil {
+		fmt.Println("what fuck you ")
 		return err
 	}
 	return nil

@@ -6,8 +6,9 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/gin-gonic/gin"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 type TokenController struct {
@@ -41,51 +42,66 @@ func (this *TokenController) Router(r *gin.Engine) {
 		//币币交易手续费汇总
 		g.GET("/token_order_fee_total", this.GetOderFeeTotalList)
 		//提币手续费汇总表
-		g.GET("/token_inout_daily_sheet",this.GetTokenInOutDailySheetList)
+		g.GET("/token_inout_daily_sheet", this.GetTokenInOutDailySheetList)
 		//仪表盘
 		//手续费走势图
-		g.GET("/fee_trend_map",this.GetFeeTrendMap)
+		g.GET("/fee_trend_map", this.GetFeeTrendMap)
 	}
 }
-func (this*TokenController) GetFeeTrendMap(c*gin.Context)  {
+
+//系统设置 币种配置
+func (this *TokenController) OperatorTokenSystemSet(c *gin.Context) {
+	// 获取参数
+	var req models.Tokens
+	err := c.ShouldBind(&req)
+	if err != nil {
+		utils.AdminLog.Errorf(err.Error())
+		this.RespErr(c, err)
+		return
+	}
+
+	return
+}
+
+func (this *TokenController) GetFeeTrendMap(c *gin.Context) {
 	//手续费 注：当天
 	//币币交易手续费
-	tokenFee,err:=new(models.Trade).GetTodayFee()
-	if err!=nil{
-		this.RespErr(c,err)
+	tokenFee, err := new(models.Trade).GetTodayFee()
+	if err != nil {
+		this.RespErr(c, err)
 		return
 	}
 	//fmt.Println("---------------->0")
 	//法币交易手续费
-	currencyTotalFee,err:=new(models.Order).GetOrderDayFee()
-	if err!=nil{
-		this.RespErr(c,err)
+	currencyTotalFee, err := new(models.Order).GetOrderDayFee()
+	if err != nil {
+		this.RespErr(c, err)
 		return
 	}
 	//fmt.Println("---------------->1")
 	//提币手续费
-	outTokenFee,err:=new(models.TokenInout).GetOutTokenFee()
-	if err!=nil{
-		this.RespErr(c,err)
+	outTokenFee, err := new(models.TokenInout).GetOutTokenFee()
+	if err != nil {
+		this.RespErr(c, err)
 		return
 	}
 	//fmt.Println("---------------->2")
 	//this.Put(c,"tFee",)
-	this.Put(c,"tradeFee",currencyTotalFee+tokenFee)
-	this.Put(c,"oFee",outTokenFee)
-	date:=fmt.Sprintf("%02d%02d",time.Now().Month(),time.Now().Day())
-	this.Put(c,"date",date)
+	this.Put(c, "tradeFee", currencyTotalFee+tokenFee)
+	this.Put(c, "oFee", outTokenFee)
+	date := fmt.Sprintf("%02d%02d", time.Now().Month(), time.Now().Day())
+	this.Put(c, "date", date)
 	this.RespOK(c)
 	return
 }
 
 //提币手续费汇总表
-func (this*TokenController)GetTokenInOutDailySheetList(c*gin.Context)  {
+func (this *TokenController) GetTokenInOutDailySheetList(c *gin.Context) {
 	req := struct {
-		Page int    `form:"page" json:"page" binding:"required"`
-		Rows int    `form:"rows" json:"rows" `
-		Date string `form:"date",json:"date"` //日期
-		TokenId int `form:"tid",json:"tid"`
+		Page    int    `form:"page" json:"page" binding:"required"`
+		Rows    int    `form:"rows" json:"rows" `
+		Date    string `form:"date",json:"date"` //日期
+		TokenId int    `form:"tid",json:"tid"`
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
@@ -93,12 +109,12 @@ func (this*TokenController)GetTokenInOutDailySheetList(c*gin.Context)  {
 		this.RespErr(c, err)
 		return
 	}
-	list,err:=new(models.WalletInoutDailySheet).GetInOutDailSheetList(req.Page,req.Rows,req.TokenId,req.Date)
-	if err!=nil{
-		this.RespErr(c,err)
+	list, err := new(models.WalletInoutDailySheet).GetInOutDailSheetList(req.Page, req.Rows, req.TokenId, req.Date)
+	if err != nil {
+		this.RespErr(c, err)
 		return
 	}
-	this.Put(c,"list",list)
+	this.Put(c, "list", list)
 	this.RespOK(c)
 	return
 }
