@@ -171,37 +171,76 @@ func (w *UserEx) GetInViteList(page, rows int, search string) (*ModelList, error
 //二级认证审核
 func (w *WebUser) SecondAffirmLimit(uid, status int) error {
 	engine := utils.Engine_common
-	query := engine.Where("uid=?", uid)
+	sess:=engine.NewSession()
+	defer sess.Close()
+	if err:=sess.Begin();err!=nil{
+		return err
+	}
+
+	query := sess.Where("uid=?", uid)
 	temp := *query
 	wu := new(WebUser)
 	has, err := temp.Get(wu)
 	if err != nil {
+		sess.Rollback()
 		return err
 	}
 	if !has {
 		return errors.New("用户不存在！！")
 	}
+	us :=new(UserSecondaryCertification)
+	has,err=sess.Table("user_secondary_certification").Where("uid=?",uid).Get(us)
+	if err!=nil{
+		return err
+	}
+	if !has{
+		return errors.New("not exists!!")
+	}
+	ReverseSidePath :=us.ReverseSidePath
+	InHandPicturePath:=us.InHandPicturePath
+	PositivePath:=us.PositivePath
 	if status == utils.AUTH_NIL {
+		//审核不通过删除数据
+		//oss
 		wu.SecurityAuth = wu.SecurityAuth &^ utils.AUTH_TWO
+		if _,err=sess.Table("user_secondary_certification").Where("uid=?",uid).Update(&UserSecondaryCertification{
+			ReverseSidePath:"",
+			InHandPicturePath:"",
+			PositivePath:"",
+			VerifyTime:0,
+			VideoRecordingDigital:"",
+		});err!=nil{
+			sess.Rollback()
+			return err
+		}
 	}
 	if status == utils.AUTH_TWO {
 		wu.SecurityAuth = wu.SecurityAuth ^ utils.AUTH_TWO // 为实名状态标识
 	}
-	wu.SetTardeMark = wu.SetTardeMark &^ 4
+	wu.SetTardeMark = wu.SetTardeMark &^ utils.APPLY_FOR_SECOND
 	_, err = query.Update(&WebUser{
 		SecurityAuth: wu.SecurityAuth,
-		SetTardeMark:wu.SetTardeMark,
 	})
 	if err != nil {
 		return err
 	}
+	sess.Commit()
+	a:=new(Article)
+	a.DeletFileToAliCloud(ReverseSidePath)
+	a.DeletFileToAliCloud(InHandPicturePath)
+	a.DeletFileToAliCloud(PositivePath)
 	return nil
 }
 
 //审核实名
 func (w *WebUser) FirstAffirmLimit(uid, status int) error {
 	engine := utils.Engine_common
-	query := engine.Where("uid=?", uid)
+	sess := engine.NewSession()
+	defer sess.Close()
+	if err := sess.Begin(); err != nil {
+		return err
+	}
+	query := sess.Where("uid=?", uid)
 	temp := *query
 	wu := new(WebUser)
 	has, err := temp.Get(wu)
@@ -212,22 +251,40 @@ func (w *WebUser) FirstAffirmLimit(uid, status int) error {
 		return errors.New("用户不存在！！")
 	}
 
+	//
 	if status == utils.AUTH_NIL {
+		//审核不过删除信息
+		has, err := sess.Table("user_ex").Where("uid=?", uid).Exist(&UserEx{})
+		if err != nil {
+			sess.Rollback()
+			return err
+		}
+		if !has {
+			return errors.New("not exists")
+		}
+		if _, err = sess.Table("user_ex").Where("uid=?", uid).Update(&UserEx{
+			IdentifyCard: "",
+			RealName:     "",
+		}); err != nil {
+			sess.Rollback()
+			return err
+		}
 		wu.SecurityAuth = wu.SecurityAuth &^ utils.AUTH_FIRST
 	}
 	if status == utils.AUTH_FIRST {
 		wu.SecurityAuth = wu.SecurityAuth ^ utils.AUTH_FIRST // 16 为实名状态标识
 	}
 	//删除 申请状态
-	wu.SecurityAuth = wu.SecurityAuth &^2
+	wu.SetTardeMark = wu.SetTardeMark &^ utils.APPLY_FOR_FIRST
 	_, err = query.Update(&WebUser{
 		SecurityAuth: wu.SecurityAuth,
-		SetTardeMark:wu.SetTardeMark,
+		SetTardeMark: wu.SetTardeMark,
 	})
 	if err != nil {
+		sess.Rollback()
 		return err
 	}
-
+	sess.Commit()
 	return nil
 }
 

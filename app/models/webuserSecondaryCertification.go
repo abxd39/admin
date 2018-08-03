@@ -7,18 +7,20 @@ import (
 )
 
 //二级认证结构
+
 type UserSecondaryCertification struct {
 	BaseModel             `xorm:"-"`
 	Id                    int    `xorm:"not null pk autoincr comment('自增id') INT(10)"`
 	Uid                   int    `xorm:"not null comment('用户uid') INT(64)"`
-	VerifyCount           int    `xorm:"not null comment('认证次数') TINYINT(4)"`
-	VerifyTime            int    `xorm:"not null comment('认证时间') VARCHAR(100)"`
+	VerifyCount           int    `xorm:"not null default 0 comment('认证次数') TINYINT(4)"`
+	VerifyTime            int    `xorm:"not null comment('认证时间戳') INT(11)"`
 	VideoRecordingDigital string `xorm:"not null comment('视频录制的数字') VARCHAR(100)"`
-	//VerifyStatus          int    `xorm:"not null comment('认证状态，1通过认证，2认证失败') TINYINT(4)"`
-	PositivePath    string `xorm:"not null comment('身份证正面图片路径') VARCHAR(100)"`
-	ReverseSidePath string `xorm:"not null comment('身份证反面图片路径') VARCHAR(100)"`
-	VideoPath       string `xorm:"not null comment('视频路径') VARCHAR(100)"`
+	PositivePath          string `xorm:"not null comment('身份证正面图片路径') VARCHAR(100)"`
+	ReverseSidePath       string `xorm:"not null comment('身份证反面图片路径') VARCHAR(100)"`
+	VideoPath             string `xorm:"not null comment('视频路径') VARCHAR(100)"`
+	InHandPicturePath     string `xorm:"not null comment('手持身份证照片路径') VARCHAR(100)"`
 }
+
 
 type UserSecondaryCertificationGroup struct {
 	UserSecondaryCertification `xorm:"extends"`
@@ -69,7 +71,7 @@ func (u *UserSecondaryCertification) GetSecondaryCertificationList(page, rows, v
 	engine := utils.Engine_common
 	query := engine.Desc("id")
 	query = query.Join("INNER", "user", "user.uid=user_secondary_certification.uid")
-	query = query.Join("LEFT", "user_ex", "user_ex.uid = user.uid AND user.set_tarde_mark=4")
+	query = query.Join("LEFT", "user_ex", "user_ex.uid = user.uid AND user.set_tarde_mark & 4=4")
 	query = query.Cols("user_secondary_certification.uid", "user_secondary_certification.verify_count", "user_secondary_certification.verify_time", "user.security_auth", "user_secondary_certification.video_recording_digital", "user.email", "user.phone", "user.status", "user_ex.nick_name")
 	if verify_status ==-1 {//刷选未认证
 		query = query.Where("user.security_auth & ? !=?", utils.AUTH_TWO,utils.AUTH_TWO)
@@ -87,7 +89,6 @@ func (u *UserSecondaryCertification) GetSecondaryCertificationList(page, rows, v
 		temp := fmt.Sprintf(" concat(IFNULL(`user`.`uid`,''),IFNULL(`user`.`phone`,''),IFNULL(`user_ex`.`nick_name`,''),IFNULL(`user`.`email`,'')) LIKE '%%%s%%'  ", search)
 		query = query.Where(temp)
 	}
-	query =query.Where("set_tarde_mark & 4=4")
 	tempquery := *query
 	count, err := tempquery.Count(&UserSecondaryCertificationGroup{})
 	if err != nil {

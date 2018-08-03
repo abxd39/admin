@@ -84,12 +84,14 @@ func (this *EntrustDetail) GetTokenOrderList(page, rows, ad_id, status, start_t,
 	if err != nil {
 		return nil, err
 	}
+
 	offset, modelList := this.Paging(page, rows, int(count))
-	list := make([]EntrustDetail, offset)
+	list := make([]EntrustDetail, 0)
 	err = query.Limit(modelList.PageSize, offset).Find(&list)
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println("modelList.PageSize=",modelList.PageSize,"offset=?",offset)
 	modelList.Items = list
 	return modelList, nil
 }

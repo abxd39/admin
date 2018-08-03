@@ -49,3 +49,9 @@ func (*BaseModel)Float64ToInt64By8Bit(s float64) int64 {
 	l := d.Round(8).Coefficient().Int64()
 	return l
 }
+
+func (*BaseModel)Int64ToFloat64By8Bit(b int64) (x float64) {
+	a := decimal.New(b, -8)
+	x, _ = a.Float64()
+	return
+}

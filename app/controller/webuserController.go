@@ -36,7 +36,7 @@ func (w *WebUserManageController) Router(r *gin.Engine) {
 
 		//用户系统设置
 		g.POST("/token_system_add", w.TokenSystemAdd)
-		g.GET("/delete_system",w.DeleteSystem)
+		g.POST("/delete_system",w.DeleteSystem)
 		g.GET("/get_system",w.GetSystem)
 		g.GET("/get_system_list",w.GetSystemList)
 	}
@@ -88,7 +88,7 @@ func (w *WebUserManageController) GetSystemList(c *gin.Context) {
 		Status int    `form:"status" json:"status"`//是否可交易状态
 		In     int    `form:"in" json:"in"`
 		Out    int    `form:"out" json:"out"`
-		Name   string `form :"name" json:"name"`
+		Name   string `form:"name" json:"name"`
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
@@ -96,6 +96,7 @@ func (w *WebUserManageController) GetSystemList(c *gin.Context) {
 		w.RespErr(c, err)
 		return
 	}
+	fmt.Println("---------------->",req.Name)
 	list,err:=new(models.Tokens).GetSystemList(req.Page,req.Rows,req.Status,req.In,req.Out,req.Name)
 	if err!=nil{
 		w.RespErr(c,err)
@@ -109,14 +110,41 @@ func (w *WebUserManageController) GetSystemList(c *gin.Context) {
 //系统设置 币种配置
 func (w *WebUserManageController) TokenSystemAdd(c *gin.Context) {
 	// 获取参数
-	var req models.Tokens
+	req:=struct {
+		Id        int    `form:"id"  json:"id" `
+		Mark      string `form:"mark" json:"mark" binding:"required" `
+		Detail    string `form:"detail" json:"detail" binding:"required" `
+		Logo      string `form:"logo" json:"logo" binding:"required" json:"logo"`
+		Status               int     `form:"status"  json:"status" binding:"required" json:"status"`
+		InTokenMark          int     `form:"in_mark" json:"in_mark" binding:"required" json:"in_mark"`
+		InTokenLeastBalance  float64   `form:"in_least_balance" json:"in_least_balance" binding:"required" json:"in_least_balance"`
+		OutTokenMark         int     `form:"out_mark" json:"out_mark" binding:"required" json:"out_mark"`
+		OutTokenLeastBalance float64   `form:"out_least_balance" json:"out_least_balance" binding:"required" json:"out_least_balance"`
+		OutTokenFee          float32 `form:"out_fee" json:"out_fee" binding:"required" json:"out_fee"`
+		InRemarks            string  `form:"in_remarks"   json:"in_remarks"`
+		OutRemarks           string  `form:"out_remarks" json:"out_remarks"`
+	}{}
+
 	err := c.ShouldBind(&req)
 	if err != nil {
 		utils.AdminLog.Errorf(err.Error())
 		w.RespErr(c, err)
 		return
 	}
-	err = new(models.Tokens).TokensSystemAdd(req)
+	err = new(models.Tokens).TokensSystemAdd(models.Tokens{
+		Id:req.Id,
+		Mark:req.Mark,
+		Detail:req.Detail,
+		Logo:req.Logo,
+		Status:req.Status,
+		InTokenLeastBalance:new(models.Tokens).Float64ToInt64By8Bit(req.InTokenLeastBalance),
+		OutTokenLeastBalance:new(models.Tokens).Float64ToInt64By8Bit(req.OutTokenLeastBalance),
+		InTokenMark:req.InTokenMark,
+		OutTokenMark:req.OutTokenMark,
+		OutTokenFee:req.OutTokenFee,
+		InRemarks:req.InRemarks,
+		OutRemarks:req.OutRemarks,
+	})
 	if err != nil {
 		w.RespErr(c, err)
 		return

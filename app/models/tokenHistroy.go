@@ -49,7 +49,7 @@ func (this *TokenHistory) GetAddTakeList(page, rows, tid, uid int, date uint64) 
 	}
 
 	offset,mlist:=this.Paging(page,rows,int(count))
-	list:=make([]TokenHistoryGroup,offset)
+	list:=make([]TokenHistoryGroup,0)
 	err=query.Limit(mlist.PageSize,offset).Find(&list)
 	if err!=nil{
 		return nil,err

@@ -8,3 +8,8 @@ const (
 	AUTH_TWO    = 4  //0100		//二级
 	AUTH_FIRST  = 16 //0001 0000 实名认证
 )
+
+const (
+	APPLY_FOR_FIRST=2//实名认证申请状态
+	APPLY_FOR_SECOND=4//二级认证申请状态
+)

@@ -141,7 +141,7 @@ func (this *Trade) GetTokenRecordList(page, rows, opt, uid int, date uint64, nam
 		return nil, err
 	}
 	offset, modelList := this.Paging(page, rows, int(count))
-	list := make([]Trade, offset)
+	list := make([]Trade, 0)
 	//fmt.Printf("$$$$$$$$$$$$$$$%#v\n", rows)
 	err = query.Limit(modelList.PageSize, offset).Find(&list)
 	if err != nil {
@@ -180,7 +180,7 @@ func (this *Trade) GetFeeInfoList(page, rows, uid, opt int, date uint64, name st
 		return nil, err
 	}
 	offset, mlist := this.Paging(page, rows, int(count))
-	list := make([]TradeEx, offset)
+	list := make([]TradeEx, 0)
 	err = ValuQuery.Limit(mlist.PageSize, offset).Find(&list)
 	if err != nil {
 		return nil, err
