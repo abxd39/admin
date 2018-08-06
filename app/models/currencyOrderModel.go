@@ -11,6 +11,7 @@ import (
 // 订单表
 type Order struct {
 	BaseModel   `xorm:"-"`
+	SubductionZero`xorm:"-"`
 	Id          uint64 `xorm:"not null pk autoincr comment('ID')  INT(10)"  json:"id"`
 	OrderId     string `xorm:"not null pk comment('订单ID') INT(10)"   json:"order_id"` // hash( type_id, 6( user_id, + 时间秒）
 	AdId        uint64 `xorm:"not null default 0 comment('广告ID') index INT(10)"  json:"ad_id"`
@@ -46,7 +47,16 @@ type OrderGroup struct {
 	Transfer       float64
 }
 
+type OrderAddName struct {
+	Order          `xorm:"extends"`
+	Mark string `xorm:"VARBINARY(20)" json:"Name"`    // 货币标识
+}
+
 func (o *Order) TableName() string {
+	return "order"
+}
+
+func (o *OrderAddName) TableName() string {
 	return "order"
 }
 
@@ -170,12 +180,16 @@ func (this *Order) GetOrderId(uid []int, status int) ([]OrderGroup, error) {
 
 func (this *Order) GetOrderList(Page, PageNum, AdType, States, TokenId int, StartTime, search string) (*ModelList, error) {
 	engine := utils.Engine_currency
-	query := engine.Desc("id")
+	query := engine.Desc("order.id")
+	query = query.Join("LEFT", "g_common.tokens t", "order.token_id=t.id")
 	if AdType != 0 {
 		query = query.Where("ad_type=?", AdType)
 	}
 	if States == 5 {
-		query = query.Where("states=?", 0)
+		query = query.Cols("states").Where("states=?", 0)
+	}
+	if States!=0{
+		query = query.Cols("states").Where("states=?", States)
 	}
 	if TokenId != 0 {
 		query = query.Where("token_id=?", TokenId)
@@ -197,7 +211,7 @@ func (this *Order) GetOrderList(Page, PageNum, AdType, States, TokenId int, Star
 	}
 	offset, modelList := this.Paging(Page, PageNum, int(count))
 	//查询符合要求数据
-	list := make([]Order, 0)
+	list := make([]OrderAddName, 0)
 	err = query.Limit(modelList.PageSize, offset).Find(&list)
 	if err != nil {
 		return nil, err
@@ -206,6 +220,12 @@ func (this *Order) GetOrderList(Page, PageNum, AdType, States, TokenId int, Star
 
 	if err != nil {
 		return nil, err
+	}
+	//去掉零
+	for i,v:=range list{
+		num,price :=this.SubductionZeroMethodInt64(v.Num,v.Price)
+		list[i].NumberTrue =num
+		list[i].PriceTrue = price
 	}
 	modelList.Items = list
 	return modelList, nil

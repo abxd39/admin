@@ -205,7 +205,7 @@ func (w *WebUser) SecondAffirmLimit(uid, status int) error {
 		//审核不通过删除数据
 		//oss
 		wu.SecurityAuth = wu.SecurityAuth &^ utils.AUTH_TWO
-		wu.SetTardeMark = wu.SetTardeMark &^ utils.APPLY_FOR_SECOND_NOT_ALREADY //二级认证没有通过
+		wu.SetTardeMark = wu.SetTardeMark ^ utils.APPLY_FOR_SECOND_NOT_ALREADY //二级认证没有通过
 		wu.SetTardeMark = wu.SetTardeMark &^ utils.APPLY_FOR_SECOND //申请撤销
 		fmt.Println("uid=",uid, "------------------>二级认证",wu.SetTardeMark)
 		if _, err = sess.Table("user_secondary_certification").Where("uid=?", uid).Cols("reverse_side_path", "in_hand_picture_path", "positive_path", "verify_time", "video_recording_digital").Update(&UserSecondaryCertification{
@@ -247,7 +247,7 @@ func (w *WebUser) SecondAffirmLimit(uid, status int) error {
 	}
 	//审核过之后不管通没通过审核 实名申请的状态一律设为为 未申请状态
 	wu.SetTardeMark = wu.SetTardeMark &^ utils.APPLY_FOR_SECOND
-	wu.SetTardeMark = wu.SetTardeMark &^ utils.APPLY_FOR_SECOND_NOT_ALREADY //二级认证没有通过
+	wu.SetTardeMark = wu.SetTardeMark ^ utils.APPLY_FOR_SECOND_NOT_ALREADY //二级认证没有通过
 	wu.SetTardeMark = wu.SetTardeMark &^ utils.APPLY_FOR_SECOND //申请撤销
 	_, err = sess.Where("uid=?", uid).Cols("security_auth", "set_tarde_mark").Update(&WebUser{
 		SecurityAuth: wu.SecurityAuth,
@@ -303,7 +303,7 @@ func (w *WebUser) FirstAffirmLimit(uid, status int) error {
 		}
 		wu.SecurityAuth = wu.SecurityAuth &^ utils.AUTH_FIRST
 		wu.SetTardeMark = wu.SetTardeMark &^ utils.APPLY_FOR_FIRST//撤销申请
-		wu.SetTardeMark = wu.SetTardeMark &^ utils.APPLY_FOR_FIRST_NOT_ALREADY //没有通过
+		wu.SetTardeMark = wu.SetTardeMark ^ utils.APPLY_FOR_FIRST_NOT_ALREADY //没有通过
 	}
 	if status == utils.AUTH_FIRST {
 		wu.SecurityAuth = wu.SecurityAuth ^ utils.AUTH_FIRST // 16 为实名状态标识
@@ -382,7 +382,7 @@ func (w *WebUser) GetFirstList(page, rows, status, cstatus int, time uint64, sea
 	query := engine.Desc("user.uid")
 	//query = query.Cols("user_ex.real_name", "user.uid", "user_ex.register_time", "user.phone", "user_ex.nick_name", "user.email", "user.security_auth", "user.status")
 	query = query.Join("INNER", "user_ex", "user_ex.uid=user.uid")
-	//query = query.Where("user.set_tarde_mark &2 =2")
+	query = query.Where("user.set_tarde_mark &2 =2 or user.set_tarde_mark&16=16 or user.security_auth&16=16")
 	if status != 0 {
 		query = query.Where("`user`.`status`=?", status)
 	}

@@ -16,6 +16,10 @@ type UserInfo struct {
 	TokenName string `json:"token_name"`
 }
 
+type SubductionZero struct {
+	PriceTrue float64 `json:"price_true"`
+	NumberTrue float64`json:"number_true"`
+}
 
 func (b *BaseModel) Int64MulInt64By8Bit(ma int64, mb int64) int64 {
 	dd := decimal.New(ma, 0)
@@ -44,7 +48,7 @@ func (*BaseModel)Int64MulInt64By8BitString(a int64, b int64) string {
 	return r.String()
 }
 
-func (*BaseModel)Float64ToInt64By8Bit(s float64) int64 {
+func (b*BaseModel)Float64ToInt64By8Bit(s float64) int64 {
 	d := decimal.NewFromFloat(s)
 	l := d.Round(8).Coefficient().Int64()
 	return l
@@ -53,5 +57,17 @@ func (*BaseModel)Float64ToInt64By8Bit(s float64) int64 {
 func (*BaseModel)Int64ToFloat64By8Bit(b int64) (x float64) {
 	a := decimal.New(b, -8)
 	x, _ = a.Float64()
+	return
+}
+
+func (b*BaseModel) SubductionZeroMethod (num,price uint64)( rNum,rPrice float64)  {
+	rNum =b.Int64ToFloat64By8Bit(int64(num))
+	rPrice =b.Int64ToFloat64By8Bit(int64(price))
+	return
+}
+
+func (b*BaseModel) SubductionZeroMethodInt64 (num,price int64)( rNum,rPrice float64)  {
+	rNum =b.Int64ToFloat64By8Bit(num)
+	rPrice =b.Int64ToFloat64By8Bit(price)
 	return
 }

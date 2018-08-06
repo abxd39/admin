@@ -8,6 +8,24 @@ import (
 )
 
 //bibi 交易表
+//type Trade struct {
+//	BaseModel    `xorm:"-"`
+//	TradeId      int    `xorm:"not null pk autoincr comment('交易表的id') INT(11)"`
+//	TradeNo      string `xorm:"comment('订单号') unique(uni_reade_no) VARCHAR(32)"`
+//	Uid          int64  `xorm:"comment('买家uid') index BIGINT(11)"`
+//	TokenId      int    `xorm:"comment('主货币id') index INT(11)"`
+//	TokenTradeId int    `xorm:"comment('交易币种') INT(11)"`
+//	TokenName    string `xorm:"not null comment('交易对 名称 例如USDT/BTC') VARCHAR(10)"`
+//	Price        int64  `xorm:"comment('价格') BIGINT(20)"`
+//	Num          int64  `xorm:"comment('数量') BIGINT(20)"`
+//	Fee          int64  `xorm:"comment('手续费') BIGINT(20)"`
+//	Opt          int    `xorm:"comment(' buy  1或sell 2') index unique(uni_reade_no) TINYINT(4)"`
+//	DealTime     int64  `xorm:"comment('成交时间') BIGINT(11)"`
+//	States       int    `xorm:"comment('0是挂单，1是部分成交,2成交， -1撤销') INT(11)"`
+//	FeeCny       int64  `xorm:"comment( '手续费折合CNY') BIGINT(20)"`
+//	TotalCny     int64  `xorm:"comment( '总交易额折合CNY') BIGINT(20)"`
+//}
+
 type Trade struct {
 	BaseModel    `xorm:"-"`
 	TradeId      int    `xorm:"not null pk autoincr comment('交易表的id') INT(11)"`
@@ -15,16 +33,18 @@ type Trade struct {
 	Uid          int64  `xorm:"comment('买家uid') index BIGINT(11)"`
 	TokenId      int    `xorm:"comment('主货币id') index INT(11)"`
 	TokenTradeId int    `xorm:"comment('交易币种') INT(11)"`
-	TokenName    string `xorm:"not null comment('交易对 名称 例如USDT/BTC') VARCHAR(10)"`
+	TokenName    string `xorm:"not null default 'BTC' comment('交易对 名称 例如USDT/BTC') VARCHAR(10)"`
 	Price        int64  `xorm:"comment('价格') BIGINT(20)"`
 	Num          int64  `xorm:"comment('数量') BIGINT(20)"`
 	Fee          int64  `xorm:"comment('手续费') BIGINT(20)"`
 	Opt          int    `xorm:"comment(' buy  1或sell 2') index unique(uni_reade_no) TINYINT(4)"`
-	DealTime     int64  `xorm:"comment('成交时间') BIGINT(11)"`
+	DealTime     int64  `xorm:"comment('成交时间') index BIGINT(11)"`
 	States       int    `xorm:"comment('0是挂单，1是部分成交,2成交， -1撤销') INT(11)"`
-	FeeCny       int64  `xorm:"comment( '手续费折合CNY') BIGINT(20)"`
-	TotalCny     int64  `xorm:"comment( '总交易额折合CNY') BIGINT(20)"`
+	FeeCny       int64  `xorm:"comment('手续费折合CNY') BIGINT(20)"`
+	TotalCny     int64  `xorm:"comment('总交易额折合CNY') BIGINT(20)"`
+	EntrustId    string `xorm:"VARCHAR(32)"`
 }
+
 
 type TradeEx struct {
 	Trade          `xorm:"extends"`
@@ -118,11 +138,12 @@ func (this *Trade) TotalTotalTradeList(page, rows int, date uint64) (*ModelList,
 	return nil, nil
 }
 
+//bibi 流水
 func (this *Trade) GetTokenRecordList(page, rows, opt, uid int, date uint64, name string) (*ModelList, error) {
 	engine := utils.Engine_token
 
 	query := engine.Desc("uid")
-	query = query.Where("status=2")
+	query = query.Where("states=2")
 	if name != `` {
 		query = query.Where("token_name=?", name) //交易对
 	}

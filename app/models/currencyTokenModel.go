@@ -10,6 +10,7 @@ type CommonTokens struct {
 	Id   uint32 `xorm:"not null pk autoincr INT(10)" json:"Id"`
 	Name string `xorm:"VARBINARY(20)" json:"CnName"` // 货币中文名
 	Mark string `xorm:"VARBINARY(20)" json:"Name"`    // 货币标识
+	//Detail string `xorm:"VARBINARY(20)" json:"detail"`    // 货币标识
 }
 
 func (t *CommonTokens) TableName() string {

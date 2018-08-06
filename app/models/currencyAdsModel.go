@@ -34,6 +34,7 @@ type Ads struct {
 // 法币交易列表 - 用户虚拟币-订单统计 - 用户虚拟货币资产
 type AdsUserCurrencyCount struct {
 	Ads           `xorm:"extends"`
+	SubductionZero `xorm:"-"`
 	TWOVerifyMark int    `xorm:"-"`
 	Uname         string `xorm:"-"`
 	Phone         string `xorm:"-"`
@@ -116,6 +117,10 @@ func (this *Ads) GetAdsList(page, rows, status, tokenid, tradeid, verify int, se
 	//挂单日期
 	if verify != 0 || status != 0 || search != `` {
 		ulist, err := new(UserGroup).UserList(page, rows, verify, status, search, 0)
+		if err!=nil{
+			return nil,err
+		}
+		fmt.Println("认证刷选",ulist)
 		uid := make([]int64, 0)
 		value, ok := ulist.Items.([]UserGroup)
 		if !ok {
@@ -145,6 +150,12 @@ func (this *Ads) GetAdsList(page, rows, status, tokenid, tradeid, verify int, se
 					break
 				}
 			}
+		}
+		//去掉零
+		for i,v:=range list{
+			num,price :=this.SubductionZeroMethod(v.Num,v.Price)
+			list[i].NumberTrue =num
+			list[i].PriceTrue = price
 		}
 		modelList.Items = list
 		return modelList, nil
@@ -210,6 +221,12 @@ func (this *Ads) GetAdsList(page, rows, status, tokenid, tradeid, verify int, se
 				break
 			}
 		}
+	}
+	//去掉零
+	for i,v:=range list{
+		num,price :=this.SubductionZeroMethod(v.Num,v.Price)
+		list[i].NumberTrue =num
+		list[i].PriceTrue = price
 	}
 	modelList.Items = list
 	return modelList, nil

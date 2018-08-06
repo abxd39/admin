@@ -7,6 +7,7 @@ import "errors"
 //bibi委托表
 type EntrustDetail struct {
 	BaseModel   `xorm:"-"`
+	ReturnValueOperator`xorm:"-"`
 	EntrustId   string `xorm:"not null pk comment('委托记录表（委托管理）') VARCHAR(64)"`
 	Uid         int64  `xorm:"not null comment('用户id') BIGINT(32)"`
 	Symbol      string `xorm:"comment('队列') VARCHAR(64)"`
@@ -23,6 +24,15 @@ type EntrustDetail struct {
 	Mount       int64  `xorm:"comment('总金额') BIGINT(20)"`
 }
 
+type ReturnValueOperator struct {
+	AllNumTrue float64 `json:"all_num_true"`
+	SurplusNumTrue float64 `json:"surplus_num_true"`
+	PriceTrue float64 `json:"price_true"`
+	OnPriceTrue float64 `json:"on_price_true"`
+	FeeTrue float64 `json:"fee_true"`
+	MountTrue float64 `json:"mount_true"`
+	FinishCount float64 `json:"finish_count"`
+} 
 
 func (this *EntrustDetail) IsExist(symbol string) (bool, error) {
 	engine := utils.Engine_token
@@ -79,6 +89,7 @@ func (this *EntrustDetail) GetTokenOrderList(page, rows, ad_id, status, start_t,
 	if uid != 0 {
 		query = query.Where("uid=?", uid)
 	}
+	fmt.Println("debug------>1110")
 	tempQuery := *query
 	count, err := tempQuery.Count(&EntrustDetail{})
 	if err != nil {
@@ -92,6 +103,15 @@ func (this *EntrustDetail) GetTokenOrderList(page, rows, ad_id, status, start_t,
 		return nil, err
 	}
 	fmt.Println("modelList.PageSize=",modelList.PageSize,"offset=?",offset)
+	for i,v:=range list{
+		list[i].PriceTrue = this.Int64ToFloat64By8Bit(v.Price)
+		list[i].FeeTrue = this.Int64ToFloat64By8Bit(v.Fee)
+		list[i].AllNumTrue = this.Int64ToFloat64By8Bit(v.AllNum)
+		list[i].OnPriceTrue = this.Int64ToFloat64By8Bit(v.OnPrice)
+		list[i].SurplusNumTrue =this.Int64ToFloat64By8Bit(v.SurplusNum)
+		list[i].MountTrue = this.Int64ToFloat64By8Bit(v.Mount)
+		list[i].FinishCount = list[i].AllNumTrue-list[i].SurplusNumTrue
+	}
 	modelList.Items = list
 	return modelList, nil
 }
