@@ -173,10 +173,7 @@ func (w *UserEx) GetInViteList(page, rows int, search string) (*ModelList, error
 
 //二级认证审核
 func (w *WebUser) SecondAffirmLimit(uid, status int) error {
-	err := Reflash(uid, "hhhhhhhhhhhhhhhhhh")
-	if err != nil {
-		fmt.Println("缓存清理失败!!!")
-	}
+
 	engine := utils.Engine_common
 	sess := engine.NewSession()
 	defer sess.Close()
@@ -208,7 +205,9 @@ func (w *WebUser) SecondAffirmLimit(uid, status int) error {
 		//审核不通过删除数据
 		//oss
 		wu.SecurityAuth = wu.SecurityAuth &^ utils.AUTH_TWO
-		wu.SetTardeMark = wu.SetTardeMark ^ utils.APPLY_FOR_SECOND_NOT_ALREADY //二级认证没有通过
+		wu.SetTardeMark = wu.SetTardeMark &^ utils.APPLY_FOR_SECOND_NOT_ALREADY //二级认证没有通过
+		wu.SetTardeMark = wu.SetTardeMark &^ utils.APPLY_FOR_SECOND //申请撤销
+		fmt.Println("uid=",uid, "------------------>二级认证",wu.SetTardeMark)
 		if _, err = sess.Table("user_secondary_certification").Where("uid=?", uid).Cols("reverse_side_path", "in_hand_picture_path", "positive_path", "verify_time", "video_recording_digital").Update(&UserSecondaryCertification{
 			ReverseSidePath:       "",
 			InHandPicturePath:     "",
@@ -229,7 +228,7 @@ func (w *WebUser) SecondAffirmLimit(uid, status int) error {
 		if PositivePath != `` {
 			a.DeletFileToAliCloud(PositivePath)
 		}
-		_, err = sess.Where("uid=?", uid).Cols("security_auth", "set_trade_mark").Update(&WebUser{
+		_, err = sess.Where("uid=?", uid).Cols("security_auth","set_tarde_mark").Update(&WebUser{
 			SecurityAuth: wu.SecurityAuth,
 			SetTardeMark: wu.SetTardeMark,
 		})
@@ -237,7 +236,10 @@ func (w *WebUser) SecondAffirmLimit(uid, status int) error {
 			return err
 		}
 		sess.Commit()
-
+		err = Reflash(uid, "hhhhhhhhhhhhhhhhhh")
+		if err != nil {
+			fmt.Println("缓存清理失败!!!")
+		}
 		return nil
 	}
 	if status == utils.AUTH_TWO {
@@ -245,7 +247,9 @@ func (w *WebUser) SecondAffirmLimit(uid, status int) error {
 	}
 	//审核过之后不管通没通过审核 实名申请的状态一律设为为 未申请状态
 	wu.SetTardeMark = wu.SetTardeMark &^ utils.APPLY_FOR_SECOND
-	_, err = sess.Where("uid=?", uid).Cols("security_auth", "set_trade_mark").Update(&WebUser{
+	wu.SetTardeMark = wu.SetTardeMark &^ utils.APPLY_FOR_SECOND_NOT_ALREADY //二级认证没有通过
+	wu.SetTardeMark = wu.SetTardeMark &^ utils.APPLY_FOR_SECOND //申请撤销
+	_, err = sess.Where("uid=?", uid).Cols("security_auth", "set_tarde_mark").Update(&WebUser{
 		SecurityAuth: wu.SecurityAuth,
 		SetTardeMark: wu.SetTardeMark,
 	})
@@ -253,29 +257,25 @@ func (w *WebUser) SecondAffirmLimit(uid, status int) error {
 		return err
 	}
 	sess.Commit()
-	// err=Reflash(uid,"hhhhhhhhhhhhhhhhhh")
-	// if err!=nil{
-	// 	fmt.Println("缓存清理失败!!!")
-	// }
+	err=Reflash(uid,"hhhhhhhhhhhhhhhhhh")
+	if err!=nil{
+		fmt.Println("缓存清理失败!!!")
+	}
 	return nil
 }
 
 //审核实名
 func (w *WebUser) FirstAffirmLimit(uid, status int) error {
-	err := Reflash(uid, "hhhhhhhhhhhhhhhhhh")
-	if err != nil {
-		fmt.Println("缓存清理失败!!!")
-	}
+
 	engine := utils.Engine_common
 	sess := engine.NewSession()
 	defer sess.Close()
 	if err := sess.Begin(); err != nil {
 		return err
 	}
-	query := sess.Where("uid=?", uid)
-	temp := *query
+	//temp := *query
 	wu := new(WebUser)
-	has, err := temp.Get(wu)
+	has, err := sess.Where("uid=?",uid).Get(wu)
 	if err != nil {
 		return err
 	}
@@ -302,13 +302,15 @@ func (w *WebUser) FirstAffirmLimit(uid, status int) error {
 			return err
 		}
 		wu.SecurityAuth = wu.SecurityAuth &^ utils.AUTH_FIRST
+		wu.SetTardeMark = wu.SetTardeMark &^ utils.APPLY_FOR_FIRST//撤销申请
+		wu.SetTardeMark = wu.SetTardeMark &^ utils.APPLY_FOR_FIRST_NOT_ALREADY //没有通过
 	}
 	if status == utils.AUTH_FIRST {
 		wu.SecurityAuth = wu.SecurityAuth ^ utils.AUTH_FIRST // 16 为实名状态标识
 	}
 	//删除 申请状态
 	wu.SetTardeMark = wu.SetTardeMark &^ utils.APPLY_FOR_FIRST
-	_, err = query.Update(&WebUser{
+	_, err = sess.Where("uid=?",uid).Cols("security_auth", "set_tarde_mark").Update(&WebUser{
 		SecurityAuth: wu.SecurityAuth,
 		SetTardeMark: wu.SetTardeMark,
 	})
@@ -317,7 +319,10 @@ func (w *WebUser) FirstAffirmLimit(uid, status int) error {
 		return err
 	}
 	sess.Commit()
-
+	err = Reflash(uid, "hhhhhhhhhhhhhhhhhh")
+	if err != nil {
+		fmt.Println("缓存清理失败!!!")
+	}
 	return nil
 }
 
