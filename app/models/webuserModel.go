@@ -2,8 +2,11 @@ package models
 
 import (
 	"admin/utils"
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"time"
 )
 
@@ -170,17 +173,19 @@ func (w *UserEx) GetInViteList(page, rows int, search string) (*ModelList, error
 
 //二级认证审核
 func (w *WebUser) SecondAffirmLimit(uid, status int) error {
+	err := Reflash(uid, "hhhhhhhhhhhhhhhhhh")
+	if err != nil {
+		fmt.Println("缓存清理失败!!!")
+	}
 	engine := utils.Engine_common
-	sess:=engine.NewSession()
+	sess := engine.NewSession()
 	defer sess.Close()
-	if err:=sess.Begin();err!=nil{
+	if err := sess.Begin(); err != nil {
 		return err
 	}
 
-	query := sess.Where("uid=?", uid)
-	temp := *query
 	wu := new(WebUser)
-	has, err := temp.Get(wu)
+	has, err := sess.Where("uid=?", uid).Get(wu)
 	if err != nil {
 		sess.Rollback()
 		return err
@@ -188,52 +193,79 @@ func (w *WebUser) SecondAffirmLimit(uid, status int) error {
 	if !has {
 		return errors.New("用户不存在！！")
 	}
-	us :=new(UserSecondaryCertification)
-	has,err=sess.Table("user_secondary_certification").Where("uid=?",uid).Get(us)
-	if err!=nil{
+	us := new(UserSecondaryCertification)
+	has, err = sess.Table("user_secondary_certification").Where("uid=?", uid).Get(us)
+	if err != nil {
 		return err
 	}
-	if !has{
+	if !has {
 		return errors.New("not exists!!")
 	}
-	ReverseSidePath :=us.ReverseSidePath
-	InHandPicturePath:=us.InHandPicturePath
-	PositivePath:=us.PositivePath
+	ReverseSidePath := us.ReverseSidePath
+	InHandPicturePath := us.InHandPicturePath
+	PositivePath := us.PositivePath
 	if status == utils.AUTH_NIL {
 		//审核不通过删除数据
 		//oss
 		wu.SecurityAuth = wu.SecurityAuth &^ utils.AUTH_TWO
-		if _,err=sess.Table("user_secondary_certification").Where("uid=?",uid).Update(&UserSecondaryCertification{
-			ReverseSidePath:"",
-			InHandPicturePath:"",
-			PositivePath:"",
-			VerifyTime:0,
-			VideoRecordingDigital:"",
-		});err!=nil{
+		wu.SetTardeMark = wu.SetTardeMark ^ utils.APPLY_FOR_SECOND_NOT_ALREADY //二级认证没有通过
+		if _, err = sess.Table("user_secondary_certification").Where("uid=?", uid).Cols("reverse_side_path", "in_hand_picture_path", "positive_path", "verify_time", "video_recording_digital").Update(&UserSecondaryCertification{
+			ReverseSidePath:       "",
+			InHandPicturePath:     "",
+			PositivePath:          "",
+			VerifyTime:            0,
+			VideoRecordingDigital: "",
+		}); err != nil {
 			sess.Rollback()
 			return err
 		}
+		a := new(Article)
+		if ReverseSidePath != `` {
+			a.DeletFileToAliCloud(ReverseSidePath)
+		}
+		if InHandPicturePath != `` {
+			a.DeletFileToAliCloud(InHandPicturePath)
+		}
+		if PositivePath != `` {
+			a.DeletFileToAliCloud(PositivePath)
+		}
+		_, err = sess.Where("uid=?", uid).Cols("security_auth", "set_trade_mark").Update(&WebUser{
+			SecurityAuth: wu.SecurityAuth,
+			SetTardeMark: wu.SetTardeMark,
+		})
+		if err != nil {
+			return err
+		}
+		sess.Commit()
+
+		return nil
 	}
 	if status == utils.AUTH_TWO {
 		wu.SecurityAuth = wu.SecurityAuth ^ utils.AUTH_TWO // 为实名状态标识
 	}
+	//审核过之后不管通没通过审核 实名申请的状态一律设为为 未申请状态
 	wu.SetTardeMark = wu.SetTardeMark &^ utils.APPLY_FOR_SECOND
-	_, err = query.Update(&WebUser{
+	_, err = sess.Where("uid=?", uid).Cols("security_auth", "set_trade_mark").Update(&WebUser{
 		SecurityAuth: wu.SecurityAuth,
+		SetTardeMark: wu.SetTardeMark,
 	})
 	if err != nil {
 		return err
 	}
 	sess.Commit()
-	a:=new(Article)
-	a.DeletFileToAliCloud(ReverseSidePath)
-	a.DeletFileToAliCloud(InHandPicturePath)
-	a.DeletFileToAliCloud(PositivePath)
+	// err=Reflash(uid,"hhhhhhhhhhhhhhhhhh")
+	// if err!=nil{
+	// 	fmt.Println("缓存清理失败!!!")
+	// }
 	return nil
 }
 
 //审核实名
 func (w *WebUser) FirstAffirmLimit(uid, status int) error {
+	err := Reflash(uid, "hhhhhhhhhhhhhhhhhh")
+	if err != nil {
+		fmt.Println("缓存清理失败!!!")
+	}
 	engine := utils.Engine_common
 	sess := engine.NewSession()
 	defer sess.Close()
@@ -262,7 +294,7 @@ func (w *WebUser) FirstAffirmLimit(uid, status int) error {
 		if !has {
 			return errors.New("not exists")
 		}
-		if _, err = sess.Table("user_ex").Where("uid=?", uid).Update(&UserEx{
+		if _, err = sess.Table("user_ex").Where("uid=?", uid).Cols("identify_card", "real_name").Update(&UserEx{
 			IdentifyCard: "",
 			RealName:     "",
 		}); err != nil {
@@ -285,6 +317,30 @@ func (w *WebUser) FirstAffirmLimit(uid, status int) error {
 		return err
 	}
 	sess.Commit()
+
+	return nil
+}
+
+func Reflash(uid int, key string) error {
+	params := make(map[string]interface{})
+	params["uid"] = uid
+	params["key"] = key
+	bytesData, err := json.Marshal(params)
+	if err != nil {
+		return err
+	}
+	reader := bytes.NewReader(bytesData)
+	url := "http://47.106.136.96:8069/admin/refresh?"
+	request, err := http.NewRequest("POST", url, reader)
+	if err != nil {
+		return err
+	}
+	request.Header.Set("Content-Type", "application/json;charset=UTF-8")
+	client := http.Client{}
+	_, err = client.Do(request)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -294,7 +350,7 @@ func (w *FirstDetail) GetFirstDetail(uid int) (*FirstDetail, error) {
 	query := engine.Desc("user_ex.uid")
 	query = query.Join("INNER", "user", "user.uid=user_ex.uid")
 	query = query.Where("user_ex.uid=?", uid)
-	query = query.Cols("user_ex.register_time", "user_ex.uid", "user_ex.real_name", "user_ex.identify_card", "user_ex.affirm_time", "user_ex.affirm_count", "user.account", "user_ex.nick_name", "user.security_auth")
+	//query = query.Cols("user_ex.register_time", "user_ex.uid", "user_ex.real_name", "user_ex.identify_card", "user_ex.affirm_time", "user_ex.affirm_count", "user.account", "user_ex.nick_name", "user.security_auth")
 	temp := *query
 	has, err := temp.Exist(&FirstDetail{})
 	if err != nil {
@@ -319,9 +375,9 @@ func (w *FirstDetail) GetFirstDetail(uid int) (*FirstDetail, error) {
 func (w *WebUser) GetFirstList(page, rows, status, cstatus int, time uint64, search string) (*ModelList, error) {
 	engine := utils.Engine_common
 	query := engine.Desc("user.uid")
-	query = query.Cols("user_ex.real_name", "user.uid", "user_ex.register_time", "user.phone", "user_ex.nick_name", "user.email", "user.security_auth", "user.status")
+	//query = query.Cols("user_ex.real_name", "user.uid", "user_ex.register_time", "user.phone", "user_ex.nick_name", "user.email", "user.security_auth", "user.status")
 	query = query.Join("INNER", "user_ex", "user_ex.uid=user.uid")
-	query = query.Where("user.set_tarde_mark &2 =2")
+	//query = query.Where("user.set_tarde_mark &2 =2")
 	if status != 0 {
 		query = query.Where("`user`.`status`=?", status)
 	}

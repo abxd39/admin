@@ -44,7 +44,7 @@ func (u *UserSecondaryCertificationGroup) GetSecondaryCertificationOfUid(uid int
 	query := engine.Desc("id")
 	query = query.Join("INNER", "user", "user.uid=user_secondary_certification.uid")
 	query = query.Join("LEFT", "user_ex", "user_ex.uid = user_secondary_certification.uid")
-	query = query.Cols("user_secondary_certification.uid", "user_secondary_certification.verify_count", "user_secondary_certification.verify_time", "user.security_auth", "user_secondary_certification.video_recording_digital", "user.email", "user.phone", "user.status", "user_ex.nick_name")
+	//query = query.Cols("user_secondary_certification.uid", "user_secondary_certification.verify_count", "user_secondary_certification.verify_time", "user.security_auth", "user_secondary_certification.video_recording_digital", "user.email", "user.phone", "user.status", "user_ex.nick_name")
 	query = query.Where("user_secondary_certification.uid=?", uid)
 	tempQuery := *query
 	has, err := tempQuery.Exist(&UserSecondaryCertification{})
@@ -62,6 +62,7 @@ func (u *UserSecondaryCertificationGroup) GetSecondaryCertificationOfUid(uid int
 	if us.SecurityAuth&utils.AUTH_TWO == utils.AUTH_TWO{
 		us.TwoVerifyMark = 1
 	}
+
 	return us, nil
 }
 
@@ -69,40 +70,80 @@ func (u *UserSecondaryCertificationGroup) GetSecondaryCertificationOfUid(uid int
 func (u *UserSecondaryCertification) GetSecondaryCertificationList(page, rows, verify_status, user_status, time int, search string) (*ModelList, error) {
 
 	engine := utils.Engine_common
-	query := engine.Desc("id")
-	query = query.Join("INNER", "user", "user.uid=user_secondary_certification.uid")
-	query = query.Join("LEFT", "user_ex", "user_ex.uid = user.uid AND user.set_tarde_mark & 4=4")
-	query = query.Cols("user_secondary_certification.uid", "user_secondary_certification.verify_count", "user_secondary_certification.verify_time", "user.security_auth", "user_secondary_certification.video_recording_digital", "user.email", "user.phone", "user.status", "user_ex.nick_name")
-	if verify_status ==-1 {//刷选未认证
-		query = query.Where("user.security_auth & ? !=?", utils.AUTH_TWO,utils.AUTH_TWO)
+	//query := engine.Desc("id")
+	//query = query.Join("INNER", "user", "user.uid=user_secondary_certification.uid")
+	//query = query.Join("LEFT", "user_ex", "user_ex.uid = user.uid AND user.set_tarde_mark & 4=4")
+	//query = query.Cols("user_secondary_certification.uid", "user_secondary_certification.verify_count", "user_secondary_certification.verify_time", "user.security_auth", "user_secondary_certification.video_recording_digital", "user.email", "user.phone", "user.status", "user_ex.nick_name")
+	//if verify_status ==-1 {//刷选未认证
+	//	query = query.Where("user.security_auth & ? !=?", utils.AUTH_TWO,utils.AUTH_TWO)
+	//}
+	//if verify_status == utils.AUTH_TWO{
+	//	query = query.Where("user.security_auth & ? =?", utils.AUTH_TWO,utils.AUTH_TWO)
+	//}
+	//if user_status != 0 {
+	//	query = query.Where("status=?", user_status)
+	//}
+	//if time != 0 {
+	//	query = query.Where("verify_time  BETWEEN ? AND ? ", time, time+86400)
+	//}
+	//if len(search) != 0 {
+	//	temp := fmt.Sprintf(" concat(IFNULL(`user`.`uid`,''),IFNULL(`user`.`phone`,''),IFNULL(`user_ex`.`nick_name`,''),IFNULL(`user`.`email`,'')) LIKE '%%%s%%'  ", search)
+	//	query = query.Where(temp)
+	//}
+
+	sql :="SELECT t.phone,t.email,t.status,t.uid,t.set_tarde_mark,t.security_auth,us.verify_time,us.verify_count,us.video_recording_digital "
+	countSql:= "SELECT COUNT(*) num "
+
+	Value:="FROM  g_common.`user` t JOIN g_common.`user_secondary_certification` us ON us.uid =t.uid  JOIN g_common.`user_ex` ex ON us.uid= ex.uid "
+	var condition string
+	if verify_status ==-1{
+		temp:="WHERE ( t.set_tarde_mark &4=4 OR  t.set_tarde_mark&8=8 ) "
+		condition = temp
+	}else {
+		temp:="WHERE (t.security_auth&4=4 OR t.set_tarde_mark &4=4 OR  t.set_tarde_mark&8=8 ) "
+		condition = temp
 	}
-	if verify_status == utils.AUTH_TWO{
-		query = query.Where("user.security_auth & ? =?", utils.AUTH_TWO,utils.AUTH_TWO)
+	if user_status!=0{
+		temp :=fmt.Sprintf("AND t.status=%d ",user_status)
+		condition +=temp
 	}
-	if user_status != 0 {
-		query = query.Where("status=?", user_status)
+	if time!=0{
+		temp:=fmt.Sprintf(" AND us.verify_time BETWEEN %d AND %d ",time, time+86400)
+		condition+=temp
 	}
-	if time != 0 {
-		query = query.Where("verify_time  BETWEEN ? AND ? ", time, time+86400)
-	}
-	if len(search) != 0 {
-		temp := fmt.Sprintf(" concat(IFNULL(`user`.`uid`,''),IFNULL(`user`.`phone`,''),IFNULL(`user_ex`.`nick_name`,''),IFNULL(`user`.`email`,'')) LIKE '%%%s%%'  ", search)
-		query = query.Where(temp)
-	}
-	tempquery := *query
-	count, err := tempquery.Count(&UserSecondaryCertificationGroup{})
+
+	count:= &struct {
+		Num int
+	}{}
+
+	_, err := engine.SQL(countSql+Value+condition).Get(count)
 	if err != nil {
 		return nil, err
 	}
-	offset, modellist := u.Paging(page, rows, int(count))
-	list := make([]UserSecondaryCertificationGroup, 0)
-
-	err = query.Limit(modellist.PageSize, offset).Find(&list)
+	fmt.Println("-------------->num=",count.Num)
+	offset, modellist := u.Paging(page, rows, int(count.Num))
+	type UserCer struct{
+		NickName                   string
+		SecurityAuth               int
+		TwoVerifyMark              int
+		Phone                      string
+		Email                      string
+		Account                    string
+		Status                     int
+		Uid                   int
+		VerifyCount           int
+		VerifyTime            int
+		VideoRecordingDigital string
+	}
+	list := make([] UserCer, 0)
+	limitSql:=fmt.Sprintf("LIMIT %d OFFSET %d",modellist.PageSize,offset)
+	err =engine.SQL(sql+Value+condition+limitSql).Find(&list)
 	if err != nil {
 		return nil, err
 	}
 	for index, _ := range list {
-		if list[index].SecurityAuth&utils.AUTH_TWO == utils.AUTH_TWO {
+		if list[index].SecurityAuth & utils.AUTH_TWO == utils.AUTH_TWO {
+			fmt.Println("---> securityauth=",list[index].SecurityAuth )
 			list[index].TwoVerifyMark = 1
 		}
 	}

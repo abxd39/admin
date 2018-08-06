@@ -27,6 +27,10 @@ type TokensGroup struct {
 	InLeast float64 `xorm:"-"`
 	OutLeast float64 `xorm:"-"`
 }
+
+func(t*Tokens)TableName()string{
+	return "tokens"
+}
 //添加 删除 修改
 
 func (t *Tokens) TokensSystemAdd(tokens Tokens) error {
@@ -98,7 +102,7 @@ func (t *Tokens) GetSystemList(page, rows, status, in, out int, name string) (*M
 	return mList, nil
 }
 
-func (t *Tokens) GetSystem(id int) (*Tokens, error) {
+func (t *Tokens) GetSystem(id int) (*TokensGroup, error) {
 	engine := utils.Engine_common
 	tg:=new(TokensGroup)
 	has, err := engine.Where("id=?", id).Get(tg)
@@ -110,7 +114,7 @@ func (t *Tokens) GetSystem(id int) (*Tokens, error) {
 	}
 	tg.InLeast = t.Int64ToFloat64By8Bit(tg.InTokenLeastBalance)
 	tg.OutLeast =t.Int64ToFloat64By8Bit(tg.OutTokenLeastBalance)
-	return t, nil
+	return tg, nil
 }
 
 func (t *Tokens) DeleteSystem(id int) error {
