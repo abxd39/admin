@@ -2,7 +2,10 @@ package models
 
 import "fmt"
 import "admin/utils"
-import "errors"
+import (
+	"errors"
+	"strconv"
+)
 
 //bibi委托表
 type EntrustDetail struct {
@@ -18,20 +21,21 @@ type EntrustDetail struct {
 	Opt                 int    `xorm:"not null comment('类型 卖出单1 还是买入单0') TINYINT(4)"`
 	Type                int    `xorm:"comment('交易类型') TINYINT(4)"`
 	OnPrice             int64  `xorm:"not null comment('委托价格(挂单价格全价格 卖出价格是扣除手续费的）') BIGINT(20)"`
-	FeePercent          int64  `xorm:"not null comment('手续费比例') BIGINT(20)"`
-	States              int    `xorm:"not null comment('0是挂单，1是部分成交,2成交， 3撤销') TINYINT(4)"`
+	FeePercent          float64  `xorm:"not null comment('手续费比例') BIGINT(20)"`//手续费比例 0.1%=0.001
+	States              int    `xorm:"not null comment('0是挂单，1是部分成交,2成交， 3撤销') TINYINT(4)" json:"states"`
 	CreatedTime         int64  `xorm:"not null comment('添加时间') BIGINT(10)"`
-	Mount               int64  `xorm:"comment('总金额') BIGINT(20)"`
+	Sum               	int64  `xorm:"comment('委托总额') BIGINT(20)"`
 }
+
 
 type ReturnValueOperator struct {
 	AllNumTrue     float64 `json:"all_num_true"`
-	SurplusNumTrue float64 `json:"surplus_num_true"`
+	SurplusNumTrue float64 `json:"surplus_num_true"`//剩余
 	PriceTrue      float64 `json:"price_true"`
-	OnPriceTrue    float64 `json:"on_price_true"`
-	FeeTrue        float64 `json:"fee_true"`
-	MountTrue      float64 `json:"mount_true"`
-	FinishCount    float64 `json:"finish_count"`
+	OnPriceTrue    float64 `json:"on_price_true"` //
+	FeeTrue        float64 `json:"fee_true"` //手续费
+	//MountTrue      float64 `json:"mount_true"`
+	FinishCount    float64 `json:"finish_count"` //已成
 }
 
 func (this *EntrustDetail) IsExist(symbol string) (bool, error) {
@@ -66,7 +70,9 @@ func (this *EntrustDetail) EvacuateOder(uid int, odid string) error {
 func (this *EntrustDetail) GetTokenOrderList(page, rows, ad_id, status, start_t, uid int, symbo, trade_id string) (*ModelList, error) {
 	engine := utils.Engine_token
 	//
+
 	query := engine.Desc("entrust_id")
+	//query = query.Join("left","trade","trade.entrust_id = entrust_id")
 	if trade_id != `` {
 		query = query.Where("entrust_id=?", trade_id)
 	}
@@ -77,7 +83,7 @@ func (this *EntrustDetail) GetTokenOrderList(page, rows, ad_id, status, start_t,
 		query = query.Where("opt=?", ad_id)
 	}
 	if status != 0 {
-		query = query.Cols("states").Where("states=?", status)
+		query = query.Where("states=?", status)
 	}
 	if start_t != 0 {
 		query = query.Where("created_time  BETWEEN ? AND ? ", start_t, start_t+86400)
@@ -102,13 +108,18 @@ func (this *EntrustDetail) GetTokenOrderList(page, rows, ad_id, status, start_t,
 
 	for i, v := range list {
 		list[i].PriceTrue = this.Int64ToFloat64By8Bit(v.Price)
-		list[i].FeeTrue = this.Int64ToFloat64By8Bit(v.FeePercent)
+		list[i].FeeTrue = this.FeePercent * this.Decimal(this.Int64ToFloat64By8Bit(v.Sum))
 		list[i].AllNumTrue = this.Int64ToFloat64By8Bit(v.AllNum)
 		list[i].OnPriceTrue = this.Int64ToFloat64By8Bit(v.OnPrice)
 		list[i].SurplusNumTrue = this.Int64ToFloat64By8Bit(v.SurplusNum)
-		list[i].MountTrue = this.Int64ToFloat64By8Bit(v.Mount)
+		//list[i].MountTrue = this.Int64ToFloat64By8Bit(v.Mount)
 		list[i].FinishCount = list[i].AllNumTrue - list[i].SurplusNumTrue
 	}
 	modelList.Items = list
 	return modelList, nil
+}
+
+func (this *EntrustDetail)Decimal(value float64) float64 {
+	value, _ = strconv.ParseFloat(fmt.Sprintf("%.8f", value), 64)
+	return value
 }

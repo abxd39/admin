@@ -11,7 +11,7 @@ type Ads struct {
 	BaseModel   `xorm:"-"`
 	Id          uint64 `xorm:"not null pk autoincr INT(10)" json:"id"`
 	Uid         int64  `xorm:"INT(10)" json:"uid"`              // 用户ID
-	TypeId      uint32 `xorm:"TINYINT(1)" json:"type_id"`       // 类型:1出售 2购买
+	TypeId      uint32 `xorm:"TINYINT(1)" json:"type_id"`       // 类型:2出售 1购买
 	TokenId     uint32 `xorm:"INT(10)" json:"token_id"`         // 货币类型
 	TokenName   string `xorm:"VARBINARY(36)" json:"token_name"` // 货币名称
 	Price       uint64 `xorm:"BIGINT(20)" json:"price"`         // 单价

@@ -3,6 +3,7 @@ package models
 import (
 	"admin/utils"
 	"fmt"
+	"strconv"
 )
 
 // 用户虚拟货币资产表
@@ -19,14 +20,23 @@ type UserCurrency struct {
 
 //折合 rmb
 type AmountToCny struct {
-	BaseModel        `xorm:"-"`
+	BaseModel    `xorm:"-"`
 	UserCurrency `xorm:"extends"`
-	AmountTo float64 `xorm:"-"`//折合人民币
+	AmountTo     float64 `xorm:"-"json:"amount_to"` //折合人民币
+	Email        string  `json:"email"`
+	Phone        string  `json:"phone"`
+	Status       int     `json:"status"`
+	NickName     string  `json:"nick_name"`
+	Account      string  `json:"account"`
 }
-func (this*AmountToCny) TableName()string{
+
+func (this *AmountToCny) TableName() string {
 	return "user_currency"
 }
 
+//func (this *UserCurrency)TableName()string  {
+//	return "user_currency"
+//}
 //获取单个用户的所有法币资产
 func (this *UserCurrency) GetCurrencyList(page, rows, uid, tokenid int) ([]UserCurrency, int, int, error) {
 	engine := utils.Engine_currency
@@ -97,15 +107,17 @@ func (this *UserCurrency) GetBalance(uid, token_id int) (*UserCurrency, error) {
 
 }
 
-
 //p2-3-1法币账户统计列表
 
-func (this*AmountToCny)CurrencyBalance(page,rows,status int , search string)(*ModelList,error) {
+func (this *AmountToCny) CurrencyBalance(page, rows, status int, search string) (*ModelList, error) {
 	engine := utils.Engine_currency
 	fmt.Println("------->amountToCny")
 	query := engine.Alias("uc").Desc("uc.uid")
-	query =query.Join("INNER","g_common.user u","u.uid=uc.uid")
-	query = query.Join("INNER", "g_common.user_ex ex", "ex.uid=uc.uid")
+	query = query.Cols("uc.uid", "uc.token_id", "uc.freeze", "uc.balance")
+	query = query.Cols("u.phone", "u.email", "u.status", "u.account")
+	query = query.Cols("ex.nick_name")
+	query = query.Join("LEFT", "g_common.user u", "u.uid=uc.uid")
+	query = query.Join("LEFT", "g_common.user_ex ex", "ex.uid=uc.uid")
 	//query =query.GroupBy("uc.token_id")
 	if status != 0 {
 		query = query.Where("u.status=?", status)
@@ -115,17 +127,24 @@ func (this*AmountToCny)CurrencyBalance(page,rows,status int , search string)(*Mo
 		query = query.Where(temp)
 	}
 
-	countQuery:=*query
-	count,err:=countQuery.Count(&AmountToCny{})
-	if err!=nil{
-		return nil,err
+	countQuery := *query
+	count, err := countQuery.Count(&AmountToCny{})
+	if err != nil {
+		return nil, err
 	}
-	offset,mList:=this.Paging(page,rows,int(count))
-	list:=make([]AmountToCny,0)
-	err=query.GroupBy("uc.token_id").Limit(mList.PageSize,offset).Find(&list)
-	if err!=nil{
-		return nil,err
+	offset, mList := this.Paging(page, rows, int(count))
+	list := make([]AmountToCny, 0)
+	err = query.GroupBy("uc.token_id").Limit(mList.PageSize, offset).Find(&list)
+	if err != nil {
+		return nil, err
 	}
-	mList.Items =list
-	return mList,nil
+	mList.Items = list
+	//抓取所有货币的id 和价格 2018-08-07 4：15  折合 无法计算 原因是 没有取价格的的表
+
+	return mList, nil
+}
+
+func (this *AmountToCny)Decimal(value float64) float64 {
+	value, _ = strconv.ParseFloat(fmt.Sprintf("%.2f", value), 64)
+	return value
 }
