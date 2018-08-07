@@ -272,6 +272,7 @@ func (cu *CurrencyController) GetUserDetailList(c *gin.Context) {
 	return
 }
 
+//p2-3-1法币账户统计列表
 func (cu *CurrencyController) GetTotalCurrencyBalance(c *gin.Context) {
 	req := struct {
 		Page     int    `form:"page" json:"page" binding:"required"`
@@ -286,7 +287,8 @@ func (cu *CurrencyController) GetTotalCurrencyBalance(c *gin.Context) {
 		return
 	}
 	fmt.Println(".0.................0.0.0.0.0.0.0.0.......")
-	result, err := new(models.UserGroup).GetAllUser(req.Page, req.Page_num, req.Status, req.Search)
+	//result, err := new(models.UserGroup).GetAllUser(req.Page, req.Page_num, req.Status, req.Search)
+	result,err:=new(models.AmountToCny).CurrencyBalance(req.Page,req.Page_num,req.Status,req.Search)
 	if err != nil {
 		cu.RespErr(c, err)
 	}

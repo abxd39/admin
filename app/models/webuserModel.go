@@ -2,11 +2,11 @@ package models
 
 import (
 	"admin/utils"
-	"bytes"
-	"encoding/json"
+
+	"admin/apis"
 	"errors"
 	"fmt"
-	"net/http"
+
 	"time"
 )
 
@@ -236,7 +236,7 @@ func (w *WebUser) SecondAffirmLimit(uid, status int) error {
 			return err
 		}
 		sess.Commit()
-		err = Reflash(uid, "hhhhhhhhhhhhhhhhhh")
+		err = apis.Reflash(uid)
 		if err != nil {
 			fmt.Println("缓存清理失败!!!")
 		}
@@ -257,7 +257,7 @@ func (w *WebUser) SecondAffirmLimit(uid, status int) error {
 		return err
 	}
 	sess.Commit()
-	err=Reflash(uid,"hhhhhhhhhhhhhhhhhh")
+	err=apis.Reflash(uid)
 	if err!=nil{
 		fmt.Println("缓存清理失败!!!")
 	}
@@ -319,35 +319,14 @@ func (w *WebUser) FirstAffirmLimit(uid, status int) error {
 		return err
 	}
 	sess.Commit()
-	err = Reflash(uid, "hhhhhhhhhhhhhhhhhh")
+	err = apis.Reflash(uid)
 	if err != nil {
 		fmt.Println("缓存清理失败!!!")
 	}
 	return nil
 }
 
-func Reflash(uid int, key string) error {
-	params := make(map[string]interface{})
-	params["uid"] = uid
-	params["key"] = key
-	bytesData, err := json.Marshal(params)
-	if err != nil {
-		return err
-	}
-	reader := bytes.NewReader(bytesData)
-	url := "http://47.106.136.96:8069/admin/refresh?"
-	request, err := http.NewRequest("POST", url, reader)
-	if err != nil {
-		return err
-	}
-	request.Header.Set("Content-Type", "application/json;charset=UTF-8")
-	client := http.Client{}
-	_, err = client.Do(request)
-	if err != nil {
-		return err
-	}
-	return nil
-}
+
 
 //单个用户的认证详情
 func (w *FirstDetail) GetFirstDetail(uid int) (*FirstDetail, error) {

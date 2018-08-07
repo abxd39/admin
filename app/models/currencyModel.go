@@ -2,6 +2,7 @@ package models
 
 import (
 	"admin/utils"
+	"fmt"
 )
 
 // 用户虚拟货币资产表
@@ -14,6 +15,16 @@ type UserCurrency struct {
 	Balance   int64  `xorm:"not null default 0 comment('余额') BIGINT"   json:"balance"`        // 余额
 	Address   string `xorm:"not null default '' comment('充值地址') VARCHAR(255)" json:"address"` // 充值地址
 	Version   int64  `xorm:"version"`
+}
+
+//折合 rmb
+type AmountToCny struct {
+	BaseModel        `xorm:"-"`
+	UserCurrency `xorm:"extends"`
+	AmountTo float64 `xorm:"-"`//折合人民币
+}
+func (this*AmountToCny) TableName()string{
+	return "user_currency"
 }
 
 //获取单个用户的所有法币资产
@@ -84,4 +95,37 @@ func (this *UserCurrency) GetBalance(uid, token_id int) (*UserCurrency, error) {
 	}
 	return data, nil
 
+}
+
+
+//p2-3-1法币账户统计列表
+
+func (this*AmountToCny)CurrencyBalance(page,rows,status int , search string)(*ModelList,error) {
+	engine := utils.Engine_currency
+	fmt.Println("------->amountToCny")
+	query := engine.Alias("uc").Desc("uc.uid")
+	query =query.Join("INNER","g_common.user u","u.uid=uc.uid")
+	query = query.Join("INNER", "g_common.user_ex ex", "ex.uid=uc.uid")
+	//query =query.GroupBy("uc.token_id")
+	if status != 0 {
+		query = query.Where("u.status=?", status)
+	}
+	if len(search) != 0 {
+		temp := fmt.Sprintf(" concat(IFNULL(uc.`uid`,''),IFNULL(u.`phone`,''),IFNULL(ex.`nick_name`,''),IFNULL(u.`email`,'')) LIKE '%%%s%%'  ", search)
+		query = query.Where(temp)
+	}
+
+	countQuery:=*query
+	count,err:=countQuery.Count(&AmountToCny{})
+	if err!=nil{
+		return nil,err
+	}
+	offset,mList:=this.Paging(page,rows,int(count))
+	list:=make([]AmountToCny,0)
+	err=query.GroupBy("uc.token_id").Limit(mList.PageSize,offset).Find(&list)
+	if err!=nil{
+		return nil,err
+	}
+	mList.Items =list
+	return mList,nil
 }
