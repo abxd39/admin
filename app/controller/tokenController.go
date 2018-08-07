@@ -605,8 +605,8 @@ func (this *TokenController) GetTokenOderList(c *gin.Context) {
 		Page_num int    `form:"rows" json:"rows" `
 		Uid      int    `form:"uid" json:"uid" `
 		Trade_id string `form:"trade_id" json:"trade_id" ` //交易类型id 市价交易or 限价交易
-		Start_t  int    `form:"start_t" json:"start_t" binding:"required" `	//时间 默认当天
-		Symbo    string `form:"symbo" json:"symbo" `  //交易对
+		Start_t  int    `form:"start_t" json:"start_t"`	//时间 默认当天
+		Symbo    string `form:"symbo" json:"symbo"  binding:"required" `  //交易对
 		Ad_id    int    `form:"ad_id" json:"ad_id" `  //买卖方向
 		Status   int    `form:"status" json:"staus" ` //订单状态
 	}{}

@@ -3,6 +3,7 @@ package models
 import (
 	"admin/utils"
 	"errors"
+	"fmt"
 )
 
 type UserToken struct {
@@ -18,7 +19,6 @@ type UserToken struct {
 //资产
 type PersonalProperty struct {
 	UserToken `xorm:"extends"`
-	Uid       uint64 `xorm:"-"`
 	NickName  string
 	Phone     string
 	Email     string
@@ -57,7 +57,27 @@ func (t *PersonalProperty) TotalUserBalance(page, rows, status int, search strin
 	query := engine.Alias("ut")
 	query = query.Join("LEFT", "g_common.user u", "u.uid=ut.uid")
 	query = query.Join("LEFT", "g_common.user_ex ex", "ex.uid=ut.uid")
+	if status != 0 {
+		query = query.Where("u.status=?", status)
+	}
+	if search != `` {
+		temp := fmt.Sprintf(" concat(IFNULL(ut.`uid`,''),IFNULL(u.`phone`,''),IFNULL(ex.`nick_name`,''),IFNULL(u.`email`,'')) LIKE '%%%s%%'  ", search)
+		query = query.Where(temp)
 
+	}
+
+	countQuery:=*query
+	count,err:=countQuery.Count(&PersonalProperty{})
+	if err!=nil{
+		return nil,err
+	}
+	 offset,mList:=t.Paging(page,rows,int(count))
+	 list:=make([]PersonalProperty,0)
+	 err=query.Limit(mList.PageSize,offset).Find(&list)
+	if err!=nil{
+		return nil,err
+	}
+	mList.Items = list
 	//if status != 0 || search != `` {
 	//	list, err := new(WebUser).GetAllUser(page, rows, status, search)
 	//	if err != nil {
@@ -147,5 +167,5 @@ func (t *PersonalProperty) TotalUserBalance(page, rows, status int, search strin
 	//}
 	//modelList.Items = tokenlist
 	//return modelList, nil
-	return nil, nil
+	return mList, nil
 }

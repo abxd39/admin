@@ -10,7 +10,6 @@ import (
 //bibi委托表
 type EntrustDetail struct {
 	BaseModel           `xorm:"-"`
-	ReturnValueOperator `xorm:"-"`
 	EntrustId           string `xorm:"not null pk comment('委托记录表（委托管理）') VARCHAR(64)"`
 	Uid                 int64  `xorm:"not null comment('用户id') BIGINT(32)"`
 	Symbol              string `xorm:"comment('队列') VARCHAR(64)"`
@@ -29,6 +28,7 @@ type EntrustDetail struct {
 
 
 type ReturnValueOperator struct {
+	EntrustDetail `xorm:"extends"`
 	AllNumTrue     float64 `json:"all_num_true"`
 	SurplusNumTrue float64 `json:"surplus_num_true"`//剩余
 	PriceTrue      float64 `json:"price_true"`
@@ -36,6 +36,11 @@ type ReturnValueOperator struct {
 	FeeTrue        float64 `json:"fee_true"` //手续费
 	//MountTrue      float64 `json:"mount_true"`
 	FinishCount    float64 `json:"finish_count"` //已成
+	Fee int64	`json:"fee"`//手续费
+}
+
+func (this*ReturnValueOperator)TableName()string  {
+	return "entrust_detail"
 }
 
 func (this *EntrustDetail) IsExist(symbol string) (bool, error) {
@@ -71,36 +76,37 @@ func (this *EntrustDetail) GetTokenOrderList(page, rows, ad_id, status, start_t,
 	engine := utils.Engine_token
 	//
 
-	query := engine.Desc("entrust_id")
-	//query = query.Join("left","trade","trade.entrust_id = entrust_id")
+	query := engine.Desc("en.entrust_id")
+	//sql:=fmt.Sprintf(" and created_time  BETWEEN %d AND %d ", start_t, start_t+86400)
+	query  =query.Alias("en")
+	query = query.Join("left","trade t","t.entrust_id = en.entrust_id ")
+	query = query.Where("en.symbol=?",symbo)
 	if trade_id != `` {
-		query = query.Where("entrust_id=?", trade_id)
+		query = query.Where("en.entrust_id=?", trade_id)
 	}
-	if symbo != `` {
-		query = query.Where("token_id=?", symbo)
-	}
+
 	if ad_id != 0 {
-		query = query.Where("opt=?", ad_id)
+		query = query.Where("en.opt=?", ad_id)
 	}
 	if status != 0 {
-		query = query.Where("states=?", status)
+		query = query.Where("en.states=?", status)
 	}
 	if start_t != 0 {
-		query = query.Where("created_time  BETWEEN ? AND ? ", start_t, start_t+86400)
+		query = query.Where("en.created_time  BETWEEN ? AND ? ", start_t, start_t+86400)
 	}
 	if uid != 0 {
-		query = query.Where("uid=?", uid)
+		query = query.Where("en.uid=?", uid)
 	}
 	fmt.Println("debug------>1110")
 	tempQuery := *query
-	count, err := tempQuery.Count(&EntrustDetail{})
+	count, err := tempQuery.Count(&ReturnValueOperator{})
 	if err != nil {
 		return nil, err
 	}
 
 	offset, modelList := this.Paging(page, rows, int(count))
 	fmt.Println("---------------------->count=",count,"modelList.PageSize=", modelList.PageSize, "offset=?", offset)
-	list := make([]EntrustDetail, 0)
+	list := make([]ReturnValueOperator, 0)
 	err = query.Limit(modelList.PageSize, offset).Find(&list)
 	if err != nil {
 		return nil, err
@@ -108,7 +114,7 @@ func (this *EntrustDetail) GetTokenOrderList(page, rows, ad_id, status, start_t,
 
 	for i, v := range list {
 		list[i].PriceTrue = this.Int64ToFloat64By8Bit(v.Price)
-		list[i].FeeTrue = this.FeePercent * this.Decimal(this.Int64ToFloat64By8Bit(v.Sum))
+		list[i].FeeTrue = this.Decimal(this.Int64ToFloat64By8Bit(v.Fee))
 		list[i].AllNumTrue = this.Int64ToFloat64By8Bit(v.AllNum)
 		list[i].OnPriceTrue = this.Int64ToFloat64By8Bit(v.OnPrice)
 		list[i].SurplusNumTrue = this.Int64ToFloat64By8Bit(v.SurplusNum)
@@ -120,6 +126,6 @@ func (this *EntrustDetail) GetTokenOrderList(page, rows, ad_id, status, start_t,
 }
 
 func (this *EntrustDetail)Decimal(value float64) float64 {
-	value, _ = strconv.ParseFloat(fmt.Sprintf("%.8f", value), 64)
+	value, _ = strconv.ParseFloat(fmt.Sprintf("%.4f", value), 64)
 	return value
 }

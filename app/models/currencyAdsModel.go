@@ -133,7 +133,7 @@ func (this *Ads) GetAdsList(page, rows, status, tokenid, tradeid, verify int, se
 	// 分叉
 
 	if verify != 0 {
-		query  =query.Where("u.security_auth&?=?",verify,verify)
+		query  =query.Where("ads.is_twolevel=?",verify)
 	}//||
 	if status != 0 {
 		query =query.Where("u.status=?",status)

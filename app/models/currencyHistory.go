@@ -7,7 +7,7 @@ import (
 
 type UserCurrencyHistory struct {
 	BaseModel   `xorm:"-"`
-	UserInfo    `xorm:"-"`
+	UserInfo    `xorm:"extends"`
 	Id          int    `xorm:"not null pk autoincr comment('ID') INT(10)" json:"id"`
 	Uid         int    `xorm:"not null default 0 INT(10)" json:"uid"`
 	OrderId     string `xorm:"not null default '' comment('订单ID') VARCHAR(64)" json:"order_id"`
@@ -22,7 +22,9 @@ type UserCurrencyHistory struct {
 	UpdatedTime string `xorm:"comment('修改间') DATETIME" json:"updated_time"`
 }
 
-
+func (u*UserCurrencyHistory)TableName()string  {
+	return "user_currency_history"
+}
 
 
 func (u *UserCurrencyHistory) GetList(page, rows, ot int, date string) (*ModelList, error) {
@@ -54,10 +56,16 @@ func (u *UserCurrencyHistory) GetList(page, rows, ot int, date string) (*ModelLi
 	return modelList, nil
 }
 
-func (u *UserCurrencyHistory) GetListForUid(page, rows int, uid []int64) (*ModelList, error) {
+func (u *UserCurrencyHistory) GetListForUid(page, rows,status,chType int, search,date string) (*ModelList, error) {
 	engine := utils.Engine_currency
-	query := engine.Desc("id")
-	query = query.In("uid", uid)
+	fmt.Println("------------------------>")
+	query := engine.Alias("uch").Desc("id")
+	query = query.Join("LEFT", "g_common.user u ", "u.uid= uch.uid")
+	query = query.Join("LEFT", "g_common.user_ex ex", "uch.uid=ex.uid")
+	substr := date[:11] + "23:59:59"
+	//temp:= fmt.Sprintf("create_time BETWEEN '%s' AND '%s' ", st, substr)
+	//query = query.Where(temp)
+	query =query.Where("uch.created_time between ? and ?", date,substr)
 	tempQuery := *query
 	count, err := tempQuery.Count(&UserCurrencyHistory{})
 	if err != nil {
@@ -68,6 +76,10 @@ func (u *UserCurrencyHistory) GetListForUid(page, rows int, uid []int64) (*Model
 	err = query.Limit(modelList.PageSize, offset).Find(&list)
 	if err != nil {
 		return nil, err
+	}
+	for i,v:=range list{
+		list[i].NumTrue= u.Int64ToFloat64By8Bit(v.Num)
+		list[i].SurplusTrue = u.Int64ToFloat64By8Bit(v.Surplus)
 	}
 	modelList.Items = list
 	return modelList, nil
