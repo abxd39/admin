@@ -578,7 +578,7 @@ func (this *TokenController) GetRecordList(c *gin.Context) {
 		Page_num int    `form:"rows" json:"rows" `
 		Uid      int    `form:"uid" json:"uid" `
 		Date     uint64 `form:"date" json:"date" `
-		Name     string `form:"name" json:"name" ` //交易对
+		Name     string `form:"name" json:"name" binding:"required" ` //交易对
 		Opt      int    `form:"opt" json:"opt" `   //买卖方向
 	}{}
 	err := c.ShouldBind(&req)
@@ -605,7 +605,7 @@ func (this *TokenController) GetTokenOderList(c *gin.Context) {
 		Page_num int    `form:"rows" json:"rows" `
 		Uid      int    `form:"uid" json:"uid" `
 		Trade_id string `form:"trade_id" json:"trade_id" ` //交易类型id 市价交易or 限价交易
-		Start_t  int    `form:"start_t" json:"start_t" `
+		Start_t  int    `form:"start_t" json:"start_t" binding:"required" `	//时间 默认当天
 		Symbo    string `form:"symbo" json:"symbo" `  //交易对
 		Ad_id    int    `form:"ad_id" json:"ad_id" `  //买卖方向
 		Status   int    `form:"status" json:"staus" ` //订单状态

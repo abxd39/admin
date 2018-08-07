@@ -33,18 +33,32 @@ type Trade struct {
 	Uid          int64  `xorm:"comment('买家uid') index BIGINT(11)"`
 	TokenId      int    `xorm:"comment('主货币id') index INT(11)"`
 	TokenTradeId int    `xorm:"comment('交易币种') INT(11)"`
-	TokenName    string `xorm:"not null default 'BTC' comment('交易对 名称 例如USDT/BTC') VARCHAR(10)"`
+	Symbol       string `xorm:"not null default 'BTC' comment('交易对 名称 例如USDT/BTC') VARCHAR(16)" `
 	Price        int64  `xorm:"comment('价格') BIGINT(20)"`
 	Num          int64  `xorm:"comment('数量') BIGINT(20)"`
 	Fee          int64  `xorm:"comment('手续费') BIGINT(20)"`
 	Opt          int    `xorm:"comment(' buy  1或sell 2') index unique(uni_reade_no) TINYINT(4)"`
 	DealTime     int64  `xorm:"comment('成交时间') index BIGINT(11)"`
-	States       int    `xorm:"comment('0是挂单，1是部分成交,2成交， -1撤销') INT(11)"`
-	FeeCny       int64  `xorm:"comment('手续费折合CNY') BIGINT(20)"`
-	TotalCny     int64  `xorm:"comment('总交易额折合CNY') BIGINT(20)"`
-	EntrustId    string `xorm:"VARCHAR(32)"`
+	//States       int    `xorm:"comment('0是挂单，1是部分成交,2成交， -1撤销') INT(11)"`
+	FeeCny    int64  `xorm:"comment('手续费折合CNY') BIGINT(20)"`
+	TotalCny  int64  `xorm:"comment('总交易额折合CNY') BIGINT(20)"`
+	EntrustId string `xorm:"VARCHAR(32)"`
 }
 
+type TradeReturn struct {
+	Trade          `xorm:"extends"`
+	AllNum         int64   `xorm:"not null comment('总数量') BIGINT(20)"`  //总数
+	SurplusNum     int64   `xorm:"not null comment('剩余数量') BIGINT(20)"` //余数
+	FinishCount    float64 `xorm:"-" json:"finish_count"` //已成
+	FeeTrue        float64 `xorm:"-" json:"fee_true"`
+	AllNumTrue     float64 `xorm:"-" json:"all_num_true"`
+	SurplusNumTrue float64 `xorm:"-" json:"surplus_num_true"`
+	PriceTrue      float64 `xorm:"-" json:"price_true"`
+}
+
+func (t *TradeReturn) TableName() string {
+	return "trade"
+}
 
 type TradeEx struct {
 	Trade          `xorm:"extends"`
@@ -138,36 +152,40 @@ func (this *Trade) TotalTotalTradeList(page, rows int, date uint64) (*ModelList,
 	return nil, nil
 }
 
-//bibi 流水
 func (this *Trade) GetTokenRecordList(page, rows, opt, uid int, date uint64, name string) (*ModelList, error) {
 	engine := utils.Engine_token
-
-	query := engine.Desc("uid")
-	query = query.Where("states=2")
-	if name != `` {
-		query = query.Where("token_name=?", name) //交易对
-	}
+	query := engine.Desc("t.entrust_id")
+	query = query.Alias("t").Join("left", "entrust_detail e", "e.entrust_id= t.entrust_id")
+	query = query.Where("(e.states=2 or e.states=1) and e.symbol=?", name) //交易对
 	if opt != 0 {
-		query = query.Where("opt=?", opt) //交易方向
+		query = query.Where("t.opt=?", opt) //交易方向
 	}
 	if uid != 0 {
-		query = query.Where("uid=?", uid)
+		query = query.Where("t.uid=?", uid)
 	}
 	if date != 0 {
-		query = query.Where("deal_time BETWEEN ? AND ? ", date, date+86400)
+		query = query.Where("t.deal_time BETWEEN ? AND ? ", date, date+86400)
 	}
 	tempQuery := *query
 
-	count, err := tempQuery.Count(&Trade{})
+	count, err := tempQuery.Count(&TradeReturn{})
 	if err != nil {
 		return nil, err
 	}
 	offset, modelList := this.Paging(page, rows, int(count))
-	list := make([]Trade, 0)
+	list := make([]TradeReturn, 0)
 	//fmt.Printf("$$$$$$$$$$$$$$$%#v\n", rows)
 	err = query.Limit(modelList.PageSize, offset).Find(&list)
 	if err != nil {
 		return nil, err
+	}
+	for i, v := range list {
+		allNum, surPlusNUm := this.SubductionZeroMethodInt64(v.AllNum, v.SurplusNum)
+		list[i].AllNumTrue = allNum
+		list[i].SurplusNumTrue = surPlusNUm
+		list[i].FinishCount = allNum - surPlusNUm
+		list[i].FeeTrue = this.Int64ToFloat64By8Bit(v.Fee)
+		list[i].PriceTrue = this.Int64ToFloat64By8Bit(v.Price)
 	}
 	modelList.Items = list
 	return modelList, nil

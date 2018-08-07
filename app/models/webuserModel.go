@@ -139,7 +139,7 @@ func (w *UserEx) GetInviteInfoList(uid, page, rows int, date uint64, name, accou
 func (w *UserEx) GetInViteList(page, rows int, search string) (*ModelList, error) {
 	engine := utils.Engine_common
 	countSql := "SELECT COUNT(*) cnt FROM (%s) newtable"
-	sql := "SELECT u.uid,u.`email`,u.`phone`,ue.`real_name`,ue.nick_name,ue.`invite_id`,u.`status`,tmp.cnt invite_count FROM (SELECT invite_id,COUNT(invite_id) cnt FROM user_ex GROUP BY invite_id) tmp JOIN user_ex ue ON ue.uid=tmp.invite_id JOIN `user` u ON u.uid=tmp.invite_id WHERE tmp.invite_id!=0"
+	sql := "SELECT u.uid,u.`email`,u.`phone`,ue.`real_name`,ue.nick_name,u.account,ue.`invite_id`,u.`status`,tmp.cnt invite_count FROM (SELECT invite_id,COUNT(invite_id) cnt FROM user_ex GROUP BY invite_id) tmp JOIN user_ex ue ON ue.uid=tmp.invite_id JOIN `user` u ON u.uid=tmp.invite_id WHERE tmp.invite_id!=0"
 	limitSql := " LIMIT %d OFFSET %d "
 
 	if search != `` {

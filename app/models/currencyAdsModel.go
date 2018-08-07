@@ -42,6 +42,23 @@ type AdsUserCurrencyCount struct {
 	Ustatus       uint32 `xorm:"-"`
 }
 
+
+type AdsUserExUser struct {
+	Ads           `xorm:"extends"`
+	SubductionZero `xorm:"-"`
+	TWOVerifyMark int    `xorm:"-"`
+	NickName         string
+	Phone         string
+	Email         string
+	Status       int32
+	SecurityAuth int
+	PremiumTrue float64 `xorm:"-" json:"premium_true"`
+	AcceptPriceTrue float64 `xorm:"-" json:"accept_price_true"`
+}
+
+func (a*AdsUserExUser) TableName()string{
+	return "ads"
+}
 //g_currency
 func (AdsUserCurrencyCount) TableName() string {
 	return "ads"
@@ -108,59 +125,25 @@ func (this *Ads) DownTradeAds(id, uid int) error {
 func (this *Ads) GetAdsList(page, rows, status, tokenid, tradeid, verify int, search, date string) (*ModelList, error) {
 
 	engine := utils.Engine_currency
-	query := engine.Desc("id")
+	query := engine.Desc("ads.id")
 
 	//总页数
-	// query := engine.Join("INNER", "user_currency", "ads.uid=user_currency.uid")
-	// query = query.Join("LEFT", "user_currency_count", "ads.uid=user_currency_count.uid")
+	query = engine.Join("LEFT", "g_common.user u ", "u.uid= ads.uid")
+	query = query.Join("LEFT", "g_common.user_ex ex", "ads.uid=ex.uid")
 	// 分叉
-	//挂单日期
-	if verify != 0 || status != 0 || search != `` {
-		ulist, err := new(UserGroup).UserList(page, rows, verify, status, search, 0)
-		if err!=nil{
-			return nil,err
-		}
-		fmt.Println("认证刷选",ulist)
-		uid := make([]int64, 0)
-		value, ok := ulist.Items.([]UserGroup)
-		if !ok {
-			return nil, errors.New("assert failed!!!")
-		}
-		for _, v := range value {
-			uid = append(uid, v.Uid)
-		}
-		fmt.Println("uidlist", uid)
-		list := make([]AdsUserCurrencyCount, 0)
-		query = query.In("uid", uid)
-		tempQuery := *query
-		count, err := tempQuery.Count(&AdsUserCurrencyCount{})
-		offset, modelList := this.Paging(page, rows, int(count))
-		err = query.Limit(modelList.PageSize, offset).Find(&list)
-		if err != nil {
-			return nil, err
-		}
-		for index, vads := range list {
-			for _, v := range value {
-				if vads.Uid == v.Uid {
-					list[index].TWOVerifyMark = v.TWOVerifyMark
-					list[index].Phone = v.Phone
-					list[index].Uname = v.NickName
-					list[index].Ustatus = uint32(v.Status)
-					list[index].Email = v.Email
-					break
-				}
-			}
-		}
-		//去掉零
-		for i,v:=range list{
-			num,price :=this.SubductionZeroMethod(v.Num,v.Price)
-			list[i].NumberTrue =num
-			list[i].PriceTrue = price
-		}
-		modelList.Items = list
-		return modelList, nil
-	}
 
+	if verify != 0 {
+		query  =query.Where("u.security_auth&?=?",verify,verify)
+	}//||
+	if status != 0 {
+		query =query.Where("u.status=?",status)
+	}
+	if search != `` {
+		if len(search) > 0 {
+			temp := fmt.Sprintf(" concat(IFNULL(u.`uid`,''),IFNULL(u.`phone`,''),IFNULL(ex.`nick_name`,''),IFNULL(u.`email`,'')) LIKE '%%%s%%'  ", search)
+			query = query.Where(temp)
+		}
+	}
 	if tradeid != 0 {
 		query = query.Where("type_id=?", tradeid)
 	}
@@ -173,61 +156,32 @@ func (this *Ads) GetAdsList(page, rows, status, tokenid, tradeid, verify int, se
 		query = query.Where(temp)
 	}
 	tempQuery := *query
-	uidQuery := *query
+	//uidQuery := *query
 	//分两部分查询Count
-	count, err := tempQuery.Count(&AdsUserCurrencyCount{})
+	count, err := tempQuery.Count(&AdsUserExUser{})
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Println("count=", count)
-	offset, modelList := this.Paging(page, rows, int(count))
-	fmt.Println("offset=", offset, "modelList", modelList)
-	list := make([]AdsUserCurrencyCount, 0)
-	err = query.Limit(modelList.PageSize, offset).Find(&list)
-	if err != nil {
-		return nil, err
+	offset,mList:=this.Paging(page,rows,int(count))
+	list:=make([]AdsUserExUser ,0)
+	err=query.Limit(mList.PageSize,offset).Find(&list)
+	if err!=nil{
+		return nil,err
 	}
 
-	//去重
-	uidList := make([]Ads, 0)
-	err = uidQuery.Distinct("uid").Find(&uidList)
-	if err != nil {
-		return nil, err
-	}
-	//查询用户资料
-
-	//无条件判断
-
-	uid := make([]int64, 0)
-	for _, v := range uidList {
-		uid = append(uid, v.Uid)
-	}
-	fmt.Println("uidList", len(uid))
-	//跨库查询 用户资料
-	ulist, err := new(UserGroup).GetCurrencyList(uid, verify, search)
-	if err != nil {
-		return nil, err
-	}
-	fmt.Println("ulist=", len(ulist))
-	for index, value := range list {
-		for _, v := range ulist {
-			if value.Uid == v.Uid {
-				list[index].TWOVerifyMark = v.TWOVerifyMark
-				list[index].Phone = v.Phone
-				list[index].Uname = v.NickName
-				list[index].Ustatus = uint32(v.Status)
-				list[index].Email = v.Email
-				break
-			}
-		}
-	}
-	//去掉零
 	for i,v:=range list{
 		num,price :=this.SubductionZeroMethod(v.Num,v.Price)
 		list[i].NumberTrue =num
 		list[i].PriceTrue = price
+		if v.SecurityAuth &4==4{
+			list[i].TWOVerifyMark =1
+		}else {
+			list[i].TWOVerifyMark =0
+		}
+		list[i].PremiumTrue= this.Int64ToFloat64By8Bit(int64(v.Premium))
+		list[i].AcceptPriceTrue =this.Int64ToFloat64By8Bit(int64(v.AcceptPrice))
+
 	}
-	modelList.Items = list
-	return modelList, nil
+	mList.Items = list
+	return mList, nil
 }
