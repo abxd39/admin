@@ -173,7 +173,8 @@ func (cu *CurrencyController) GetCurrencyChangeHistory(c *gin.Context) {
 	//	cu.RespOK(c)
 	//	return
 	//}
-	cu.Put(c, "list", list)
+	ulist.Items =list
+	cu.Put(c, "list", ulist)
 	cu.RespOK(c)
 	return
 }

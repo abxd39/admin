@@ -173,7 +173,12 @@ func (w *UserEx) GetInViteList(page, rows int, search string) (*ModelList, error
 
 //二级认证审核
 func (w *WebUser) SecondAffirmLimit(uid, status int) error {
-
+	//err :=new(apis.VendorApi).AddAwardToken(uid)
+	//if err!=nil{
+	//	//sess.Rollback()
+	//	fmt.Println("赠送奖励失败")
+	//}
+	//return nil
 	engine := utils.Engine_common
 	sess := engine.NewSession()
 	defer sess.Close()
@@ -188,6 +193,7 @@ func (w *WebUser) SecondAffirmLimit(uid, status int) error {
 		return err
 	}
 	if !has {
+		sess.Rollback()
 		return errors.New("用户不存在！！")
 	}
 	us := new(UserSecondaryCertification)
@@ -196,6 +202,7 @@ func (w *WebUser) SecondAffirmLimit(uid, status int) error {
 		return err
 	}
 	if !has {
+		sess.Rollback()
 		return errors.New("not exists!!")
 	}
 	ReverseSidePath := us.ReverseSidePath
@@ -206,8 +213,8 @@ func (w *WebUser) SecondAffirmLimit(uid, status int) error {
 		//oss
 		wu.SecurityAuth = wu.SecurityAuth &^ utils.AUTH_TWO
 		wu.SetTardeMark = wu.SetTardeMark ^ utils.APPLY_FOR_SECOND_NOT_ALREADY //二级认证没有通过
-		wu.SetTardeMark = wu.SetTardeMark &^ utils.APPLY_FOR_SECOND //申请撤销
-		fmt.Println("uid=",uid, "------------------>二级认证",wu.SetTardeMark)
+		wu.SetTardeMark = wu.SetTardeMark &^ utils.APPLY_FOR_SECOND            //申请撤销
+		fmt.Println("uid=", uid, "------------------>二级认证", wu.SetTardeMark)
 		if _, err = sess.Table("user_secondary_certification").Where("uid=?", uid).Cols("reverse_side_path", "in_hand_picture_path", "positive_path", "verify_time", "video_recording_digital").Update(&UserSecondaryCertification{
 			ReverseSidePath:       "",
 			InHandPicturePath:     "",
@@ -228,15 +235,16 @@ func (w *WebUser) SecondAffirmLimit(uid, status int) error {
 		if PositivePath != `` {
 			a.DeletFileToAliCloud(PositivePath)
 		}
-		_, err = sess.Where("uid=?", uid).Cols("security_auth","set_tarde_mark").Update(&WebUser{
+		_, err = sess.Where("uid=?", uid).Cols("security_auth", "set_tarde_mark").Update(&WebUser{
 			SecurityAuth: wu.SecurityAuth,
 			SetTardeMark: wu.SetTardeMark,
 		})
 		if err != nil {
+			sess.Rollback()
 			return err
 		}
 		sess.Commit()
-		err = apis.Reflash(uid)
+		err = new(apis.VendorApi).Reflash(uid)
 		if err != nil {
 			fmt.Println("缓存清理失败!!!")
 		}
@@ -248,19 +256,26 @@ func (w *WebUser) SecondAffirmLimit(uid, status int) error {
 	//审核过之后不管通没通过审核 实名申请的状态一律设为为 未申请状态
 	wu.SetTardeMark = wu.SetTardeMark &^ utils.APPLY_FOR_SECOND
 	wu.SetTardeMark = wu.SetTardeMark ^ utils.APPLY_FOR_SECOND_NOT_ALREADY //二级认证没有通过
-	wu.SetTardeMark = wu.SetTardeMark &^ utils.APPLY_FOR_SECOND //申请撤销
+	wu.SetTardeMark = wu.SetTardeMark &^ utils.APPLY_FOR_SECOND            //申请撤销
 	_, err = sess.Where("uid=?", uid).Cols("security_auth", "set_tarde_mark").Update(&WebUser{
 		SecurityAuth: wu.SecurityAuth,
 		SetTardeMark: wu.SetTardeMark,
 	})
 	if err != nil {
+		sess.Rollback()
 		return err
 	}
-	sess.Commit()
-	err=apis.Reflash(uid)
+	err =new(apis.VendorApi).AddAwardToken(uid)
 	if err!=nil{
+		sess.Rollback()
+		fmt.Println("赠送奖励失败")
+	}
+	sess.Commit()
+	err = new(apis.VendorApi).Reflash(uid)
+	if err != nil {
 		fmt.Println("缓存清理失败!!!")
 	}
+
 	return nil
 }
 
@@ -275,11 +290,13 @@ func (w *WebUser) FirstAffirmLimit(uid, status int) error {
 	}
 	//temp := *query
 	wu := new(WebUser)
-	has, err := sess.Where("uid=?",uid).Get(wu)
+	has, err := sess.Where("uid=?", uid).Get(wu)
 	if err != nil {
+		sess.Rollback()
 		return err
 	}
 	if !has {
+		sess.Rollback()
 		return errors.New("用户不存在！！")
 	}
 
@@ -302,7 +319,7 @@ func (w *WebUser) FirstAffirmLimit(uid, status int) error {
 			return err
 		}
 		wu.SecurityAuth = wu.SecurityAuth &^ utils.AUTH_FIRST
-		wu.SetTardeMark = wu.SetTardeMark &^ utils.APPLY_FOR_FIRST//撤销申请
+		wu.SetTardeMark = wu.SetTardeMark &^ utils.APPLY_FOR_FIRST            //撤销申请
 		wu.SetTardeMark = wu.SetTardeMark ^ utils.APPLY_FOR_FIRST_NOT_ALREADY //没有通过
 	}
 	if status == utils.AUTH_FIRST {
@@ -310,7 +327,7 @@ func (w *WebUser) FirstAffirmLimit(uid, status int) error {
 	}
 	//删除 申请状态
 	wu.SetTardeMark = wu.SetTardeMark &^ utils.APPLY_FOR_FIRST
-	_, err = sess.Where("uid=?",uid).Cols("security_auth", "set_tarde_mark").Update(&WebUser{
+	_, err = sess.Where("uid=?", uid).Cols("security_auth", "set_tarde_mark").Update(&WebUser{
 		SecurityAuth: wu.SecurityAuth,
 		SetTardeMark: wu.SetTardeMark,
 	})
@@ -319,14 +336,13 @@ func (w *WebUser) FirstAffirmLimit(uid, status int) error {
 		return err
 	}
 	sess.Commit()
-	err = apis.Reflash(uid)
+	err =new(apis.VendorApi).Reflash(uid)
 	if err != nil {
 		fmt.Println("缓存清理失败!!!")
 	}
+
 	return nil
 }
-
-
 
 //单个用户的认证详情
 func (w *FirstDetail) GetFirstDetail(uid int) (*FirstDetail, error) {
@@ -672,4 +688,57 @@ func (w *WebUser) GetUserListForUid(uid []uint64) ([]UserGroup, error) {
 		}
 	}
 	return list, nil
+}
+
+type TotalProperty struct {
+	BaseModel `xorm:"-"`
+	Uid int64
+	Phone     string
+	NickName  string
+	Status    int
+	Rt       int64 //用户注册时间
+	Email     string
+	TokenId   uint32
+	Ucb       int64 //法币总资产
+	Ucf       int64 //法币冻结
+	Utb       int64 //币币总资产
+	Utc       int64 //币币冻结
+}
+
+func (*TotalProperty) TableName() string {
+	return "user"
+}
+
+
+func (w *TotalProperty) GetTotalProperty(page, rows, status int, date uint64, search string) (*ModelList, error) {
+	engine := utils.Engine_common
+
+	countSql:="SELECT COUNT(u.`uid`) num "
+	contentSql:=" SELECT `u`.`uid`, `u`.`email`, `u`.`phone`, `ex`.`nick_name`, `ex`.`register_time` `rt`, `uc`.`balance`  `ucb`, `uc`.`freeze` `ucf`, `ut`.`balance` `utb`, `ut`.`frozen` `utf` "
+	mid:="FROM `user` AS `u` LEFT JOIN g_common.user_ex ex ON u.uid=ex.uid LEFT JOIN g_currency.user_currency uc ON u.uid=uc.uid LEFT JOIN g_token.user_token ut ON u.uid=ut.uid "
+	sql:=fmt.Sprintf(" WHERE (ex.register_time BETWEEN %d AND %d)",date,date+86400)
+	if status != 0 {
+		appendSql := fmt.Sprintf("and  u.status=%d ", status)
+		sql+=appendSql
+	}
+	if search != `` {
+		appendSql:= fmt.Sprintf(" and concat(IFNULL(u.`uid`,''),IFNULL(u.`phone`,''),IFNULL(ex.`nick_name`,''),IFNULL(u.`email`,'')) LIKE '%%%s%%'  ", search)
+		sql += appendSql
+	}
+	Count:=&struct{
+	 Num int
+	}{}
+	_,err := engine.SQL(countSql+mid+sql).Get(Count)
+	if err != nil {
+		return nil, err
+	}
+	offset, mList := w.Paging(page, rows, int(Count.Num))
+	list := make([]TotalProperty, 0)
+	limitSql:=fmt.Sprintf("limit %d offset %d",mList.PageSize, offset)
+	err = engine.SQL(contentSql+mid+sql+limitSql).Find(&list)
+	if err != nil {
+		return nil, err
+	}
+	mList.Items = list
+	return mList, nil
 }

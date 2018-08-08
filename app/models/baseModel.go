@@ -14,8 +14,8 @@ type UserInfo struct {
 	Email       string  `json:"email"`
 	Status      int     `json:"status"`
 	TokenName   string  `json:"token_name"`
-	SurplusTrue float64 `xorm:"-"`
-	NumTrue     float64 `xorm:"-"`
+	SurplusTrue float64 `xorm:"-" json:"surplus_true"`
+	NumTrue     float64 `xorm:"-" json:"num_true"`
 }
 
 type SubductionZero struct {

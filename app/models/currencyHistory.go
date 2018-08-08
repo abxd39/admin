@@ -6,8 +6,8 @@ import (
 )
 
 type UserCurrencyHistory struct {
-	BaseModel   `xorm:"-"`
 	UserInfo    `xorm:"extends"`
+	BaseModel   `xorm:"-"`
 	Id          int    `xorm:"not null pk autoincr comment('ID') INT(10)" json:"id"`
 	Uid         int    `xorm:"not null default 0 INT(10)" json:"uid"`
 	OrderId     string `xorm:"not null default '' comment('订单ID') VARCHAR(64)" json:"order_id"`
@@ -56,6 +56,7 @@ func (u *UserCurrencyHistory) GetList(page, rows, ot int, date string) (*ModelLi
 	return modelList, nil
 }
 
+//p2-3-3法币账户变更详情
 func (u *UserCurrencyHistory) GetListForUid(page, rows,status,chType int, search,date string) (*ModelList, error) {
 	engine := utils.Engine_currency
 	fmt.Println("------------------------>")
@@ -66,6 +67,16 @@ func (u *UserCurrencyHistory) GetListForUid(page, rows,status,chType int, search
 	//temp:= fmt.Sprintf("create_time BETWEEN '%s' AND '%s' ", st, substr)
 	//query = query.Where(temp)
 	query =query.Where("uch.created_time between ? and ?", date,substr)
+	if chType!=0{
+		query =query.Where("uch.operator=?",chType)
+	}
+	if status!=0{
+		query =query.Where("u.status=?",status)
+	}
+	if search!=``{
+		temp := fmt.Sprintf(" concat(IFNULL(u.`uid`,''),IFNULL(u.`phone`,''),IFNULL(ex.`nick_name`,''),IFNULL(u.`email`,'')) LIKE '%%%s%%'  ", search)
+		query = query.Where(temp)
+	}
 	tempQuery := *query
 	count, err := tempQuery.Count(&UserCurrencyHistory{})
 	if err != nil {

@@ -21,6 +21,55 @@ type TokenFeeDailySheetGroup struct {
 	Total     float64 `json:"total"`
 }
 
+func (this *TokenFeeDailySheet)Test1(){
+	now := time.Now()
+	current := now.Format("2006-01-02 15:04:05")
+	cunrrentUnixtime := now.Unix()
+	//bibi 日报表统计
+	type statisticsDayTrade struct {
+		TotalBuyFeeCny  int64 //买
+		TotalSellFeeCny int64 //卖
+		TotalBalanceCny int64 //总
+		Total           int64
+		Date            int64
+	}
+
+	engine := utils.Engine_token
+	sql := "FROM (SELECT  FROM_UNIXTIME(deal_time,'%Y-%m-%d') days, states,opt, fee_cny FROM g_token.trade) t "
+	hearSql := fmt.Sprintf("SELECT SUM(fee_cny)  %s ", "total_buy_fee_cny ")
+	temp := fmt.Sprintf(" WHERE t.states=2 AND t.opt=%d AND t.days='%s'", 1, current)
+	sql1 := hearSql + sql + temp
+	statistics := new(statisticsDayTrade)
+	_, err := engine.SQL(sql1).Get(statistics)
+	if err != nil {
+		fmt.Println(err)
+		utils.AdminLog.Println("定时任务执行失败")
+		return
+	}
+	fmt.Println(statistics)
+	hearSql = fmt.Sprintf("SELECT SUM(fee_cny)  %s ", "total_sell_fee_cny ")
+	sqlSell := fmt.Sprintf(" WHERE t.states=2 AND t.opt=%d AND t.days='%s'", 2, current)
+	_, err = engine.SQL(hearSql + sql + sqlSell).Get(statistics)
+	if err != nil {
+		utils.AdminLog.Println("定时任务执行失败")
+		return
+	}
+	statistics.TotalBalanceCny = statistics.TotalBuyFeeCny + statistics.TotalSellFeeCny
+	statistics.Date = cunrrentUnixtime
+	_, err = engine.InsertOne(&TokenFeeDailySheet{
+		TotalBalance: statistics.TotalBalanceCny,
+		BuyBalance:   statistics.TotalBuyFeeCny,
+		SellBalance:  statistics.TotalSellFeeCny,
+		Date:         statistics.Date,
+	})
+	fmt.Println(statistics)
+	if err != nil {
+		utils.AdminLog.Println("定时任务执行失败")
+		return
+	}
+	fmt.Println("successful")
+}
+
 //定时结算bibi 日交易报表表数据
 func (this *TokenFeeDailySheet) BoottimeTimingSettlement() {
 

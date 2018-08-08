@@ -73,7 +73,7 @@ func (this *WalletInoutDailySheet) BoottimeTimingSettlement() {
 			this.Date = now.Format("2006-01-02 15:04:05")
 
 			fmt.Println("3->		", this)
-			_, err = engine.Table("token_inout_daily_sheet").InsertOne(this)
+			_, err = engine.Table("token_inout_daily_sheet").Cols("token_id","token_name","total_day_balance","total_day_fee","total_balance","total_fee","date").InsertOne(this)
 			if err != nil {
 				utils.AdminLog.Println(err.Error())
 				continue

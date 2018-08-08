@@ -2,11 +2,12 @@ package models
 
 import (
 	"admin/utils"
+	"fmt"
 )
 
 type MoneyRecord struct {
 	BaseModel   `xorm:"-"`
-	UserInfo    `xorm:"-"`
+	UserInfo    `xorm:"extends"`
 	Id          int64  `xorm:"pk autoincr BIGINT(20)" json:"id"`
 	Uid         int    `xorm:"comment('用户ID') unique(hash_index) INT(11)" json:"uid"`
 	TokenId     int    `xorm:"comment('代币ID') INT(11)" json:"token_id"`
@@ -43,15 +44,24 @@ func (m *MoneyRecord) GetMoneyList(page, rows int, uid []int64) (*ModelList, err
 	return modelList, nil
 }
 
-func (m *MoneyRecord) GetMoneyListForDateOrType(page, rows, ty int, date uint64) (*ModelList, error) {
+func (m *MoneyRecord) GetMoneyListForDateOrType(page, rows, ty,status int, date uint64,search string) (*ModelList, error) {
 	engine := utils.Engine_token
-	query := engine.Desc("id")
+	query := engine.Alias("uch").Desc("id")
+	query = query.Join("LEFT", "g_common.user u ", "u.uid= uch.uid")
+	query = query.Join("LEFT", "g_common.user_ex ex", "uch.uid=ex.uid")
+	query =query.Where("uch.created_time between ? and ?", date,date+86400)
+
+	if search!=``{
+		temp := fmt.Sprintf(" concat(IFNULL(u.`uid`,''),IFNULL(u.`phone`,''),IFNULL(ex.`nick_name`,''),IFNULL(u.`email`,'')) LIKE '%%%s%%'  ", search)
+		query = query.Where(temp)
+	}
 	if ty != 0 {
-		query = query.Where("opt=?", ty)
+		query = query.Where("uch.opt=?", ty)
 	}
-	if date != 0 {
-		query = query.Where("created_time BETWEEN ? AND ?", date, date+86400)
+	if status!=0{
+		query =query.Where("u.status=?",status)
 	}
+
 	tempQuery := *query
 	count, err := tempQuery.Count(&MoneyRecord{})
 	if err != nil {
@@ -62,6 +72,10 @@ func (m *MoneyRecord) GetMoneyListForDateOrType(page, rows, ty int, date uint64)
 	err = query.Limit(modelList.PageSize, offset).Find(&list)
 	if err != nil {
 		return nil, err
+	}
+	for i,v:=range list{
+		list[i].NumTrue = m.Int64ToFloat64By8Bit(v.Num)
+		list[i].SurplusTrue =m.Int64ToFloat64By8Bit(v.Surplus)
 	}
 	modelList.Items = list
 	return modelList, nil

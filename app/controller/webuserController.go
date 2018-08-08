@@ -485,6 +485,7 @@ func (w *WebUserManageController) GetTotalProperty(c *gin.Context) {
 		Rows   int    `form:"rows" json:"rows" `
 		Status int    `form:"status" json:"status" `
 		Search string `form:"search" json:"search" `
+		Date uint64  `form:"date",json:"date" binding:"required"`
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
@@ -492,57 +493,14 @@ func (w *WebUserManageController) GetTotalProperty(c *gin.Context) {
 		w.RespErr(c, err)
 		return
 	}
-	//1所有用户数量
-	result, err := new(models.WebUser).GetAllUser(req.Page, req.Rows, req.Status, req.Search)
-	if err != nil {
-		w.RespErr(c, err)
+	//
+	list,err:=new(models.TotalProperty).GetTotalProperty(req.Page,req.Rows,req.Status,req.Date,req.Search)
+	if err!=nil{
+		utils.AdminLog.Errorln(err.Error())
+		w.RespErr(c,err)
 		return
 	}
-	userlist := make([]int, 0)
-	list, Ok := result.Items.([]models.WebUser)
-	if !Ok {
-		w.RespErr(c, err)
-		return
-	}
-	for _, v := range list {
-		userlist = append(userlist, int(v.Uid))
-	}
-	// //根据UID 获取广告id
-	// adlist, err := new(cur.Ads).GetIdList(userlist)
-	// if err != nil {
-	// 	c.JSON(http.StatusOK, gin.H{"code": 1, "data": "", "msg": err.Error()})
-	// 	return
-	// }
-	orderlist, err := new(models.Order).GetOrderId(userlist, req.Status)
-	if err != nil {
-		w.RespErr(c, err)
-		return
-	}
-	_ = orderlist
-	// rsp := make([]Rsp, 0)
-	// for _, v := range orderlist {
 
-	// }
-	//统计所有订单id与UID 的管理
-	//var ad map[int][]int
-	//orderId := make([]string, 0)
-
-	//for _, uid := range userlist {
-	// 	//找出相同uid的所有id
-	// 	idlist := make([]int, 0)
-	// 	for _, adid := range adlist {
-	// 		if uid == int(adid.Uid) {
-	// 			idlist = append(idlist, int(adid.Id))
-	// 		}
-	// 	}
-
-	// }
-
-	//2法币总资产
-	//再此需要传递一个交易的状态作为参数 付状态: 1待支付 2待放行(已支付) 3确认支付(已完成)
-	//new(cur.Order).GetOrderId(orderId, 3)
-	//3币币总资产
-	//result.Items =
 	w.Put(c, "list", list)
 	w.RespOK(c, "成功")
 	return

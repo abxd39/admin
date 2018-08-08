@@ -7,6 +7,7 @@ import (
 	"github.com/go-redis/redis"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/go-xorm/xorm"
+	"admin/apis"
 )
 
 var Engine_currency *xorm.Engine
@@ -108,7 +109,21 @@ func init() {
 		// HandleError(err)
 		panic(err)
 	}
-
+	remote:= Cfg.MustValue("userUrl", "remoteUrl")
+	local:=Cfg.MustValue("userUrl", "localUrl")
+	key :=Cfg.MustValue("userUrl", "key")
+	if remote==``{
+		fmt.Printf(err.Error())
+		panic(err)
+	}
+	apis.InitUserUrl(remote,local,key)
+	award:=Cfg.MustValue("award","url")
+	awardKey:=Cfg.MustValue("award","key")
+	if award ==``{
+		fmt.Printf(err.Error())
+		panic(err)
+	}
+	apis.InitAwardUrl(award,awardKey)
 	return
 
 }

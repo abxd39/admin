@@ -46,11 +46,15 @@ func (this *TokenController) Router(r *gin.Engine) {
 		//仪表盘
 		//手续费走势图
 		g.GET("/fee_trend_map", this.GetFeeTrendMap)
+		g.GET("/test1",this.test1)
 
 	}
 }
 
-
+func(this *TokenController) test1(c*gin.Context){
+	new(models.TokenFeeDailySheet).Test1()
+	return
+}
 
 func (this *TokenController) GetFeeTrendMap(c *gin.Context) {
 	//手续费 注：当天
@@ -388,7 +392,7 @@ func (this *TokenController) ChangeDetail(c *gin.Context) {
 	req := struct {
 		Page   int    `form:"page" json:"page" binding:"required"`
 		Rows   int    `form:"rows" json:"rows" `
-		Date   uint64 `form:"date" json:"date" `
+		Date   uint64 `form:"date" json:"date" binding:"required"`
 		Search string `form:"search" json:"search" ` //刷选
 		Type   int    `form:"type" json:"type" `     //交易方向 买 卖 划转
 		Status int    `form:"status" json:"status" ` //用户状态
@@ -405,99 +409,118 @@ func (this *TokenController) ChangeDetail(c *gin.Context) {
 		this.RespErr(c, err)
 		return
 	}
-	//没写完
-	//在此分道扬镳
-	if req.Search != `` || req.Status != 0 {
-		list, err := new(models.UserGroup).GetAllUser(req.Page, req.Rows, req.Status, req.Search)
-		if err != nil {
-			this.RespErr(c, err)
-			return
-		}
-		value, Ok := list.Items.([]models.UserGroup)
-		if !Ok {
-			this.RespErr(c, errors.New("assert type UserGroup failed!!"))
-			return
-		}
-		uidlist := make([]int64, 0)
-		for _, v := range value {
-			uidlist = append(uidlist, v.Uid)
-		}
-		monerylist, err := new(models.MoneyRecord).GetMoneyList(req.Page, req.Rows, uidlist)
-		if err != nil {
-			this.RespErr(c, err)
-			return
-		}
-		tokenValue, ok := monerylist.Items.([]models.MoneyRecord)
-		if !ok {
-			this.RespErr(c, errors.New("assert type MoneyRecord failed!!"))
-			return
-		}
-		for i, _ := range tokenValue {
-			for _, v := range value {
-				if int(v.Uid) == tokenValue[i].Uid {
-					tokenValue[i].NickName = v.NickName
-					tokenValue[i].Email = v.Email
-					tokenValue[i].Phone = v.Phone
-					tokenValue[i].Status = v.Status
-					break
-				}
-			}
-			for _, tv := range tokenlist {
-				if int(tv.Id) == tokenValue[i].TokenId {
-					tokenValue[i].TokenName = tv.Name
-					break
-				}
-			}
-		}
-		monerylist.Items = tokenValue
-		this.Put(c, "list", monerylist)
-		this.RespOK(c)
-		return
-	} else {
-		fmt.Println("1111111111111111111111111", err)
-		list, err := new(models.MoneyRecord).GetMoneyListForDateOrType(req.Page, req.Rows, req.Type, req.Date)
-		if err != nil {
-			this.RespErr(c, err)
-			return
-		}
-		uidList := make([]uint64, 0)
-		Value, ok := list.Items.([]models.MoneyRecord)
-		if !ok {
-			this.RespErr(c, err)
-			return
-		}
-		for _, v := range Value {
-			uidList = append(uidList, uint64(v.Uid))
-		}
-		ulist, err := new(models.UserGroup).GetUserListForUid(uidList)
-		if err != nil {
-			this.RespErr(c, err)
-			return
-		}
-		for i, _ := range Value {
-			for _, v := range ulist {
-				if Value[i].Uid == int(v.Uid) {
-					Value[i].NickName = v.NickName
-					Value[i].Phone = v.Phone
-					Value[i].Email = v.Email
-					Value[i].Status = v.Status
-					break
-				}
-			}
-			for _, vt := range tokenlist {
-				if int(vt.Id) == Value[i].TokenId {
-					Value[i].TokenName = vt.Name
-					break
-				}
-
-			}
-
-		}
-		list.Items = Value
-		this.Put(c, "list", list)
-		this.RespOK(c)
+	fmt.Println("------------------------>what funck you ",req.Status)
+	mlist, err := new(models.MoneyRecord).GetMoneyListForDateOrType(req.Page, req.Rows, req.Type, req.Status, req.Date, req.Search)
+	if err != nil {
+		this.RespErr(c, err)
 		return
 	}
+	list, Ok := mlist.Items.([]models.MoneyRecord)
+	if !Ok {
+		this.RespErr(c, errors.New("assert type UserGroup failed!!"))
+		return
+	}
+	for i, v := range list {
+		for _, vt := range tokenlist {
+			if vt.Id == uint32(v.TokenId) {
+				list[i].TokenName = vt.Mark
+				break
+			}
+		}
+	}
+	//没写完
+	//在此分道扬镳
+	//if req.Search != `` || req.Status != 0 {
+	//	list, err := new(models.UserGroup).GetAllUser(req.Page, req.Rows, req.Status, req.Search)
+	//	if err != nil {
+	//		this.RespErr(c, err)
+	//		return
+	//	}
+	//	value, Ok := list.Items.([]models.UserGroup)
+	//	if !Ok {
+	//		this.RespErr(c, errors.New("assert type UserGroup failed!!"))
+	//		return
+	//	}
+	//	uidlist := make([]int64, 0)
+	//	for _, v := range value {
+	//		uidlist = append(uidlist, v.Uid)
+	//	}
+	//	monerylist, err := new(models.MoneyRecord).GetMoneyList(req.Page, req.Rows, uidlist)
+	//	if err != nil {
+	//		this.RespErr(c, err)
+	//		return
+	//	}
+	//	tokenValue, ok := monerylist.Items.([]models.MoneyRecord)
+	//	if !ok {
+	//		this.RespErr(c, errors.New("assert type MoneyRecord failed!!"))
+	//		return
+	//	}
+	//	for i, _ := range tokenValue {
+	//		for _, v := range value {
+	//			if int(v.Uid) == tokenValue[i].Uid {
+	//				tokenValue[i].NickName = v.NickName
+	//				tokenValue[i].Email = v.Email
+	//				tokenValue[i].Phone = v.Phone
+	//				tokenValue[i].Status = v.Status
+	//				break
+	//			}
+	//		}
+	//		for _, tv := range tokenlist {
+	//			if int(tv.Id) == tokenValue[i].TokenId {
+	//				tokenValue[i].TokenName = tv.Name
+	//				break
+	//			}
+	//		}
+	//	}
+	//	monerylist.Items = tokenValue
+	//	this.Put(c, "list", monerylist)
+	//	this.RespOK(c)
+	//	return
+	//} else {
+	//	fmt.Println("1111111111111111111111111", err)
+	//	list, err := new(models.MoneyRecord).GetMoneyListForDateOrType(req.Page, req.Rows, req.Type, req.Date)
+	//	if err != nil {
+	//		this.RespErr(c, err)
+	//		return
+	//	}
+	//	uidList := make([]uint64, 0)
+	//	Value, ok := list.Items.([]models.MoneyRecord)
+	//	if !ok {
+	//		this.RespErr(c, err)
+	//		return
+	//	}
+	//	for _, v := range Value {
+	//		uidList = append(uidList, uint64(v.Uid))
+	//	}
+	//	ulist, err := new(models.UserGroup).GetUserListForUid(uidList)
+	//	if err != nil {
+	//		this.RespErr(c, err)
+	//		return
+	//	}
+	//	for i, _ := range Value {
+	//		for _, v := range ulist {
+	//			if Value[i].Uid == int(v.Uid) {
+	//				Value[i].NickName = v.NickName
+	//				Value[i].Phone = v.Phone
+	//				Value[i].Email = v.Email
+	//				Value[i].Status = v.Status
+	//				break
+	//			}
+	//		}
+	//		for _, vt := range tokenlist {
+	//			if int(vt.Id) == Value[i].TokenId {
+	//				Value[i].TokenName = vt.Name
+	//				break
+	//			}
+	//
+	//		}
+	//
+	//	}
+
+	mlist.Items = list
+	this.Put(c, "list", mlist)
+	this.RespOK(c)
+	return
 }
 
 func (this *TokenController) GetTokenCashList(c *gin.Context) {
@@ -579,7 +602,7 @@ func (this *TokenController) GetRecordList(c *gin.Context) {
 		Uid      int    `form:"uid" json:"uid" `
 		Date     uint64 `form:"date" json:"date" `
 		Name     string `form:"name" json:"name" binding:"required" ` //交易对
-		Opt      int    `form:"opt" json:"opt" `   //买卖方向
+		Opt      int    `form:"opt" json:"opt" `                      //买卖方向
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
@@ -604,11 +627,11 @@ func (this *TokenController) GetTokenOderList(c *gin.Context) {
 		Page     int    `form:"page" json:"page" binding:"required"`
 		Page_num int    `form:"rows" json:"rows" `
 		Uid      int    `form:"uid" json:"uid" `
-		Trade_id string `form:"trade_id" json:"trade_id" ` //交易类型id 市价交易or 限价交易
-		Start_t  int    `form:"start_t" json:"start_t"`	//时间 默认当天
-		Symbo    string `form:"symbo" json:"symbo"  binding:"required" `  //交易对
-		Ad_id    int    `form:"ad_id" json:"ad_id" `  //买卖方向
-		Status   int    `form:"status" json:"staus" ` //订单状态
+		Trade_id string `form:"trade_id" json:"trade_id" `               //交易类型id 市价交易or 限价交易
+		Start_t  int    `form:"start_t" json:"start_t"`                  //时间 默认当天
+		Symbo    string `form:"symbo" json:"symbo"  binding:"required" ` //交易对
+		Ad_id    int    `form:"ad_id" json:"ad_id" `                     //买卖方向
+		Status   int    `form:"status" json:"staus" `                    //订单状态
 	}{}
 
 	err := c.ShouldBind(&req)
