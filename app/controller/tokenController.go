@@ -8,7 +8,9 @@ import (
 
 	"time"
 
+	"admin/constant"
 	"github.com/gin-gonic/gin"
+	"regexp"
 )
 
 type TokenController struct {
@@ -46,12 +48,14 @@ func (this *TokenController) Router(r *gin.Engine) {
 		//仪表盘
 		//手续费走势图
 		g.GET("/fee_trend_map", this.GetFeeTrendMap)
-		g.GET("/test1",this.test1)
+		g.GET("/test1", this.test1)
+
+		g.GET("/list_transfer_daily_sheet", this.ListTransferDailySheet)
 
 	}
 }
 
-func(this *TokenController) test1(c*gin.Context){
+func (this *TokenController) test1(c *gin.Context) {
 	new(models.TokenFeeDailySheet).Test1()
 	new(models.CurencyFeeDailySheet).BoottimeTimingSettlement()
 	new(models.WalletInoutDailySheet).BoottimeTimingSettlement()
@@ -413,7 +417,7 @@ func (this *TokenController) ChangeDetail(c *gin.Context) {
 		this.RespErr(c, err)
 		return
 	}
-	fmt.Println("------------------------>what funck you ",req.Status)
+	fmt.Println("------------------------>what funck you ", req.Status)
 	mlist, err := new(models.MoneyRecord).GetMoneyListForDateOrType(req.Page, req.Rows, req.Type, req.Status, req.Date, req.Search)
 	if err != nil {
 		this.RespErr(c, err)
@@ -654,5 +658,59 @@ func (this *TokenController) GetTokenOderList(c *gin.Context) {
 	}
 	this.Put(c, "list", list)
 	this.RespOK(c)
+	return
+}
+
+// 日划转汇总列表
+func (t *TokenController) ListTransferDailySheet(ctx *gin.Context) {
+	// 获取参数
+	page, err := t.GetInt(ctx, "page", 1)
+	if err != nil {
+		t.RespErr(ctx, "参数page格式错误")
+		return
+	}
+	rows, err := t.GetInt(ctx, "rows", 10)
+	if err != nil {
+		t.RespErr(ctx, "参数rows格式错误")
+		return
+	}
+
+	// 筛选
+	filter := make(map[string]string)
+	if v := t.GetString(ctx, "type"); v != "" {
+		filter["type"] = v
+	}
+	if v := t.GetString(ctx, "token_id"); v != "" {
+		filter["token_id"] = v
+	}
+	if v := t.GetString(ctx, "date_begin"); v != "" {
+		if matched, err := regexp.MatchString(constant.DATE, v); err != nil || !matched {
+			t.RespErr(ctx, "参数date_begin格式错误")
+			return
+		}
+
+		filter["date_begin"] = v
+	}
+	if v := t.GetString(ctx, "date_end"); v != "" {
+		if matched, err := regexp.MatchString(constant.DATE, v); err != nil || !matched {
+			t.RespErr(ctx, "参数date_end格式错误")
+			return
+		}
+
+		filter["date_end"] = v
+	}
+
+	// 调用model
+	_, list, err := new(models.TransferDailySheet).List(page, rows, filter)
+	if err != nil {
+		t.RespErr(ctx, err)
+		return
+	}
+
+	// 设置返回数据
+	t.Put(ctx, "list", list)
+
+	// 返回
+	t.RespOK(ctx)
 	return
 }
