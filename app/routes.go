@@ -21,5 +21,6 @@ func Router(r *gin.Engine) {
 	new(controller.TokenController).Router(r)
 	new(controller.RoleController).Router(r)
 	new(controller.NodeController).Router(r)
+	new(controller.NodeAPIController).Router(r)
 	new(controller.ConfigController).Router(r)
 }
