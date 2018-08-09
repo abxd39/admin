@@ -72,27 +72,29 @@ func (this *EntrustDetail) EvacuateOder(uid int, odid string) error {
 
 }
 
-func (this *EntrustDetail) GetTokenOrderList(page, rows, ad_id, status, start_t, uid int, symbo, trade_id string) (*ModelList, error) {
+func (this *EntrustDetail) GetTokenOrderList(page, rows, adId, status, bt,et, uid int, symbol, tradeId string) (*ModelList, error) {
 	engine := utils.Engine_token
-	//
-
 	query := engine.Desc("en.entrust_id")
-	//sql:=fmt.Sprintf(" and created_time  BETWEEN %d AND %d ", start_t, start_t+86400)
 	query  =query.Alias("en")
+	query =query.Desc("en.entrust_id ")
 	query = query.Join("left","trade t","t.entrust_id = en.entrust_id ")
-	query = query.Where("en.symbol=?",symbo)
-	if trade_id != `` {
-		query = query.Where("en.entrust_id=?", trade_id)
+	query = query.Where("en.symbol=?",symbol)
+	if tradeId != `` {
+		query = query.Where("en.entrust_id=?", tradeId)
 	}
 
-	if ad_id != 0 {
-		query = query.Where("en.opt=?", ad_id)
+	if adId != 0 {
+		query = query.Where("en.opt=?", adId)
 	}
 	if status != 0 {
 		query = query.Where("en.states=?", status)
 	}
-	if start_t != 0 {
-		query = query.Where("en.created_time  BETWEEN ? AND ? ", start_t, start_t+86400)
+	if bt != 0 {
+		if et!=0{
+			query = query.Where("en.created_time  BETWEEN ? AND ? ", bt, et+86400)
+		}else {
+			query = query.Where("en.created_time  BETWEEN ? AND ? ", bt, bt+86400)
+		}
 	}
 	if uid != 0 {
 		query = query.Where("en.uid=?", uid)

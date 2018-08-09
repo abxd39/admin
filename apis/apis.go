@@ -6,6 +6,8 @@ import (
   "net/http"
   "encoding/json"
   "fmt"
+  "io/ioutil"
+  "errors"
 )
 
 type VendorApi struct {}
@@ -81,27 +83,29 @@ func (VendorApi)AddAwardToken(uid int)error{
   if err != nil {
     return err
   }
-  _=result
-  //returnValue:=&struct {
-  //
-	//  Code int`json:"code"`
-	//  Msg string `json:"msg"`
-	//  Data string `json:"data"`
-  //}{}
-  //
-	//body, err := ioutil.ReadAll(result.Body)
-	//if err!=nil{
-	//	return err
-	//}
-	//fmt.Println("000000000000000000000000000000000_1=》",returnValue)
-	//err=json.Unmarshal(body,returnValue)
-	//if err!=nil{
-	//	return err
-	//}
-	//fmt.Println("000000000000000000000000000000000_2=》",returnValue)
-	//if returnValue.Code!=0{
-	//	return errors.New("failed!!!")
-	//}
-  //fmt.Println("award send to successful!!",result.Body)
+  //mapCode :=make(map[interface{}]interface{})
+
+ // _=result
+  type ReturnValue struct {
+
+	Code int`json:"code"`
+	//Msg string `json:"msg"`
+	//Data string `json:"data"`
+  }
+
+	body, err := ioutil.ReadAll(result.Body)
+	if err!=nil{
+		return err
+	}
+	//fmt.Println("000000000000000000000000000000000_result.Body=》",string(body))
+  var returnValue  ReturnValue
+	err=json.Unmarshal(body,&returnValue)
+	if err!=nil{
+		return err
+	}
+	fmt.Printf("%#v\n",returnValue)
+	if returnValue.Code!=0{
+		return errors.New("failed!!!")
+	}
   return nil
 }

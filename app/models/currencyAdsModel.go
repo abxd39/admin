@@ -54,6 +54,7 @@ type AdsUserExUser struct {
 	SecurityAuth int
 	PremiumTrue float64 `xorm:"-" json:"premium_true"`
 	AcceptPriceTrue float64 `xorm:"-" json:"accept_price_true"`
+	Range string `xorm:"-" json:"range"`
 }
 
 func (a*AdsUserExUser) TableName()string{
@@ -180,7 +181,7 @@ func (this *Ads) GetAdsList(page, rows, status, tokenid, tradeid, verify int, se
 		}
 		list[i].PremiumTrue= this.Int64ToFloat64By8Bit(int64(v.Premium))
 		list[i].AcceptPriceTrue =this.Int64ToFloat64By8Bit(int64(v.AcceptPrice))
-
+		list[i].Range = fmt.Sprintf("%d-%d",v.MinLimit,v.MaxLimit)
 	}
 	mList.Items = list
 	return mList, nil

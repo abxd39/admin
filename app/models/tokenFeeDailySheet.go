@@ -115,7 +115,7 @@ func (this *TokenFeeDailySheet) BoottimeTimingSettlement() {
 		}
 		statistics.TotalBalanceCny = statistics.TotalBuyFeeCny + statistics.TotalSellFeeCny
 		statistics.Date = cunrrentUnixtime
-		_, err = engine.InsertOne(&TokenFeeDailySheet{
+		_, err = engine.AllCols().InsertOne(&TokenFeeDailySheet{
 			TotalBalance: statistics.TotalBalanceCny,
 			BuyBalance:   statistics.TotalBuyFeeCny,
 			SellBalance:  statistics.TotalSellFeeCny,

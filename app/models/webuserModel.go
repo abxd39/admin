@@ -176,6 +176,7 @@ func (w *WebUser) SecondAffirmLimit(uid, status int) error {
 	//err :=new(apis.VendorApi).AddAwardToken(uid)
 	//if err!=nil{
 	//	//sess.Rollback()
+	//	fmt.Println(err.Error())
 	//	fmt.Println("赠送奖励失败")
 	//}
 	//return nil
@@ -215,7 +216,7 @@ func (w *WebUser) SecondAffirmLimit(uid, status int) error {
 		wu.SetTardeMark = wu.SetTardeMark ^ utils.APPLY_FOR_SECOND_NOT_ALREADY //二级认证没有通过
 		wu.SetTardeMark = wu.SetTardeMark &^ utils.APPLY_FOR_SECOND            //申请撤销
 		fmt.Println("uid=", uid, "------------------>二级认证", wu.SetTardeMark)
-		if _, err = sess.Table("user_secondary_certification").Where("uid=?", uid).Cols("reverse_side_path", "in_hand_picture_path", "positive_path", "verify_time", "video_recording_digital").Update(&UserSecondaryCertification{
+		if _, err = sess.Table("user_secondary_certification").Where("uid=?", uid).AllCols().Update(&UserSecondaryCertification{
 			ReverseSidePath:       "",
 			InHandPicturePath:     "",
 			PositivePath:          "",
@@ -255,8 +256,8 @@ func (w *WebUser) SecondAffirmLimit(uid, status int) error {
 	}
 	//审核过之后不管通没通过审核 实名申请的状态一律设为为 未申请状态
 	wu.SetTardeMark = wu.SetTardeMark &^ utils.APPLY_FOR_SECOND
-	wu.SetTardeMark = wu.SetTardeMark ^ utils.APPLY_FOR_SECOND_NOT_ALREADY //二级认证没有通过
-	wu.SetTardeMark = wu.SetTardeMark &^ utils.APPLY_FOR_SECOND            //申请撤销
+	wu.SetTardeMark = wu.SetTardeMark &^ utils.APPLY_FOR_SECOND_NOT_ALREADY //二级认证没有通过
+	//wu.SetTardeMark = wu.SetTardeMark &^ utils.APPLY_FOR_SECOND            //申请撤销
 	_, err = sess.Where("uid=?", uid).Cols("security_auth", "set_tarde_mark").Update(&WebUser{
 		SecurityAuth: wu.SecurityAuth,
 		SetTardeMark: wu.SetTardeMark,
@@ -327,6 +328,7 @@ func (w *WebUser) FirstAffirmLimit(uid, status int) error {
 	}
 	//删除 申请状态
 	wu.SetTardeMark = wu.SetTardeMark &^ utils.APPLY_FOR_FIRST
+	wu.SetTardeMark = wu.SetTardeMark &^ utils.APPLY_FOR_FIRST_NOT_ALREADY //没有通过
 	_, err = sess.Where("uid=?", uid).Cols("security_auth", "set_tarde_mark").Update(&WebUser{
 		SecurityAuth: wu.SecurityAuth,
 		SetTardeMark: wu.SetTardeMark,

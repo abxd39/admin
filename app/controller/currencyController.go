@@ -77,102 +77,7 @@ func (cu *CurrencyController) GetCurrencyChangeHistory(c *gin.Context) {
 		}
 	}
 
-	//if req.Search != `` || req.Status != 0 {
-	//	// 先帅选用户资料
-	//	list, err := new(models.UserGroup).GetAllUser(req.Page, req.Rows, req.Status, req.Search)
-	//	if err != nil {
-	//		cu.RespErr(c, err)
-	//		return
-	//	}
-	//	value, Ok := list.Items.([]models.UserGroup)
-	//	if !Ok {
-	//		cu.RespErr(c, errors.New("assert type UserGroup failed!!"))
-	//		return
-	//	}
-	//	uidlist := make([]int64, 0)
-	//	for _, v := range value {
-	//		uidlist = append(uidlist, v.Uid)
-	//	}
-	//	histroyList, err := new(models.UserCurrencyHistory).GetListForUid(req.Page, req.Rows, uidlist)
-	//	if err != nil {
-	//		cu.RespErr(c, err)
-	//		return
-	//	}
-	//	histroyValue, ok := histroyList.Items.([]models.UserCurrencyHistory)
-	//	if !ok {
-	//		cu.RespErr(c, errors.New("assert type UserCurrencyHistory failed!!"))
-	//		return
-	//	}
-	//
-	//	for i, _ := range histroyValue {
-	//		for _, v := range value {
-	//			if histroyValue[i].Uid == int(v.Uid) {
-	//				histroyValue[i].Email = v.Email
-	//				histroyValue[i].NickName = v.NickName
-	//				histroyValue[i].Phone = v.Phone
-	//				histroyValue[i].Status = v.Status
-	//				break
-	//			}
-	//		}
-	//		for _, vt := range tokenlist {
-	//			if int(vt.Id) == histroyValue[i].TokenId {
-	//				histroyValue[i].TokenName = vt.Name
-	//				break
-	//			}
-	//
-	//		}
-	//	}
-	//	histroyList.Items = histroyValue
-	//	cu.Put(c, "list", histroyList)
-	//	cu.RespOK(c)
-	//	return
-	//
-	//} else {
-	//	list, err := new(models.UserCurrencyHistory).GetList(req.Page, req.Rows, req.Chtype, req.Date)
-	//	if err != nil {
-	//		cu.RespErr(c, err)
-	//		return
-	//	}
-	//	uidList := make([]uint64, 0)
-	//	Value, ok := list.Items.([]models.UserCurrencyHistory)
-	//	if !ok {
-	//		cu.RespErr(c, err)
-	//		return
-	//	}
-	//	for _, v := range Value {
-	//		uidList = append(uidList, uint64(v.Uid))
-	//	}
-	//	//
-	//	ulist, err := new(models.UserGroup).GetUserListForUid(uidList)
-	//	if err != nil {
-	//		cu.RespErr(c, err)
-	//		return
-	//	}
-	//
-	//	for i, _ := range Value {
-	//		for _, v := range ulist {
-	//			if Value[i].Uid == int(v.Uid) {
-	//				Value[i].NickName = v.NickName
-	//				Value[i].Phone = v.Phone
-	//				Value[i].Email = v.Email
-	//				Value[i].Status = v.Status
-	//				break
-	//			}
-	//		}
-	//		for _, vt := range tokenlist {
-	//			if int(vt.Id) == Value[i].TokenId {
-	//				Value[i].TokenName = vt.Name
-	//				break
-	//			}
-	//
-	//		}
-	//
-	//	}
-	//	list.Items = Value
-	//	cu.Put(c, "list", list)
-	//	cu.RespOK(c)
-	//	return
-	//}
+
 	ulist.Items =list
 	cu.Put(c, "list", ulist)
 	cu.RespOK(c)
@@ -276,7 +181,7 @@ func (cu *CurrencyController) GetUserDetailList(c *gin.Context) {
 		Uid      int `form:"uid" json:"uid" binding:"required"`
 		Page     int `form:"page" json:"page" binding:"required"`
 		Rows     int `form:"rows" json:"rows" `
-		Token_id int `form:"token_id" json:"token_id"`
+		TokenId int `form:"token_id" json:"token_id"`
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
@@ -285,12 +190,13 @@ func (cu *CurrencyController) GetUserDetailList(c *gin.Context) {
 		return
 	}
 
-	result, page, total, err := new(models.UserCurrency).GetCurrencyList(req.Page, req.Rows, req.Uid, req.Token_id)
+	list,err := new(models.DetailCurrency).GetCurrencyList(req.Page, req.Rows, req.Uid, req.TokenId)
 	if err != nil {
 		cu.RespErr(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"code": 0, "page": page, "total": total, "data": result, "msg": "成功"})
+	cu.Put(c,"list",list)
+	cu.RespOK(c)
 	return
 }
 

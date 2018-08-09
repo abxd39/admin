@@ -91,7 +91,7 @@ func (u *UserSecondaryCertification) GetSecondaryCertificationList(page, rows, v
 	//	query = query.Where(temp)
 	//}
 
-	sql :="SELECT t.phone,t.email,t.status,t.uid,t.set_tarde_mark,t.security_auth,us.verify_time,us.verify_count,us.video_recording_digital "
+	sql :="SELECT t.phone,t.email,t.status,t.uid,t.set_tarde_mark,t.security_auth,us.verify_time,us.verify_count,us.video_recording_digital,ex.nick_name "
 	countSql:= "SELECT COUNT(*) num "
 
 	Value:="FROM  g_common.`user` t JOIN g_common.`user_secondary_certification` us ON us.uid =t.uid  JOIN g_common.`user_ex` ex ON us.uid= ex.uid "

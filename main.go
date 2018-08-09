@@ -12,7 +12,6 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 
-	"admin/app/models"
 )
 
 func main() {
@@ -30,8 +29,9 @@ func main() {
 	r.Use(middleware.CheckLogin())
 	app.Router(r)
 	//启动定时器
-	go new(models.TokenFeeDailySheet).BoottimeTimingSettlement()
-	go new(models.WalletInoutDailySheet).BoottimeTimingSettlement()
+	//go new(models.TokenFeeDailySheet).BoottimeTimingSettlement()
+	//go new(models.WalletInoutDailySheet).BoottimeTimingSettlement()
+	//go new(models.CurencyFeeDailySheet).BoottimeTimingSettlement()
 	r.Run(fmt.Sprintf(":%d", utils.Cfg.MustInt("http", "port")))
 }
 

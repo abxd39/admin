@@ -53,6 +53,10 @@ func (this *TokenController) Router(r *gin.Engine) {
 
 func(this *TokenController) test1(c*gin.Context){
 	new(models.TokenFeeDailySheet).Test1()
+	new(models.CurencyFeeDailySheet).BoottimeTimingSettlement()
+	new(models.WalletInoutDailySheet).BoottimeTimingSettlement()
+	new(models.TokenFeeDailySheet).BoottimeTimingSettlement()
+	this.RespOK(c)
 	return
 }
 
@@ -549,6 +553,8 @@ func (this *TokenController) GetTokenCashList(c *gin.Context) {
 func (this *TokenController) GetTokenDetail(c *gin.Context) {
 	req := struct {
 		Uid      int `form:"uid" json:"uid" binding:"required"`
+		Page     int `form:"page" json:"page" binding:"required"`
+		Rows     int `form:"rows" json:"rows" `
 		Token_id int `form:"token_id" json:"token_id"`
 	}{}
 	err := c.ShouldBind(&req)
@@ -558,7 +564,7 @@ func (this *TokenController) GetTokenDetail(c *gin.Context) {
 		return
 	}
 	//bibi账户余额
-	list, err := new(models.UserToken).GetTokenDetailOfUid(req.Uid, req.Token_id)
+	list, err := new(models.DetailToken).GetTokenDetailOfUid(req.Page,req.Rows,req.Uid, req.Token_id)
 	if err != nil {
 		this.RespErr(c, err)
 		return
@@ -624,14 +630,15 @@ func (this *TokenController) GetRecordList(c *gin.Context) {
 //币币挂单列表
 func (this *TokenController) GetTokenOderList(c *gin.Context) {
 	req := struct {
-		Page     int    `form:"page" json:"page" binding:"required"`
-		Page_num int    `form:"rows" json:"rows" `
-		Uid      int    `form:"uid" json:"uid" `
-		Trade_id string `form:"trade_id" json:"trade_id" `               //交易类型id 市价交易or 限价交易
-		Start_t  int    `form:"start_t" json:"start_t"`                  //时间 默认当天
-		Symbo    string `form:"symbo" json:"symbo"  binding:"required" ` //交易对
-		Ad_id    int    `form:"ad_id" json:"ad_id" `                     //买卖方向
-		Status   int    `form:"status" json:"staus" `                    //订单状态
+		Page     	int    `form:"page" json:"page" binding:"required"`
+		Rows 	 	int    `form:"rows" json:"rows" `
+		Uid      	int    `form:"uid" json:"uid" `
+		TradeId 	string `form:"trade_id" json:"trade_id" `               //交易类型id 市价交易or 限价交易
+		BeginTime   int    `form:"bt" json:"bt"`
+		EndTime     int  `form:"et" json:"et"`
+		Symbol    	string `form:"symbol" json:"symbol"  binding:"required" ` //交易对
+		AdId    	int    `form:"ad_id" json:"ad_id" `                     //买卖方向
+		Status   	int    `form:"status" json:"staus" `                    //订单状态
 	}{}
 
 	err := c.ShouldBind(&req)
@@ -640,7 +647,7 @@ func (this *TokenController) GetTokenOderList(c *gin.Context) {
 		this.RespErr(c, err)
 		return
 	}
-	list, err := new(models.EntrustDetail).GetTokenOrderList(req.Page, req.Page_num, req.Ad_id, req.Status, req.Start_t, req.Uid, req.Symbo, req.Trade_id)
+	list, err := new(models.EntrustDetail).GetTokenOrderList(req.Page, req.Rows, req.AdId, req.Status, req.BeginTime,req.EndTime, req.Uid, req.Symbol, req.TradeId)
 	if err != nil {
 		this.RespErr(c, err)
 		return

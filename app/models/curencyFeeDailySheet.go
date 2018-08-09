@@ -95,10 +95,12 @@ func (this *CurencyFeeDailySheet) BoottimeTimingSettlement() {
 			}
 			cfds.BalanceCny +=this.Float64ToInt64By8Bit(fResult)
 		}
-		_,err=engine.InsertOne(&cfds)
+		_,err=engine.AllCols().InsertOne(&cfds)
 		if err!=nil{
 			utils.AdminLog.Println(err.Error())
 			continue
 		}
+		fmt.Println("CurencyFeeDailySheet--->successfule")
+
 	}
 }

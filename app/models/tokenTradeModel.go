@@ -199,7 +199,7 @@ func (this *Trade) GetTokenRecordList(page, rows, opt, uid int, date uint64, nam
  */
 func (this *Trade) GetFeeInfoList(page, rows, uid, opt int, date uint64, name string) (*ModelList, error) {
 	engine := utils.Engine_token
-	query := engine.Desc("deal_time")
+	query := engine.Desc("trade.token_id")
 	query = query.Join("left", "config_token_cny p", "trade.token_id = p.token_id")
 
 	if uid != 0 {
