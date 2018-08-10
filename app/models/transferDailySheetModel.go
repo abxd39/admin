@@ -11,6 +11,7 @@ type TransferDailySheet struct {
 	BaseModel `xorm:"-"`
 	Id        int32  `xorm:"id" json:"id"`
 	TokenId   int32  `xorm:"token_id" json:"token_id"`
+	TokenName string `xorm:"token_name" json:"token_name"`
 	Type      int8   `xorm:"type" json:"type"` // 1-划转到币币 2-划转到法币
 	Num       int64  `xrom:"num" json:"num"`
 	Date      string `xorm:"date" json:"date"`

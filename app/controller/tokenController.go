@@ -710,20 +710,22 @@ func (t *TokenController) ListTransferDailySheet(ctx *gin.Context) {
 
 	// 整理数据
 	type newItem struct {
-		Id      int32   `json:"id"`
-		TokenId int32   `json:"token_id"`
-		Type    int8    `json:"type"`
-		Num     float64 `json:"num"`
-		Date    string  `json:"date"`
+		Id        int32   `json:"id"`
+		TokenId   int32   `json:"token_id"`
+		TokenName string  `json:"token_name"`
+		Type      int8    `json:"type"`
+		Num       float64 `json:"num"`
+		Date      string  `json:"date"`
 	}
 	newItems := make([]newItem, len(list))
 	for k, v := range list {
 		newItems[k] = newItem{
-			Id:      v.Id,
-			TokenId: v.TokenId,
-			Type:    v.Type,
-			Num:     convert.Int64ToFloat64By8Bit(v.Num),
-			Date:    v.Date,
+			Id:        v.Id,
+			TokenId:   v.TokenId,
+			TokenName: v.TokenName,
+			Type:      v.Type,
+			Num:       convert.Int64ToFloat64By8Bit(v.Num),
+			Date:      v.Date,
 		}
 	}
 	modelList.Items = newItems
