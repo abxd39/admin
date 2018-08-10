@@ -69,13 +69,14 @@ func (u *DetailToken) GetTokenDetailOfUid(page,rows ,uid, tokenId int) (*ModelLi
 	if err != nil {
 		return nil, err
 	}
+	//注 折合为空是因为 还没有计算折合
 	for i,v:=range  list{
 		list[i].BalanceTrue = u.Int64ToFloat64By8Bit(v.Balance)
 		list[i].FrozenTrue =u.Int64ToFloat64By8Bit(v.Frozen)
 		list[i].AmountTo =u.Int64ToFloat64By8Bit(v.BalanceCny) +u.Int64ToFloat64By8Bit(v.FrozenCny)
 	}
 	mList.Items =list
-	fmt.Println("123456")
+
 	return mList, nil
 }
 
@@ -107,6 +108,7 @@ func (t *PersonalProperty) TotalUserBalance(page, rows, status int, search strin
 	if err!=nil{
 		return nil,err
 	}
+	//折合rmb为空是因为 数据库上就空
 	for i,v:=range list{
 		list[i].AmountTo  = v.BalanceCny +v.FrozenCny
 	}

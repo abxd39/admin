@@ -140,13 +140,23 @@ func (a *Article) UpArticle(id, status int) error {
 		return errors.New("文章不存在！！")
 	}
 	current := time.Now().Format("2006-01-02 15:04:05")
-	_, err := engine.Id(id).Update(&Article{
-		Astatus:    status,
-		UpdateTime: current,
-	})
-	if err != nil {
-		return err
+	//下架
+	if status==1{
+		_, err := engine.Id(id).Update(&Article{
+			Astatus:   status ,
+			UpdateTime: current,
+		})
+		if err != nil {
+			return err
+		}
 	}
+	//if status==2 {
+	//	_,err:=engine.Id(id).Delete(&Article{})
+	//	if err!=nil{
+	//		return err
+	//	}
+	//}
+
 	return nil
 }
 
