@@ -109,3 +109,4 @@ func (VendorApi)AddAwardToken(uid int)error{
 	}
   return nil
 }
+

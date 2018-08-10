@@ -178,7 +178,7 @@ func (this *Order) GetOrderId(uid []int, status int) ([]OrderGroup, error) {
 	return list, nil
 }
 
-func (this *Order) GetOrderList(Page, PageNum, AdType, States, TokenId int, StartTime, search string) (*ModelList, error) {
+func (this *Order) GetOrderList(Page, PageNum, AdType, States, TokenId int,  search string) (*ModelList, error) {
 	engine := utils.Engine_currency
 	query := engine.Desc("order.id")
 	query = query.Join("LEFT", "g_common.tokens t", "order.token_id=t.id")
@@ -194,11 +194,11 @@ func (this *Order) GetOrderList(Page, PageNum, AdType, States, TokenId int, Star
 	if TokenId != 0 {
 		query = query.Where("token_id=?", TokenId)
 	}
-	if StartTime != `` {
-		substr := StartTime[:11] + "23:59:59"
-		temp := fmt.Sprintf("created_time BETWEEN '%s' AND '%s' ", StartTime, substr)
-		query = query.Where(temp)
-	}
+	//if StartTime != `` {
+	//	substr := StartTime[:11] + "23:59:59"
+	//	temp := fmt.Sprintf("created_time BETWEEN '%s' AND '%s' ", StartTime, substr)
+	//	query = query.Where(temp)
+	//}
 	if search != `` {
 		temp := fmt.Sprintf(" concat(IFNULL(sell_name,''),IFNULL(buy_name,'')) LIKE '%%%s%%'  ", search)
 		query = query.Where(temp)

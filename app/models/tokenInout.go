@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-//冲提币明细流水表
+//冲 提 币明细流水表
 
 type TokenInout struct {
 	BaseModel   `xorm:"-"`
@@ -34,31 +34,33 @@ type TokenInout struct {
 
 type TokenInoutGroup struct {
 	TokenInout `xorm:"extends"`
-	NickName   string `xorm:"-" json:"nick_name"`
-	Phone      string `xorm:"-" json:"phone"`
-	Email      string `xorm:"-" json:"email"`
-	Status     int    `xorm:"-" json:"status"`
+	NickName   string `json:"nick_name"`
+	Phone      string `json:"phone"`
+	Email      string `json:"email"`
+	Status     int    `json:"status"`
+	AmountTrue float64 `xorm:"-" json:"amount_ture"`
+	FeeTrue float64 `xorm:"-" json:"fee_true"`
+	ToCount float64 `xorm:"-" json:"to_count"`
 }
 
 func (t *TokenInoutGroup) TableName() string {
 	return "token_inout"
 }
 
-
 //仪表盘 日提币手续费
-func (t*TokenInout)GetOutTokenFee()(float64,error)  {
-	engine:=utils.Engine_wallet
-	current:=time.Now().Format("2006-01-02 15:04:05")
-	sql:=fmt.Sprintf("SELECT SUM(t.fee)FROM (SELECT SUBSTRING(done_time,1,10)days,fee_cny fee FROM g_wallet.`token_inout` WHERE states=2)t WHERE t.days='%s'",current[:10])
-	fee:=&struct {
+func (t *TokenInout) GetOutTokenFee() (float64, error) {
+	engine := utils.Engine_wallet
+	current := time.Now().Format("2006-01-02 15:04:05")
+	sql := fmt.Sprintf("SELECT SUM(t.fee)FROM (SELECT SUBSTRING(done_time,1,10)days,fee_cny fee FROM g_wallet.`token_inout` WHERE states=2)t WHERE t.days='%s'", current[:10])
+	fee := &struct {
 		Fee float64
 	}{}
-	_,err:=engine.SQL(sql).Get(fee)
-	if err!=nil{
+	_, err := engine.SQL(sql).Get(fee)
+	if err != nil {
 		utils.AdminLog.Println(err.Error())
-		return 0,err
+		return 0, err
 	}
-	return fee.Fee,nil
+	return fee.Fee, nil
 }
 
 //日提币 每个用户提币信息
@@ -160,112 +162,153 @@ func (t *TokenInout) GetTotalList(page, rows, tokenId, opt int, date string) (*M
 }
 
 //提币 充币 p3-1-0 充币 提币管理
-func (t *TokenInout) GetTokenInList(page, rows, uStatus, status, tokenId, opt int, search, date string) (*ModelList, error) {
+func (t *TokenInoutGroup) GetTokenInList(page, rows, uStatus, status, tokenId, opt int, search string) (*ModelList, error) {
 	engine := utils.Engine_wallet
-	query := engine.Desc("states")
+	query := engine.Alias("t").Desc("t.uid")
+	query = query.Join("LEFT", "g_common.user u", "u.uid=t.uid")
+	query = query.Join("LEFT", "g_common.user_ex ex", "ex.uid=t.uid")
+	if tokenId != 0 {
+		query = query.Where("t.token_id=?", tokenId)
+	}
+	if status != 0 {
+		query = query.Where("u.states=?", status)
+	}
+	if opt != 0 {
+		query = query.Where("t.opt=?", opt)
+	}
+	//if date != `` {
+	//	subst := date[:11] + "23:59:59"
+	//	fmt.Println(subst)
+	//	sql := fmt.Sprintf("t.create_time  BETWEEN '%s' AND '%s' ", date, subst)
+	//	query = query.Where(sql)
+	//}
+	if status != 0 {
+		query = query.Where("u.status=?", status)
+	}
+	if len(search) != 0 {
+		temp := fmt.Sprintf(" concat(IFNULL(u.`uid`,''),IFNULL(u.`phone`,''),IFNULL(ex.`nick_name`,''),IFNULL(u.`email`,'')) LIKE '%%%s%%'  ", search)
+		query = query.Where(temp)
+	}
+	queryCount:=*query
+	count,err:=queryCount.Count(t)
+	if err!=nil{
+		return nil, err
+	}
+	offset,mList:=t.Paging(page,rows,int(count))
+	list:=make([]TokenInoutGroup,0)
+	err=query.Limit(mList.PageSize,offset).Find(&list)
+	if err!=nil{
+		return nil, err
+	}
+	for i,v:=range list{
+		list[i].FeeTrue = t.Int64ToFloat64By8Bit(v.Fee)
+		list[i].AmountTrue =t.Int64ToFloat64By8Bit(v.Amount)
+		list[i].ToCount = list[i].AmountTrue-list[i].FeeTrue
+	}
+	mList.Items = list
+
 	//两个方向  用户信息库和 钱包库
-	if uStatus != 0 || search != `` {
-		mList, err := new(WebUser).GetAllUser(page, rows, uStatus, search)
-		if err != nil {
-			return nil, err
-		}
-		value, ok := mList.Items.([]UserGroup)
-		if !ok {
-			return nil, errors.New("assert []webUser type failed!!")
-		}
-		uidList := make([]int64, 0)
-		for _, v := range value {
-			uidList = append(uidList, v.Uid)
-		}
-		if len(uidList) < 1 {
-			//没有匹配刷选条件的用户
-			return nil, nil
-		}
-		query = query.In("uid", uidList)
-		countQuery := *query
-		count, err := countQuery.Count(&TokenInout{})
-		offset, modelList := t.Paging(page, rows, int(count))
-		list := make([]TokenInoutGroup, 0)
-		err = query.Limit(modelList.PageSize, offset).Find(&list)
-		if err != nil {
-			return nil, err
-		}
-		//
-		for i, _ := range list {
-			for _, v := range value {
-				if list[i].Uid == int(v.Uid) {
-					list[i].NickName = v.NickName
-					list[i].Phone = v.Phone
-					list[i].Email = v.Email
-					list[i].Status = v.Status
-					break
-				}
-			}
-		}
-		modelList.Items = list
-		return modelList, nil
-	} else {
-		if tokenId != 0 {
-			query = query.Where("token_id=?", tokenId)
-		}
-		if status != 0 {
-			query = query.Where("states=?", status)
-		}
-		if opt != 0 {
-			query = query.Where("opt=?", opt)
-		}
-		if date != `` {
-			subst := date[:11] + "23:59:59"
-			fmt.Println(subst)
-			sql := fmt.Sprintf("create_time  BETWEEN '%s' AND '%s' ", date, subst)
-			query = query.Where(sql)
-		}
-		countQuery := *query
-		count, err := countQuery.Count(&TokenInout{})
-		if err != nil {
-			return nil, err
-		}
-		offset, modelList := t.Paging(page, rows, int(count))
-		list := make([]TokenInoutGroup, 0)
-		err = query.Limit(modelList.PageSize, offset).Find(&list)
-		if err != nil {
-			return nil, err
-		}
-		uidList := make([]uint64, 0)
-		for _, v := range list {
-			uidList = append(uidList, uint64(v.Uid))
-		}
-		if len(uidList) < 1 {
-			//没有匹配刷选条件的用户
-			return nil, nil
-		}
-		uList, err := new(UserGroup).GetUserListForUid(uidList)
-		if err != nil {
-			return nil, err
-		}
-		for i, _ := range list {
-			for _, v := range uList {
-				if int(v.Uid) == list[i].Uid {
-					list[i].TokenName = v.NickName
-					list[i].Phone = v.Phone
-					list[i].Email = v.Email
-					list[i].Status = v.Status
-					break
-				}
-			}
-		}
-		modelList.Items = list
-		return modelList, nil
-	} //else
-	return nil, nil
+	//if uStatus != 0 || search != `` {
+	//	mList, err := new(WebUser).GetAllUser(page, rows, uStatus, search)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//	value, ok := mList.Items.([]UserGroup)
+	//	if !ok {
+	//		return nil, errors.New("assert []webUser type failed!!")
+	//	}
+	//	uidList := make([]int64, 0)
+	//	for _, v := range value {
+	//		uidList = append(uidList, v.Uid)
+	//	}
+	//	if len(uidList) < 1 {
+	//		//没有匹配刷选条件的用户
+	//		return nil, nil
+	//	}
+	//	query = query.In("uid", uidList)
+	//	countQuery := *query
+	//	count, err := countQuery.Count(&TokenInout{})
+	//	offset, modelList := t.Paging(page, rows, int(count))
+	//	list := make([]TokenInoutGroup, 0)
+	//	err = query.Limit(modelList.PageSize, offset).Find(&list)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//	//
+	//	for i, _ := range list {
+	//		for _, v := range value {
+	//			if list[i].Uid == int(v.Uid) {
+	//				list[i].NickName = v.NickName
+	//				list[i].Phone = v.Phone
+	//				list[i].Email = v.Email
+	//				list[i].Status = v.Status
+	//				break
+	//			}
+	//		}
+	//	}
+	//	modelList.Items = list
+	//	return modelList, nil
+	//} else {
+	//	if tokenId != 0 {
+	//		query = query.Where("token_id=?", tokenId)
+	//	}
+	//	if status != 0 {
+	//		query = query.Where("states=?", status)
+	//	}
+	//	if opt != 0 {
+	//		query = query.Where("opt=?", opt)
+	//	}
+	//	if date != `` {
+	//		subst := date[:11] + "23:59:59"
+	//		fmt.Println(subst)
+	//		sql := fmt.Sprintf("create_time  BETWEEN '%s' AND '%s' ", date, subst)
+	//		query = query.Where(sql)
+	//	}
+	//	countQuery := *query
+	//	count, err := countQuery.Count(&TokenInout{})
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//	offset, modelList := t.Paging(page, rows, int(count))
+	//	list := make([]TokenInoutGroup, 0)
+	//	err = query.Limit(modelList.PageSize, offset).Find(&list)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//	uidList := make([]uint64, 0)
+	//	for _, v := range list {
+	//		uidList = append(uidList, uint64(v.Uid))
+	//	}
+	//	if len(uidList) < 1 {
+	//		//没有匹配刷选条件的用户
+	//		return nil, nil
+	//	}
+	//	uList, err := new(UserGroup).GetUserListForUid(uidList)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//	for i, _ := range list {
+	//		for _, v := range uList {
+	//			if int(v.Uid) == list[i].Uid {
+	//				list[i].TokenName = v.NickName
+	//				list[i].Phone = v.Phone
+	//				list[i].Email = v.Email
+	//				list[i].Status = v.Status
+	//				break
+	//			}
+	//		}
+	//	}
+	//	modelList.Items = list
+	//	return modelList, nil
+	//} //else
+	return mList, nil
 }
 
 //提币管理
-func (t *TokenInout) OptTakeToken(id, uid int) error {
+func (t *TokenInout) OptTakeToken(id, uid, status int) error {
 	engine := utils.Engine_wallet
-	query := engine.Desc("id")
 	//t:=new(TokenInout)
-	has, err := query.Where("id=? and uid=?", id, uid).Get(t)
+	has, err := engine.Where("id=? and uid=?", id, uid).Get(t)
 	if err != nil {
 		return err
 	}
@@ -273,12 +316,21 @@ func (t *TokenInout) OptTakeToken(id, uid int) error {
 		return errors.New("rescind failed !!")
 	}
 
-	_, err = query.Where("id=? and uid=?", id, uid).Update(&TokenInout{
-		States: 3,
-	})
-	if err != nil {
+	sess := engine.NewSession()
+	if err = sess.Begin(); err != nil {
 		return err
 	}
+	defer sess.Close()
+
+	_, err = sess.Where("id=? and uid=?", id, uid).Update(&TokenInout{
+		States: status,
+	})
+	if err != nil {
+		sess.Rollback()
+		return err
+	}
+
+	sess.Commit()
 	return nil
 
 }

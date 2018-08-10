@@ -44,12 +44,12 @@ func (m *MoneyRecord) GetMoneyList(page, rows int, uid []int64) (*ModelList, err
 	return modelList, nil
 }
 
-func (m *MoneyRecord) GetMoneyListForDateOrType(page, rows, ty,status int, date uint64,search string) (*ModelList, error) {
+func (m *MoneyRecord) GetMoneyListForDateOrType(page, rows, ty,status int, tid int,search string) (*ModelList, error) {
 	engine := utils.Engine_token
 	query := engine.Alias("uch").Desc("id")
 	query = query.Join("LEFT", "g_common.user u ", "u.uid= uch.uid")
 	query = query.Join("LEFT", "g_common.user_ex ex", "uch.uid=ex.uid")
-	query =query.Where("uch.created_time between ? and ?", date,date+86400)
+	query =query.Where("uch.token_id", tid)
 
 	if search!=``{
 		temp := fmt.Sprintf(" concat(IFNULL(u.`uid`,''),IFNULL(u.`phone`,''),IFNULL(ex.`nick_name`,''),IFNULL(u.`email`,'')) LIKE '%%%s%%'  ", search)

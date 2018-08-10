@@ -21,7 +21,7 @@ type TokenHistory struct {
 }
 type TokenHistoryGroup struct {
 	TokenHistory `xorm:"extends"`
-	Name string
+	Mark string `json:"name`
 }
 
 func (this*TokenHistoryGroup)TableName()string  {

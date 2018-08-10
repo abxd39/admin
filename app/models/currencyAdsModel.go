@@ -123,7 +123,7 @@ func (this *Ads) DownTradeAds(id, uid int) error {
 //交易 权限
 //交易方向
 // 刷选
-func (this *Ads) GetAdsList(page, rows, status, tokenid, tradeid, verify int, search, date string) (*ModelList, error) {
+func (this *Ads) GetAdsList(page, rows, status, tokenid, tradeid, verify int, search string) (*ModelList, error) {
 
 	engine := utils.Engine_currency
 	query := engine.Desc("ads.id")
@@ -151,11 +151,11 @@ func (this *Ads) GetAdsList(page, rows, status, tokenid, tradeid, verify int, se
 	if tokenid != 0 {
 		query = query.Where("token_id=?", tokenid)
 	}
-	if date != `` {
-		subst := date[:11] + "23:59:59"
-		temp := fmt.Sprintf("created_time  BETWEEN '%s' AND '%s' ", date, subst)
-		query = query.Where(temp)
-	}
+	//if date != `` {
+	//	subst := date[:11] + "23:59:59"
+	//	temp := fmt.Sprintf("created_time  BETWEEN '%s' AND '%s' ", date, subst)
+	//	query = query.Where(temp)
+	//}
 	tempQuery := *query
 	//uidQuery := *query
 	//分两部分查询Count

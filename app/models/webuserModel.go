@@ -325,10 +325,11 @@ func (w *WebUser) FirstAffirmLimit(uid, status int) error {
 	}
 	if status == utils.AUTH_FIRST {
 		wu.SecurityAuth = wu.SecurityAuth ^ utils.AUTH_FIRST // 16 为实名状态标识
+		wu.SetTardeMark = wu.SetTardeMark &^ utils.APPLY_FOR_FIRST
+		wu.SetTardeMark = wu.SetTardeMark &^ utils.APPLY_FOR_FIRST_NOT_ALREADY //没有通过
 	}
 	//删除 申请状态
-	wu.SetTardeMark = wu.SetTardeMark &^ utils.APPLY_FOR_FIRST
-	wu.SetTardeMark = wu.SetTardeMark &^ utils.APPLY_FOR_FIRST_NOT_ALREADY //没有通过
+
 	_, err = sess.Where("uid=?", uid).Cols("security_auth", "set_tarde_mark").Update(&WebUser{
 		SecurityAuth: wu.SecurityAuth,
 		SetTardeMark: wu.SetTardeMark,
