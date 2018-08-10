@@ -12,6 +12,7 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 
+	"admin/cron"
 )
 
 func main() {
@@ -19,6 +20,15 @@ func main() {
 		panic("环境变量ADMIN_API_ENV未设置")
 	}
 
+	// 定时任务
+	cron.InitCron()
+
+	//启动定时器
+	//go new(models.TokenFeeDailySheet).BoottimeTimingSettlement()
+	//go new(models.WalletInoutDailySheet).BoottimeTimingSettlement()
+	//go new(models.CurencyFeeDailySheet).BoottimeTimingSettlement()
+
+	// 配置gin
 	r := gin.Default()
 
 	// session
@@ -28,10 +38,6 @@ func main() {
 	r.Use(middleware.JsCors())
 	r.Use(middleware.CheckLogin())
 	app.Router(r)
-	//启动定时器
-	//go new(models.TokenFeeDailySheet).BoottimeTimingSettlement()
-	//go new(models.WalletInoutDailySheet).BoottimeTimingSettlement()
-	//go new(models.CurencyFeeDailySheet).BoottimeTimingSettlement()
+
 	r.Run(fmt.Sprintf(":%d", utils.Cfg.MustInt("http", "port")))
 }
-

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"admin/constant"
+	"digicon/common/convert"
 	"github.com/gin-gonic/gin"
 	"regexp"
 )
@@ -568,7 +569,7 @@ func (this *TokenController) GetTokenDetail(c *gin.Context) {
 		return
 	}
 	//bibi账户余额
-	list, err := new(models.DetailToken).GetTokenDetailOfUid(req.Page,req.Rows,req.Uid, req.Token_id)
+	list, err := new(models.DetailToken).GetTokenDetailOfUid(req.Page, req.Rows, req.Uid, req.Token_id)
 	if err != nil {
 		this.RespErr(c, err)
 		return
@@ -634,15 +635,15 @@ func (this *TokenController) GetRecordList(c *gin.Context) {
 //币币挂单列表
 func (this *TokenController) GetTokenOderList(c *gin.Context) {
 	req := struct {
-		Page     	int    `form:"page" json:"page" binding:"required"`
-		Rows 	 	int    `form:"rows" json:"rows" `
-		Uid      	int    `form:"uid" json:"uid" `
-		TradeId 	string `form:"trade_id" json:"trade_id" `               //交易类型id 市价交易or 限价交易
-		BeginTime   int    `form:"bt" json:"bt"`
-		EndTime     int  `form:"et" json:"et"`
-		Symbol    	string `form:"symbol" json:"symbol"  binding:"required" ` //交易对
-		AdId    	int    `form:"ad_id" json:"ad_id" `                     //买卖方向
-		Status   	int    `form:"status" json:"staus" `                    //订单状态
+		Page      int    `form:"page" json:"page" binding:"required"`
+		Rows      int    `form:"rows" json:"rows" `
+		Uid       int    `form:"uid" json:"uid" `
+		TradeId   string `form:"trade_id" json:"trade_id" ` //交易类型id 市价交易or 限价交易
+		BeginTime int    `form:"bt" json:"bt"`
+		EndTime   int    `form:"et" json:"et"`
+		Symbol    string `form:"symbol" json:"symbol"  binding:"required" ` //交易对
+		AdId      int    `form:"ad_id" json:"ad_id" `                       //买卖方向
+		Status    int    `form:"status" json:"staus" `                      //订单状态
 	}{}
 
 	err := c.ShouldBind(&req)
@@ -651,7 +652,7 @@ func (this *TokenController) GetTokenOderList(c *gin.Context) {
 		this.RespErr(c, err)
 		return
 	}
-	list, err := new(models.EntrustDetail).GetTokenOrderList(req.Page, req.Rows, req.AdId, req.Status, req.BeginTime,req.EndTime, req.Uid, req.Symbol, req.TradeId)
+	list, err := new(models.EntrustDetail).GetTokenOrderList(req.Page, req.Rows, req.AdId, req.Status, req.BeginTime, req.EndTime, req.Uid, req.Symbol, req.TradeId)
 	if err != nil {
 		this.RespErr(c, err)
 		return
@@ -684,7 +685,7 @@ func (t *TokenController) ListTransferDailySheet(ctx *gin.Context) {
 		filter["token_id"] = v
 	}
 	if v := t.GetString(ctx, "date_begin"); v != "" {
-		if matched, err := regexp.MatchString(constant.DATE, v); err != nil || !matched {
+		if matched, err := regexp.MatchString(constant.REGE_PATTERN_DATE, v); err != nil || !matched {
 			t.RespErr(ctx, "参数date_begin格式错误")
 			return
 		}
@@ -692,7 +693,7 @@ func (t *TokenController) ListTransferDailySheet(ctx *gin.Context) {
 		filter["date_begin"] = v
 	}
 	if v := t.GetString(ctx, "date_end"); v != "" {
-		if matched, err := regexp.MatchString(constant.DATE, v); err != nil || !matched {
+		if matched, err := regexp.MatchString(constant.REGE_PATTERN_DATE, v); err != nil || !matched {
 			t.RespErr(ctx, "参数date_end格式错误")
 			return
 		}
@@ -701,14 +702,34 @@ func (t *TokenController) ListTransferDailySheet(ctx *gin.Context) {
 	}
 
 	// 调用model
-	_, list, err := new(models.TransferDailySheet).List(page, rows, filter)
+	modelList, list, err := new(models.TransferDailySheet).List(page, rows, filter)
 	if err != nil {
 		t.RespErr(ctx, err)
 		return
 	}
 
+	// 整理数据
+	type newItem struct {
+		Id      int32   `json:"id"`
+		TokenId int32   `json:"token_id"`
+		Type    int8    `json:"type"`
+		Num     float64 `json:"num"`
+		Date    string  `json:"date"`
+	}
+	newItems := make([]newItem, len(list))
+	for k, v := range list {
+		newItems[k] = newItem{
+			Id:      v.Id,
+			TokenId: v.TokenId,
+			Type:    v.Type,
+			Num:     convert.Int64ToFloat64By8Bit(v.Num),
+			Date:    v.Date,
+		}
+	}
+	modelList.Items = newItems
+
 	// 设置返回数据
-	t.Put(ctx, "list", list)
+	t.Put(ctx, "list", modelList)
 
 	// 返回
 	t.RespOK(ctx)
