@@ -115,7 +115,7 @@ func (t *TokenInout) GetTotalInfoList(page, rows, tid, opt int, date, search str
 	return mList, nil
 }
 
-//日提币汇总
+//日提币 充币 汇总
 func (t *TokenInout) GetTotalList(page, rows, tokenId, opt int, date string) (*ModelList, error) {
 	engine := utils.Engine_wallet
 	sql1 := "FROM (SELECT DATE_FORMAT(created_time,'%Y%m%d') DAY,id,opt,SUM(amount) total,token_name name,tokenid tid FROM token_inout WHERE "
@@ -168,7 +168,7 @@ func (t *TokenInoutGroup) GetTokenInList(page, rows, uStatus, status, tokenId, o
 	query = query.Join("LEFT", "g_common.user u", "u.uid=t.uid")
 	query = query.Join("LEFT", "g_common.user_ex ex", "ex.uid=t.uid")
 	if tokenId != 0 {
-		query = query.Where("t.token_id=?", tokenId)
+		query = query.Where("t.tokenid=?", tokenId)
 	}
 	if status != 0 {
 		query = query.Where("u.states=?", status)

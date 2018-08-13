@@ -49,7 +49,7 @@ func (m *MoneyRecord) GetMoneyListForDateOrType(page, rows, ty,status int, tid i
 	query := engine.Alias("uch").Desc("id")
 	query = query.Join("LEFT", "g_common.user u ", "u.uid= uch.uid")
 	query = query.Join("LEFT", "g_common.user_ex ex", "uch.uid=ex.uid")
-	query =query.Where("uch.token_id", tid)
+	query =query.Where("uch.token_id=?", tid)
 
 	if search!=``{
 		temp := fmt.Sprintf(" concat(IFNULL(u.`uid`,''),IFNULL(u.`phone`,''),IFNULL(ex.`nick_name`,''),IFNULL(u.`email`,'')) LIKE '%%%s%%'  ", search)

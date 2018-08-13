@@ -85,6 +85,8 @@ func JsCors() gin.HandlerFunc {
 			"https://admin.untpro.com": true,
 		}
 		if os.Getenv("ADMIN_API_ENV") != "prod" {
+			allowOrigins["https://admintest.sdun.io"] =true
+			allowOrigins["http://admintest.sdun.io"] =true
 			allowOrigins["http://localhost:8888"] = true
 			allowOrigins["https://localhost:8888"] = true
 		}

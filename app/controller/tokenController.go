@@ -102,7 +102,8 @@ func (this *TokenController) GetTokenInOutDailySheetList(c *gin.Context) {
 	req := struct {
 		Page    int    `form:"page" json:"page" binding:"required"`
 		Rows    int    `form:"rows" json:"rows" `
-		Date    string `form:"date",json:"date"` //日期
+		Bt    uint64    `form:"bt",json:"bt"` //日期
+		Et  uint64      `form:"et",json:"et"`
 		TokenId int    `form:"tid",json:"tid"`
 	}{}
 	err := c.ShouldBind(&req)
@@ -111,7 +112,7 @@ func (this *TokenController) GetTokenInOutDailySheetList(c *gin.Context) {
 		this.RespErr(c, err)
 		return
 	}
-	list, err := new(models.WalletInoutDailySheet).GetInOutDailSheetList(req.Page, req.Rows, req.TokenId, req.Date)
+	list, err := new(models.TokenInoutDailySheet).GetInOutDailySheetList(req.Page, req.Rows, req.TokenId, req.Bt,req.Et)
 	if err != nil {
 		this.RespErr(c, err)
 		return
@@ -145,14 +146,15 @@ func (this *TokenController) GetOderFeeTotalList(c *gin.Context) {
 	return
 }
 
-//冲提币汇总
+//提 充 币汇总
 func (this *TokenController) GetTotalTokenList(c *gin.Context) {
 	req := struct {
 		Opt     int    `form:"opt" json:"opt" binding:"required"` //1充 2 提币
 		Page    int    `form:"page" json:"page" binding:"required"`
 		Rows    int    `form:"rows" json:"rows" `
 		TokenId int    `form:"tokenId" json:"tokenId" ` //货币id
-		Date    string `form:"date",json:"date"`        //日期
+		Bt    uint64 `form:"bt",json:"bt"`        //筛选开始日期
+		Et uint64 `form:"et",json:"et"`   //筛选结束日期
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
@@ -160,14 +162,30 @@ func (this *TokenController) GetTotalTokenList(c *gin.Context) {
 		this.RespErr(c, err)
 		return
 	}
-	list, err := new(models.TokenInout).GetTotalList(req.Page, req.Rows, req.TokenId, req.Opt, req.Date)
-	if err != nil {
-		this.RespErr(c, err)
+	//list, err := new(models.TokenInout).GetTotalList(req.Page, req.Rows, req.TokenId, req.Opt, req.Date)
+	if req.Opt ==2{ //提币
+		list,err:=new(models.TokenInoutDailySheet).DayOutDailySheet(req.Page,req.Rows,req.TokenId,req.Bt,req.Et)
+		if err != nil {
+			this.RespErr(c, err)
+			return
+		}
+		this.Put(c, "list", list)
+		this.RespOK(c)
 		return
 	}
-	this.Put(c, "list", list)
-	this.RespOK(c)
+	if req.Opt ==1{ //充币
+		list,err:=new(models.TokenInoutDailySheet).DayPutDailySheet(req.Page,req.Rows,req.TokenId,req.Bt,req.Et)
+		if err != nil {
+			this.RespErr(c, err)
+			return
+		}
+		this.Put(c, "list", list)
+		this.RespOK(c)
+		return
+	}
+	return
 }
+
 
 func (this *TokenController) GetTotalTokenInfoList(c *gin.Context) {
 	req := struct {
@@ -271,9 +289,8 @@ func (this *TokenController) GetAddTakeList(c *gin.Context) {
 	req := struct {
 		Page     int    `form:"page" json:"page" binding:"required"`
 		Rows     int    `form:"rows" json:"rows" `
-		Token_id int    `form:"token_id" json:"token_id" ` //币种
+		TokenId int    `form:"token_id" json:"token_id" binding:"required"` //币种
 		Uid      int    `form:"uid" json:"uid" `
-		Date     uint64 `form:"date",json:"date"`
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
@@ -281,7 +298,7 @@ func (this *TokenController) GetAddTakeList(c *gin.Context) {
 		this.RespErr(c, err)
 		return
 	}
-	list, err := new(models.TokenHistoryGroup).GetAddTakeList(req.Page, req.Rows, req.Token_id, req.Uid, req.Date)
+	list, err := new(models.TokenHistoryGroup).GetAddTakeList(req.Page, req.Rows, req.TokenId, req.Uid)
 	if err != nil {
 		utils.AdminLog.Println(err.Error())
 		this.RespErr(c, err)
