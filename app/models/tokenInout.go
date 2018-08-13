@@ -34,13 +34,13 @@ type TokenInout struct {
 
 type TokenInoutGroup struct {
 	TokenInout `xorm:"extends"`
-	NickName   string `json:"nick_name"`
-	Phone      string `json:"phone"`
-	Email      string `json:"email"`
-	Status     int    `json:"status"`
+	NickName   string  `json:"nick_name"`
+	Phone      string  `json:"phone"`
+	Email      string  `json:"email"`
+	Status     int     `json:"status"`
 	AmountTrue float64 `xorm:"-" json:"amount_ture"`
-	FeeTrue float64 `xorm:"-" json:"fee_true"`
-	ToCount float64 `xorm:"-" json:"to_count"`
+	FeeTrue    float64 `xorm:"-" json:"fee_true"`
+	ToCount    float64 `xorm:"-" json:"to_count"`
 }
 
 func (t *TokenInoutGroup) TableName() string {
@@ -64,27 +64,27 @@ func (t *TokenInout) GetOutTokenFee() (float64, error) {
 }
 
 //日提币 每个用户提币信息
-func (t *TokenInout) GetTotalInfoList(page, rows, tid, opt int, date, search string) (*ModelList, error) {
+func (t *TokenInout) GetTotalInfoList(page, rows, tid, opt int, search string) (*ModelList, error) {
 	enginge := utils.Engine_wallet
 	//SELECT t.time,t.token_name,t.total,t.uid
 	sql1 := " FROM (SELECT DATE_FORMAT(created_time,'%Y%m%d') DAY,created_time time ,opt,SUM(amount) total ,tokenid,token_name name,uid FROM token_inout "
-	sql := fmt.Sprintf("WHERE %d", opt)
+	sql := fmt.Sprintf("WHERE opt=%d", opt)
 	if tid != 0 {
 		tmp := fmt.Sprintf(" AND tokenid=%d", tid)
 		sql += tmp
 	}
-	//sql:=fmt.Sprintf("  opt= %d AND tokenid=%d GROUP BY DAY, uid)t WHERE t.day=",opt,tid)
+
 	//刷选
 	if search != `` {
 		tmp := fmt.Sprintf(" AND uid=%s", search)
 		sql += tmp
 	}
-	sql += " GROUP BY DAY, uid)t WHERE t.day="
+	sql += " GROUP BY DAY, uid)t "
 	sql = sql1 + sql
-	if date != `` {
-		sub := date[:8]
-		sql = sql + sub
-	}
+	//if date != `` {
+	//	sub := date[:8]
+	//	sql = sql + sub
+	//}
 
 	type Count struct {
 		Count int
@@ -118,7 +118,7 @@ func (t *TokenInout) GetTotalInfoList(page, rows, tid, opt int, date, search str
 //日提币 充币 汇总
 func (t *TokenInout) GetTotalList(page, rows, tokenId, opt int, date string) (*ModelList, error) {
 	engine := utils.Engine_wallet
-	sql1 := "FROM (SELECT DATE_FORMAT(created_time,'%Y%m%d') DAY,id,opt,SUM(amount) total,token_name name,tokenid tid FROM token_inout WHERE "
+	sql1 := "FROM (SELECT DATE_FORMAT(created_time,'%Y%m%d') DAY,id,opt,SUM(amount) count,token_name name,tokenid tid FROM token_inout WHERE "
 	sql := fmt.Sprintf("opt= %d GROUP BY DAY, tokenid) t ", opt)
 	sql = sql1 + sql
 	limitSql := " limit %d offset %d"
@@ -146,7 +146,8 @@ func (t *TokenInout) GetTotalList(page, rows, tokenId, opt int, date string) (*M
 	fmt.Println("count=", count.Count)
 	type Return struct {
 		Day   int    //日期
-		Total uint64 //提币总量
+		Count int64  //总数
+		Total float64 //提币总量
 		Name  string // 货币名称
 		Tid   int    //货币id
 	}
@@ -157,6 +158,9 @@ func (t *TokenInout) GetTotalList(page, rows, tokenId, opt int, date string) (*M
 	queryContent := "SELECT * " + sql
 	//fmt.Println(queryContent)
 	engine.SQL(queryContent).Find(&list)
+	for i,v:=range list{
+		list[i].Total =t.Int64ToFloat64By8Bit(v.Count)
+	}
 	mList.Items = list
 	return mList, nil
 }
@@ -189,21 +193,21 @@ func (t *TokenInoutGroup) GetTokenInList(page, rows, uStatus, status, tokenId, o
 		temp := fmt.Sprintf(" concat(IFNULL(u.`uid`,''),IFNULL(u.`phone`,''),IFNULL(ex.`nick_name`,''),IFNULL(u.`email`,'')) LIKE '%%%s%%'  ", search)
 		query = query.Where(temp)
 	}
-	queryCount:=*query
-	count,err:=queryCount.Count(t)
-	if err!=nil{
+	queryCount := *query
+	count, err := queryCount.Count(t)
+	if err != nil {
 		return nil, err
 	}
-	offset,mList:=t.Paging(page,rows,int(count))
-	list:=make([]TokenInoutGroup,0)
-	err=query.Limit(mList.PageSize,offset).Find(&list)
-	if err!=nil{
+	offset, mList := t.Paging(page, rows, int(count))
+	list := make([]TokenInoutGroup, 0)
+	err = query.Limit(mList.PageSize, offset).Find(&list)
+	if err != nil {
 		return nil, err
 	}
-	for i,v:=range list{
+	for i, v := range list {
 		list[i].FeeTrue = t.Int64ToFloat64By8Bit(v.Fee)
-		list[i].AmountTrue =t.Int64ToFloat64By8Bit(v.Amount)
-		list[i].ToCount = list[i].AmountTrue-list[i].FeeTrue
+		list[i].AmountTrue = t.Int64ToFloat64By8Bit(v.Amount)
+		list[i].ToCount = list[i].AmountTrue - list[i].FeeTrue
 	}
 	mList.Items = list
 

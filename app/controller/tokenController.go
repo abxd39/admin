@@ -50,10 +50,33 @@ func (this *TokenController) Router(r *gin.Engine) {
 		//手续费走势图
 		g.GET("/fee_trend_map", this.GetFeeTrendMap)
 		g.GET("/test1", this.test1)
-
+		//划转
 		g.GET("/list_transfer_daily_sheet", this.ListTransferDailySheet)
-
+		//后台充值
+		g.POST("/backstage_put",this.BackstagePut)
 	}
+}
+
+func (this* TokenController) BackstagePut(c*gin.Context)  {
+	req := struct {
+		Comment   string    `form:"comment" json:"comment" binding:"required"`
+		Count   float64    `form:"count" json:"count" binding:"required" `
+		TokenId int    `form:"tid" json:"tid" binding:"required"`
+		Uid   int `form:"uid" json:"uid" binding:"required" `
+	}{}
+	err := c.ShouldBind(&req)
+	if err != nil {
+		utils.AdminLog.Errorf(err.Error())
+		this.RespErr(c, err)
+		return
+	}
+	err=new(models.MoneyRecord).BackstagePut(req.Count,req.Uid,req.TokenId,req.Comment)
+	if err!=nil {
+		this.RespErr(c,err)
+		return
+	}
+	this.RespOK(c)
+	return
 }
 
 func (this *TokenController) test1(c *gin.Context) {
@@ -102,9 +125,9 @@ func (this *TokenController) GetTokenInOutDailySheetList(c *gin.Context) {
 	req := struct {
 		Page    int    `form:"page" json:"page" binding:"required"`
 		Rows    int    `form:"rows" json:"rows" `
-		Bt    uint64    `form:"bt",json:"bt"` //日期
-		Et  uint64      `form:"et",json:"et"`
-		TokenId int    `form:"tid",json:"tid"`
+		Bt    uint64    `form:"bt" json:"bt"` //日期
+		Et  uint64      `form:"et" json:"et"`
+		TokenId int    `form:"tid" json:"tid"`
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
@@ -193,8 +216,7 @@ func (this *TokenController) GetTotalTokenInfoList(c *gin.Context) {
 		Page    int    `form:"page" json:"page" binding:"required"`
 		Rows    int    `form:"rows" json:"rows" `
 		TokenId int    `form:"tokenId" json:"tokenId" `              //货币id
-		Date    string `form:"date",json:"date"  binding:"required"` //日期
-		Search  string `form:"search",json:"search"`                 //输入uid 搜索
+		Search  string `form:"search" json:"search"`                 //输入uid 搜索
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
@@ -202,7 +224,7 @@ func (this *TokenController) GetTotalTokenInfoList(c *gin.Context) {
 		this.RespErr(c, err)
 		return
 	}
-	list, err := new(models.TokenInout).GetTotalInfoList(req.Page, req.Rows, req.TokenId, req.Opt, req.Date, req.Search)
+	list, err := new(models.TokenInout).GetTotalInfoList(req.Page, req.Rows, req.TokenId, req.Opt, req.Search)
 	if err != nil {
 		this.RespErr(c, err)
 		return
@@ -437,12 +459,12 @@ func (this *TokenController) ChangeDetail(c *gin.Context) {
 		return
 	}
 	fmt.Println("------------------------>what funck you ", req.Status)
-	mlist, err := new(models.MoneyRecord).GetMoneyListForDateOrType(req.Page, req.Rows, req.Type, req.Status, req.Tid, req.Search)
+	mlist, err := new(models.MoneyRecordGroup).GetMoneyListForDateOrType(req.Page, req.Rows, req.Type, req.Status, req.Tid, req.Search)
 	if err != nil {
 		this.RespErr(c, err)
 		return
 	}
-	list, Ok := mlist.Items.([]models.MoneyRecord)
+	list, Ok := mlist.Items.([]models.MoneyRecordGroup)
 	if !Ok {
 		this.RespErr(c, errors.New("assert type UserGroup failed!!"))
 		return

@@ -86,3 +86,4 @@ func (b *BaseModel)decimal(value float64) float64 {
 	value, _ = strconv.ParseFloat(fmt.Sprintf("%.4f", value), 64)
 	return value
 }
+
