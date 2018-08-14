@@ -1,6 +1,7 @@
 package models
 
 import (
+	"admin/apis"
 	"admin/errors"
 	"admin/utils"
 	"fmt"
@@ -145,11 +146,11 @@ func (t *TokenInout) GetTotalList(page, rows, tokenId, opt int, date string) (*M
 	}
 	fmt.Println("count=", count.Count)
 	type Return struct {
-		Day   int    //日期
-		Count int64  //总数
+		Day   int     //日期
+		Count int64   //总数
 		Total float64 //提币总量
-		Name  string // 货币名称
-		Tid   int    //货币id
+		Name  string  // 货币名称
+		Tid   int     //货币id
 	}
 	offset, mList := t.Paging(page, rows, int(count.Count))
 	limitSql = fmt.Sprintf(limitSql, mList.PageSize, offset)
@@ -158,8 +159,8 @@ func (t *TokenInout) GetTotalList(page, rows, tokenId, opt int, date string) (*M
 	queryContent := "SELECT * " + sql
 	//fmt.Println(queryContent)
 	engine.SQL(queryContent).Find(&list)
-	for i,v:=range list{
-		list[i].Total =t.Int64ToFloat64By8Bit(v.Count)
+	for i, v := range list {
+		list[i].Total = t.Int64ToFloat64By8Bit(v.Count)
 	}
 	mList.Items = list
 	return mList, nil
@@ -211,108 +212,14 @@ func (t *TokenInoutGroup) GetTokenInList(page, rows, uStatus, status, tokenId, o
 	}
 	mList.Items = list
 
-	//两个方向  用户信息库和 钱包库
-	//if uStatus != 0 || search != `` {
-	//	mList, err := new(WebUser).GetAllUser(page, rows, uStatus, search)
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//	value, ok := mList.Items.([]UserGroup)
-	//	if !ok {
-	//		return nil, errors.New("assert []webUser type failed!!")
-	//	}
-	//	uidList := make([]int64, 0)
-	//	for _, v := range value {
-	//		uidList = append(uidList, v.Uid)
-	//	}
-	//	if len(uidList) < 1 {
-	//		//没有匹配刷选条件的用户
-	//		return nil, nil
-	//	}
-	//	query = query.In("uid", uidList)
-	//	countQuery := *query
-	//	count, err := countQuery.Count(&TokenInout{})
-	//	offset, modelList := t.Paging(page, rows, int(count))
-	//	list := make([]TokenInoutGroup, 0)
-	//	err = query.Limit(modelList.PageSize, offset).Find(&list)
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//	//
-	//	for i, _ := range list {
-	//		for _, v := range value {
-	//			if list[i].Uid == int(v.Uid) {
-	//				list[i].NickName = v.NickName
-	//				list[i].Phone = v.Phone
-	//				list[i].Email = v.Email
-	//				list[i].Status = v.Status
-	//				break
-	//			}
-	//		}
-	//	}
-	//	modelList.Items = list
-	//	return modelList, nil
-	//} else {
-	//	if tokenId != 0 {
-	//		query = query.Where("token_id=?", tokenId)
-	//	}
-	//	if status != 0 {
-	//		query = query.Where("states=?", status)
-	//	}
-	//	if opt != 0 {
-	//		query = query.Where("opt=?", opt)
-	//	}
-	//	if date != `` {
-	//		subst := date[:11] + "23:59:59"
-	//		fmt.Println(subst)
-	//		sql := fmt.Sprintf("create_time  BETWEEN '%s' AND '%s' ", date, subst)
-	//		query = query.Where(sql)
-	//	}
-	//	countQuery := *query
-	//	count, err := countQuery.Count(&TokenInout{})
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//	offset, modelList := t.Paging(page, rows, int(count))
-	//	list := make([]TokenInoutGroup, 0)
-	//	err = query.Limit(modelList.PageSize, offset).Find(&list)
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//	uidList := make([]uint64, 0)
-	//	for _, v := range list {
-	//		uidList = append(uidList, uint64(v.Uid))
-	//	}
-	//	if len(uidList) < 1 {
-	//		//没有匹配刷选条件的用户
-	//		return nil, nil
-	//	}
-	//	uList, err := new(UserGroup).GetUserListForUid(uidList)
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//	for i, _ := range list {
-	//		for _, v := range uList {
-	//			if int(v.Uid) == list[i].Uid {
-	//				list[i].TokenName = v.NickName
-	//				list[i].Phone = v.Phone
-	//				list[i].Email = v.Email
-	//				list[i].Status = v.Status
-	//				break
-	//			}
-	//		}
-	//	}
-	//	modelList.Items = list
-	//	return modelList, nil
-	//} //else
 	return mList, nil
 }
 
 //提币管理
-func (t *TokenInout) OptTakeToken(id, uid, status int) error {
+func (t *TokenInout) OptTakeToken(id, status int) error {
 	engine := utils.Engine_wallet
 	//t:=new(TokenInout)
-	has, err := engine.Where("id=? and uid=?", id, uid).Get(t)
+	has, err := engine.Where("id=? ", id).Get(t)
 	if err != nil {
 		return err
 	}
@@ -326,14 +233,32 @@ func (t *TokenInout) OptTakeToken(id, uid, status int) error {
 	}
 	defer sess.Close()
 
-	_, err = sess.Where("id=? and uid=?", id, uid).Update(&TokenInout{
+	_, err = sess.Where("id=?", id).Update(&TokenInout{
 		States: status,
 	})
 	if err != nil {
 		sess.Rollback()
 		return err
 	}
-
+	//审核通过
+	if status == utils.VERIFY_OUT_TOKEN_MARK {
+		mount := t.Int64ToFloat64By8Bit(t.Amount)
+		if mount == 0 {
+			mount = 0.9999999999
+		}
+		//fmt.Println("num=",)
+		strMount := fmt.Sprintf("%.10f", mount)
+		fmt.Sprintf(strMount)
+		sign, err := new(apis.VendorApi).GetTradeSigntx(t.Uid, t.Tokenid, t.To, strMount)
+		if err != nil {
+			sess.Rollback()
+			return err
+		}
+		fmt.Println(sign)
+		//调试用故意为之
+		sess.Rollback()
+		return nil
+	}
 	sess.Commit()
 	return nil
 

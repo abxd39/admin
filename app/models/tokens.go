@@ -132,3 +132,13 @@ func (t *Tokens) DeleteSystem(id int) error {
 	}
 	return nil
 }
+//获取货币名称
+func (t*Tokens)GetTokensList()([]Tokens,error)  {
+	engine := utils.Engine_common
+	list:=make([]Tokens,0)
+	err:=engine.Find(&list)
+	if err!=nil{
+		return nil,err
+	}
+	return list,nil
+}

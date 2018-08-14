@@ -118,7 +118,7 @@ func (m *MoneyRecordGroup) GetMoneyListForDateOrType(page, rows, ty, status int,
 		query = query.Where(temp)
 	}
 	if ty != 0 {
-		query = query.Where("uch.opt=?", ty)
+		query = query.Where("uch.type=?", ty)
 	}
 	if status != 0 {
 		query = query.Where("u.status=?", status)
@@ -142,4 +142,106 @@ func (m *MoneyRecordGroup) GetMoneyListForDateOrType(page, rows, ty, status int,
 	modelList.Items = list
 	return modelList, nil
 
+}
+
+
+//拉去平台内充值的所有记录 平台当天的单个币的充币数量
+func (m*MoneyRecord) GetPlatformAll(page,rows int ,tid,bt,et uint64)(*ModelList,error){
+	engine:=utils.Engine_token
+	sql :="SELECT FROM_UNIXTIME(created_time,'%Y%m%d') day,created_time `time` ,TYPE,SUM(num) total ,token_id tid,uid FROM g_token.money_record "
+	var condition string
+	if bt!=0{
+		if et!=0{
+			condition = fmt.Sprintf(" WHERE TYPE=6 and created_time BETWEEN %d AND %d ",bt,et+86400)
+		}else{
+			condition = fmt.Sprintf(" WHERE TYPE=6 and created_time BETWEEN %d AND %d ",bt,bt+86400)
+		}
+	}
+	if tid!=0{
+		condition +=fmt.Sprintf("  AND token_id=%d ",tid)
+	}
+
+	condition +=" GROUP BY day , token_id"
+	count:=fmt.Sprintf("SELECT COUNT(*) COUNT FROM (%s)t",sql+condition)
+	num:=&struct {
+		Count int
+	}{}
+	_,err:=engine.SQL(count).Get(num)
+	if err!=nil{
+		return nil,err
+	}
+	offset,mList:=m.Paging(page,rows,int(num.Count))
+	limit:=fmt.Sprintf(" limit %d offset %d ",mList.PageSize,offset)
+	type temp struct {
+		Day int64 	`json:"day"`
+		Total int64 `json:"total"`
+		TotalTrue float64 `xorm:"-" json:"total_true"`
+		Name string ` xorm:"-" json:"name"`
+		Tid  int `json:"tid"`
+	}
+	list:=make([]temp,0)
+	err=engine.SQL(sql+condition+limit).Find(&list)
+	if err!=nil{
+		return nil,err
+	}
+	tl,err:=new(Tokens).GetTokensList()
+	if err!=nil{
+		return nil,err
+	}
+	for i,v:=range list{
+		for _,tv:=range tl{
+			if v.Tid == tv.Id{
+				list[i].Name =tv.Mark
+				break
+			}
+		}
+		list[i].TotalTrue =m.Int64ToFloat64By8Bit(v.Total)
+	}
+	mList.Items =list
+return mList,nil
+}
+
+
+//平台内充值明细
+func (m*MoneyRecord)GetPlatForTokenOfDay(page,rows,uid,tid int,date uint64)(*ModelList,error){
+	engine:=utils.Engine_token
+	sql:="SELECT  FROM_UNIXTIME(created_time,'%Y%m%d %I:%i:%s') DAY, SUM(num) total ,uid,comment FROM g_token.money_record  "
+
+	var condition string
+	condition= fmt.Sprintf("WHERE token_id=%d AND created_time  BETWEEN %d AND %d ",tid,date, date+86400)
+
+	if uid!=0{
+		condition+= fmt.Sprintf(" AND uid=%d ",uid)
+	}
+	sql +=condition
+	sql +=" GROUP BY uid , token_id "
+	countSql:=fmt.Sprintf("select count(*) count from (%s) t",sql)
+	num:=&struct {
+		Count int
+	}{}
+	_,err:=engine.SQL(countSql).Get(num)
+	if err!=nil{
+		return nil,err
+	}
+	fmt.Println(num.Count)
+	type tmep struct {
+		Day string `json:"day"`
+		Total int64 `json:"total"`
+		TotalTrue float64 `xorm:"-" json:"total_true"`
+		Uid int64 `json:"uid"`
+		Comment string 	`json:"comment"`
+	}
+	list:=make([]tmep,0)
+	offset,mList:=m.Paging(page,rows,int(num.Count))
+	limit:=fmt.Sprintf("limit %d offset %d",mList.PageSize,offset)
+	err=engine.SQL(sql+limit).Find(&list)
+	if err!=nil{
+		return nil,err
+	}
+	for i,v:=range list{
+		list[i].TotalTrue =m.Int64ToFloat64By8Bit(v.Total)
+	}
+	fmt.Println(len(list))
+	mList.Items =list
+	return mList,nil
 }

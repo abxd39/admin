@@ -17,3 +17,5 @@ const (
 	APPLY_FOR_SECOND_NOT_ALREADY=8 //二级认证没有通过
 	APPLY_FOR_FIRST_NOT_ALREADY =16 //一级认证状态未通过
 )
+
+const VERIFY_OUT_TOKEN_MARK  = 5 // 审核通过
