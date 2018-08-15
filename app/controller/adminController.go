@@ -33,8 +33,7 @@ func (a *AdminController) Router(e *gin.Engine) {
 		group.POST("/delete", a.Delete)
 		group.GET("/list_login_log", a.ListLoginLog)
 		group.POST("/delete_login_log", a.DeleteLoginLog)
-		group.GET("/my_left_menu", a.MyLeftMenu)
-		group.GET("/my_right_menu", a.MyRightMenu)
+		group.GET("/my_menu", a.MyMenu)
 		group.POST("/update_me", a.UpdateMe)
 	}
 }
@@ -246,7 +245,7 @@ func (a *AdminController) Add(ctx *gin.Context) {
 	}
 
 	pwd := a.GetString(ctx, "pwd")
-	if matched, err := regexp.MatchString (`^[a-zA-Z0-9~!@#$%^&*_\-=+:;|,.?]{6,20}$`, pwd); err != nil || !matched {
+	if matched, err := regexp.MatchString(`^[a-zA-Z0-9~!@#$%^&*_\-=+:;|,.?]{6,20}$`, pwd); err != nil || !matched {
 		a.RespErr(ctx, "密码格式错误，6-20个字符")
 		return
 	}
@@ -454,60 +453,10 @@ func (a *AdminController) DeleteLoginLog(ctx *gin.Context) {
 	return
 }
 
-// 获取左侧菜单
-func (a *AdminController) MyLeftMenu(ctx *gin.Context) {
+// 获取菜单
+func (a *AdminController) MyMenu(ctx *gin.Context) {
 	// 调用model
-	list, err := new(bk.User).MyLeftMenu(ctx)
-	if err != nil {
-		a.RespErr(ctx, err)
-		return
-	}
-
-	// 重新组装数据
-	type NewItem struct {
-		Id       int    `json:"id"`
-		Pid      int    `json:"pid"`
-		Weight   int    `json:"weight"`
-		Title    string `json:"title"`
-		Depth    int    `json:"depth"`
-		MenuUrl  string `json:"menu_url"`
-		MenuIcon string `json:"menu_icon"`
-		FullId   string `json:"full_id"`
-	}
-
-	newList := make([]NewItem, len(list))
-	for k, v := range list {
-		newList[k] = NewItem{
-			Id:       v.Id,
-			Pid:      v.Pid,
-			Weight:   v.Weight,
-			Title:    v.Title,
-			Depth:    v.Depth,
-			MenuUrl:  v.MenuUrl,
-			MenuIcon: v.MenuIcon,
-			FullId:   v.FullId,
-		}
-	}
-
-	// 设置返回数据
-	a.Put(ctx, "list", newList)
-
-	// 返回
-	a.RespOK(ctx)
-	return
-}
-
-// 获取右侧菜单
-func (a *AdminController) MyRightMenu(ctx *gin.Context) {
-	// 获取参数
-	pid, err := a.GetInt(ctx, "pid")
-	if err != nil {
-		a.RespErr(ctx, "参数pid格式错误")
-		return
-	}
-
-	// 调用model
-	list, err := new(bk.User).MyRightMenu(ctx, pid)
+	list, err := new(bk.User).MyMenu(ctx)
 	if err != nil {
 		a.RespErr(ctx, err)
 		return

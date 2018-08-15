@@ -22,10 +22,9 @@ type UserCurrencyHistory struct {
 	UpdatedTime string `xorm:"comment('修改间') DATETIME" json:"updated_time"`
 }
 
-func (u*UserCurrencyHistory)TableName()string  {
+func (u *UserCurrencyHistory) TableName() string {
 	return "user_currency_history"
 }
-
 
 func (u *UserCurrencyHistory) GetList(page, rows, ot int, date string) (*ModelList, error) {
 	engine := utils.Engine_currency
@@ -57,7 +56,7 @@ func (u *UserCurrencyHistory) GetList(page, rows, ot int, date string) (*ModelLi
 }
 
 //p2-3-3法币账户变更详情
-func (u *UserCurrencyHistory) GetListForUid(page, rows,tid,status,chType int, search string) (*ModelList, error) {
+func (u *UserCurrencyHistory) GetListForUid(page, rows, tid, status, chType int, search string) (*ModelList, error) {
 	engine := utils.Engine_currency
 	fmt.Println("------------------------>")
 	query := engine.Alias("uch").Desc("id")
@@ -68,14 +67,14 @@ func (u *UserCurrencyHistory) GetListForUid(page, rows,tid,status,chType int, se
 	//query = query.Where(temp)
 	//query =query.Where("uch.created_time between ? and ?", date,substr)
 
-	query =query.Where("uch.token_id=?",tid)
-	if chType!=0{
-		query =query.Where("uch.operator=?",chType)
+	query = query.Where("uch.token_id=?", tid)
+	if chType != 0 {
+		query = query.Where("uch.operator=?", chType)
 	}
-	if status!=0{
-		query =query.Where("u.status=?",status)
+	if status != 0 {
+		query = query.Where("u.status=?", status)
 	}
-	if search!=``{
+	if search != `` {
 		temp := fmt.Sprintf(" concat(IFNULL(u.`uid`,''),IFNULL(u.`phone`,''),IFNULL(ex.`nick_name`,''),IFNULL(u.`email`,'')) LIKE '%%%s%%'  ", search)
 		query = query.Where(temp)
 	}
@@ -90,8 +89,8 @@ func (u *UserCurrencyHistory) GetListForUid(page, rows,tid,status,chType int, se
 	if err != nil {
 		return nil, err
 	}
-	for i,v:=range list{
-		list[i].NumTrue= u.Int64ToFloat64By8Bit(v.Num)
+	for i, v := range list {
+		list[i].NumTrue = u.Int64ToFloat64By8Bit(v.Num)
 		list[i].SurplusTrue = u.Int64ToFloat64By8Bit(v.Surplus)
 	}
 	modelList.Items = list

@@ -23,14 +23,15 @@ type Tokens struct {
 }
 
 type TokensGroup struct {
-	Tokens `xorm:"extends"`
-	InLeast float64 `xorm:"-"`
+	Tokens   `xorm:"extends"`
+	InLeast  float64 `xorm:"-"`
 	OutLeast float64 `xorm:"-"`
 }
 
-func(t*Tokens)TableName()string{
+func (t *Tokens) TableName() string {
 	return "tokens"
 }
+
 //添加 删除 修改
 
 func (t *Tokens) TokensSystemAdd(tokens Tokens) error {
@@ -94,9 +95,9 @@ func (t *Tokens) GetSystemList(page, rows, status, in, out int, name string) (*M
 	if err != nil {
 		return nil, err
 	}
-	for i,v:=range list{
+	for i, v := range list {
 		list[i].InLeast = t.Int64ToFloat64By8Bit(v.InTokenLeastBalance)
-		list[i].OutLeast =t.Int64ToFloat64By8Bit(v.OutTokenLeastBalance)
+		list[i].OutLeast = t.Int64ToFloat64By8Bit(v.OutTokenLeastBalance)
 	}
 	mList.Items = list
 	return mList, nil
@@ -104,7 +105,7 @@ func (t *Tokens) GetSystemList(page, rows, status, in, out int, name string) (*M
 
 func (t *Tokens) GetSystem(id int) (*TokensGroup, error) {
 	engine := utils.Engine_common
-	tg:=new(TokensGroup)
+	tg := new(TokensGroup)
 	has, err := engine.Where("id=?", id).Get(tg)
 	if err != nil {
 		return nil, err
@@ -113,7 +114,7 @@ func (t *Tokens) GetSystem(id int) (*TokensGroup, error) {
 		return nil, errors.New("no exists")
 	}
 	tg.InLeast = t.Int64ToFloat64By8Bit(tg.InTokenLeastBalance)
-	tg.OutLeast =t.Int64ToFloat64By8Bit(tg.OutTokenLeastBalance)
+	tg.OutLeast = t.Int64ToFloat64By8Bit(tg.OutTokenLeastBalance)
 	return tg, nil
 }
 
@@ -132,13 +133,14 @@ func (t *Tokens) DeleteSystem(id int) error {
 	}
 	return nil
 }
+
 //获取货币名称
-func (t*Tokens)GetTokensList()([]Tokens,error)  {
+func (t *Tokens) GetTokensList() ([]Tokens, error) {
 	engine := utils.Engine_common
-	list:=make([]Tokens,0)
-	err:=engine.Find(&list)
-	if err!=nil{
-		return nil,err
+	list := make([]Tokens, 0)
+	err := engine.Find(&list)
+	if err != nil {
+		return nil, err
 	}
-	return list,nil
+	return list, nil
 }

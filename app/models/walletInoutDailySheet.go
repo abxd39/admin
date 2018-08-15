@@ -18,9 +18,8 @@ import (
 //	Date            string `xorm:"not null default 'CURRENT_TIMESTAMP' comment('日期天') TIMESTAMP"`
 //}
 
-
 type TokenInoutDailySheet struct {
-	BaseModel       `xorm:"-"`
+	BaseModel      `xorm:"-"`
 	Id             int    `xorm:"not null pk autoincr comment('自增id') TINYINT(4)" `
 	TokenId        int    `xorm:"not null comment('货币id') TINYINT(4)" json:"token_id"`
 	TokenName      string `xorm:"not null comment('货币名称') VARCHAR(20)" json:"token_name"`
@@ -38,13 +37,13 @@ type TokenInoutDailySheet struct {
 
 type FeeTotalSheet struct {
 	TokenInoutDailySheet `xorm:"extends"`
-	TotalDayNumTrue float64 `xorm:"-" json:"total_num_true"`
-	TotalTrue float64 `xorm:"-" json:"total_true"`
-	TotalFeeTrue float64 `xorm:"-" json:"total_fee_true"`
-	TotalDayNumFeeTrue float64 `xorm:"-" json:"total_day_num_fee_true"`
+	TotalDayNumTrue      float64 `xorm:"-" json:"total_num_true"`
+	TotalTrue            float64 `xorm:"-" json:"total_true"`
+	TotalFeeTrue         float64 `xorm:"-" json:"total_fee_true"`
+	TotalDayNumFeeTrue   float64 `xorm:"-" json:"total_day_num_fee_true"`
 }
 
-func (this*FeeTotalSheet) TableName()string{
+func (this *FeeTotalSheet) TableName() string {
 	return "token_inout_daily_sheet"
 }
 func (this *TokenInoutDailySheet) TableName() string {
@@ -111,7 +110,7 @@ func (this *TokenInoutDailySheet) TableName() string {
 //}
 
 //提币手续费汇总表
-func (this *TokenInoutDailySheet) GetInOutDailySheetList(page, rows, tokenId int, bt,et uint64) (*ModelList, error) {
+func (this *TokenInoutDailySheet) GetInOutDailySheetList(page, rows, tokenId int, bt, et uint64) (*ModelList, error) {
 
 	engine := utils.Engine_wallet
 	query := engine.Desc("id")
@@ -119,11 +118,11 @@ func (this *TokenInoutDailySheet) GetInOutDailySheetList(page, rows, tokenId int
 		query = query.Where("token_id=?", tokenId)
 	}
 
-	if bt!=0{
-		if et!=0{
-			query = query.Where("date between ? and ?",bt,et+86400)
-		}else {
-			query = query.Where("date between ? and ?",bt,bt+86400)
+	if bt != 0 {
+		if et != 0 {
+			query = query.Where("date between ? and ?", bt, et+86400)
+		} else {
+			query = query.Where("date between ? and ?", bt, bt+86400)
 		}
 	}
 	//query = query.Where("id>?", 0)
@@ -140,105 +139,103 @@ func (this *TokenInoutDailySheet) GetInOutDailySheetList(page, rows, tokenId int
 	if err != nil {
 		return nil, err
 	}
-	for i,v:=range list{
+	for i, v := range list {
 		list[i].TotalTrue = this.Int64ToFloat64By8Bit(v.Total)
 		list[i].TotalDayNumTrue = this.Int64ToFloat64By8Bit(v.TotalDayNum)
-		list[i].TotalFeeTrue =this.Int64ToFloat64By8Bit(v.TotalFee)
-		list[i].TotalDayNumFeeTrue =this.Int64ToFloat64By8Bit(v.TotalDayNumFee)
+		list[i].TotalFeeTrue = this.Int64ToFloat64By8Bit(v.TotalFee)
+		list[i].TotalDayNumFeeTrue = this.Int64ToFloat64By8Bit(v.TotalDayNumFee)
 	}
 	mList.Items = list
 	return mList, nil
 }
 
-
-
 //日冲币汇总表
-func (t*TokenInoutDailySheet)DayPutDailySheet(page,rows,tid int ,bt,et uint64)(*ModelList,error)  {
-	 engine :=utils.Engine_wallet
-	 query :=engine.Desc("id")
-	 if tid!=0{
-	 	query =query.Where("token_id=?",tid)
-	 }
+func (t *TokenInoutDailySheet) DayPutDailySheet(page, rows, tid int, bt, et uint64) (*ModelList, error) {
+	engine := utils.Engine_wallet
+	query := engine.Desc("id")
+	if tid != 0 {
+		query = query.Where("token_id=?", tid)
+	}
 
-	if bt!=0{
-		if et!=0{
-			query = query.Where("date between ? and ?",bt,et+86400)
-		}else {
-			query = query.Where("date between ? and ?",bt,bt+86400)
+	if bt != 0 {
+		if et != 0 {
+			query = query.Where("date between ? and ?", bt, et+86400)
+		} else {
+			query = query.Where("date between ? and ?", bt, bt+86400)
 		}
 	}
 
-	countCount:=*query
-	count,err:=countCount.Count(t)
-	if err!=nil{
+	countCount := *query
+	count, err := countCount.Count(t)
+	if err != nil {
 		return nil, err
 	}
-	offset,mList:=t.Paging(page,rows,int(count))
+	offset, mList := t.Paging(page, rows, int(count))
 
-	type  temp struct {
-		TotalPut       int64 `json:"total_put"`
-		TotalDayPut    int64 `json:"total_day_put"`
-		TokenName      string `json:"token_name"`
-		TokenId        int `json:"token_id"`
-		TotalPutTrue  float64  `xorm:"-" json:"total_true"`
+	type temp struct {
+		TotalPut        int64   `json:"total_put"`
+		TotalDayPut     int64   `json:"total_day_put"`
+		TokenName       string  `json:"token_name"`
+		TokenId         int     `json:"token_id"`
+		TotalPutTrue    float64 `xorm:"-" json:"total_true"`
 		TotalDayPutTrue float64 `xorm:"-" json:"total_day_true"`
-		Date           int64  ` json:"date"`
+		Date            int64   ` json:"date"`
 	}
 	list := make([]temp, 0)
 
-	err=query.Table("token_inout_daily_sheet").Limit(mList.PageSize,offset).Find(&list)
-	if err!=nil{
+	err = query.Table("token_inout_daily_sheet").Limit(mList.PageSize, offset).Find(&list)
+	if err != nil {
 		return nil, err
 	}
-	for i,v:=range list{
+	for i, v := range list {
 		list[i].TotalPutTrue = t.Int64ToFloat64By8Bit(v.TotalDayPut)
-		list[i].TotalDayPutTrue =t.Int64ToFloat64By8Bit(v.TotalDayPut)
+		list[i].TotalDayPutTrue = t.Int64ToFloat64By8Bit(v.TotalDayPut)
 	}
-	mList.Items =list
+	mList.Items = list
 	return mList, nil
 }
 
 //日提币
-func (t*TokenInoutDailySheet)DayOutDailySheet(page,rows,tid int ,bt,et uint64)(*ModelList,error)  {
-	engine :=utils.Engine_wallet
-	query :=engine.Desc("id")
-	if tid!=0{
-		query =query.Where("token_id=?",tid)
+func (t *TokenInoutDailySheet) DayOutDailySheet(page, rows, tid int, bt, et uint64) (*ModelList, error) {
+	engine := utils.Engine_wallet
+	query := engine.Desc("id")
+	if tid != 0 {
+		query = query.Where("token_id=?", tid)
 	}
 
-	if bt!=0{
-		if et!=0{
-			query = query.Where("date between ? and ?",bt,et+86400)
-		}else {
-			query = query.Where("date between ? and ?",bt,bt+86400)
+	if bt != 0 {
+		if et != 0 {
+			query = query.Where("date between ? and ?", bt, et+86400)
+		} else {
+			query = query.Where("date between ? and ?", bt, bt+86400)
 		}
 	}
 
-	countCount:=*query
-	count,err:=countCount.Count(t)
-	if err!=nil{
+	countCount := *query
+	count, err := countCount.Count(t)
+	if err != nil {
 		return nil, err
 	}
 
-	offset,mList:=t.Paging(page,rows,int(count))
-	type  temp struct {
-		Total       int64 `json:"total"`
-		TotalDayNum    int64 `json:"total_num"`
-		TokenName      string `json:"token_name"`
-		TokenId        int `json:"token_id"`
-		TotalTrue  float64 `xorm:"-" json:"total_true"`
+	offset, mList := t.Paging(page, rows, int(count))
+	type temp struct {
+		Total        int64   `json:"total"`
+		TotalDayNum  int64   `json:"total_num"`
+		TokenName    string  `json:"token_name"`
+		TokenId      int     `json:"token_id"`
+		TotalTrue    float64 `xorm:"-" json:"total_true"`
 		TotalNumTrue float64 `xorm:"-" json:"total_day_true"`
-		Date           int64  ` json:"date"`
+		Date         int64   ` json:"date"`
 	}
-	list:=make([]temp,0)
-	err=query.Table("token_inout_daily_sheet").Limit(mList.PageSize,offset).Find(&list)
-	if err!=nil{
+	list := make([]temp, 0)
+	err = query.Table("token_inout_daily_sheet").Limit(mList.PageSize, offset).Find(&list)
+	if err != nil {
 		return nil, err
 	}
-	for i,v:=range list{
+	for i, v := range list {
 		list[i].TotalTrue = t.Int64ToFloat64By8Bit(v.Total)
-		list[i].TotalNumTrue =t.Int64ToFloat64By8Bit(v.TotalDayNum)
+		list[i].TotalNumTrue = t.Int64ToFloat64By8Bit(v.TotalDayNum)
 	}
-	mList.Items =list
+	mList.Items = list
 	return mList, nil
 }

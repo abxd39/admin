@@ -243,21 +243,33 @@ func (t *TokenInout) OptTakeToken(id, status int) error {
 	//审核通过
 	if status == utils.VERIFY_OUT_TOKEN_MARK {
 		mount := t.Int64ToFloat64By8Bit(t.Amount)
-		if mount == 0 {
-			mount = 0.9999999999
-		}
-		//fmt.Println("num=",)
+		//if mount == 0 {
+		//	mount = 0.9999999999
+		//}
+		////fmt.Println("num=",)
 		strMount := fmt.Sprintf("%.10f", mount)
-		fmt.Sprintf(strMount)
-		sign, err := new(apis.VendorApi).GetTradeSigntx(t.Uid, t.Tokenid, t.To, strMount)
-		if err != nil {
-			sess.Rollback()
-			return err
+		if t.Tokenid ==3 {//eth
+			fmt.Sprintf(strMount)
+			sign, err := new(apis.VendorApi).GetTradeSigntx(t.Uid, t.Tokenid, t.To, strMount)
+			if err != nil {
+				sess.Rollback()
+				return err
+			}
+			err=new(apis.VendorApi).PostOutToken(t.Uid,t.Tokenid,t.Id,sign)
+			if err!=nil{
+				sess.Rollback()
+				return err
+			}
 		}
-		fmt.Println(sign)
-		//调试用故意为之
-		sess.Rollback()
-		return nil
+		if t.Tokenid == 2 {//btc
+			err =new(apis.VendorApi).PostOutTokenBtc(t.Uid,t.Tokenid,t.Id,t.To,strMount)
+			if err!=nil{
+				sess.Rollback()
+				return err
+			}
+		}
+
+
 	}
 	sess.Commit()
 	return nil

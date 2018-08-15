@@ -49,7 +49,7 @@ type TradeReturn struct {
 	Trade          `xorm:"extends"`
 	AllNum         int64   `xorm:"not null comment('总数量') BIGINT(20)"`  //总数
 	SurplusNum     int64   `xorm:"not null comment('剩余数量') BIGINT(20)"` //余数
-	FinishCount    float64 `xorm:"-" json:"finish_count"` //已成
+	FinishCount    float64 `xorm:"-" json:"finish_count"`               //已成
 	FeeTrue        float64 `xorm:"-" json:"fee_true"`
 	AllNumTrue     float64 `xorm:"-" json:"all_num_true"`
 	SurplusNumTrue float64 `xorm:"-" json:"surplus_num_true"`
@@ -63,8 +63,8 @@ func (t *TradeReturn) TableName() string {
 type TradeEx struct {
 	Trade          `xorm:"extends"`
 	ConfigTokenCny `xorm:"extends"`
-	TotalTrue       float64 //交易总额
-	FeeTrue         float64 //交易手续费
+	TotalTrue      float64 //交易总额
+	FeeTrue        float64 //交易手续费
 }
 
 type TotalTradeCNY struct {
@@ -152,7 +152,7 @@ func (this *Trade) TotalTotalTradeList(page, rows int, date uint64) (*ModelList,
 	return nil, nil
 }
 
-func (this *Trade) GetTokenRecordList(page, rows, opt, uid int, bt,et uint64, name string) (*ModelList, error) {
+func (this *Trade) GetTokenRecordList(page, rows, opt, uid int, bt, et uint64, name string) (*ModelList, error) {
 	engine := utils.Engine_token
 	query := engine.Desc("t.entrust_id")
 	query = query.Alias("t").Join("left", "entrust_detail e", "e.entrust_id= t.entrust_id")
@@ -164,9 +164,9 @@ func (this *Trade) GetTokenRecordList(page, rows, opt, uid int, bt,et uint64, na
 		query = query.Where("t.uid=?", uid)
 	}
 	if bt != 0 {
-		if et!=0{
+		if et != 0 {
 			query = query.Where("t.deal_time BETWEEN ? AND ? ", bt, et+86400)
-		}else {
+		} else {
 			query = query.Where("t.deal_time BETWEEN ? AND ? ", bt, bt+86400)
 		}
 

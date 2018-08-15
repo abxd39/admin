@@ -21,7 +21,6 @@ type UserSecondaryCertification struct {
 	InHandPicturePath     string `xorm:"not null comment('手持身份证照片路径') VARCHAR(100)"`
 }
 
-
 type UserSecondaryCertificationGroup struct {
 	UserSecondaryCertification `xorm:"extends"`
 	NickName                   string `xorm:"not null default '' comment('用户昵称') VARCHAR(64)"`
@@ -59,7 +58,7 @@ func (u *UserSecondaryCertificationGroup) GetSecondaryCertificationOfUid(uid int
 	if err != nil {
 		return nil, err
 	}
-	if us.SecurityAuth&utils.AUTH_TWO == utils.AUTH_TWO{
+	if us.SecurityAuth&utils.AUTH_TWO == utils.AUTH_TWO {
 		us.TwoVerifyMark = 1
 	}
 
@@ -91,59 +90,59 @@ func (u *UserSecondaryCertification) GetSecondaryCertificationList(page, rows, v
 	//	query = query.Where(temp)
 	//}
 
-	sql :="SELECT t.phone,t.email,t.status,t.uid,t.set_tarde_mark,t.security_auth,us.verify_time,us.verify_count,us.video_recording_digital,ex.nick_name "
-	countSql:= "SELECT COUNT(*) num "
+	sql := "SELECT t.phone,t.email,t.status,t.uid,t.set_tarde_mark,t.security_auth,us.verify_time,us.verify_count,us.video_recording_digital,ex.nick_name "
+	countSql := "SELECT COUNT(*) num "
 
-	Value:="FROM  g_common.`user` t JOIN g_common.`user_secondary_certification` us ON us.uid =t.uid  JOIN g_common.`user_ex` ex ON us.uid= ex.uid "
+	Value := "FROM  g_common.`user` t JOIN g_common.`user_secondary_certification` us ON us.uid =t.uid  JOIN g_common.`user_ex` ex ON us.uid= ex.uid "
 	var condition string
-	if verify_status ==-1{
-		temp:="WHERE ( t.set_tarde_mark &4=4 OR  t.set_tarde_mark&8=8 ) "
+	if verify_status == -1 {
+		temp := "WHERE ( t.set_tarde_mark &4=4 OR  t.set_tarde_mark&8=8 ) "
 		condition = temp
-	}else {
-		temp:="WHERE (t.security_auth&4=4 OR t.set_tarde_mark &4=4 OR  t.set_tarde_mark&8=8 ) "
+	} else {
+		temp := "WHERE (t.security_auth&4=4 OR t.set_tarde_mark &4=4 OR  t.set_tarde_mark&8=8 ) "
 		condition = temp
 	}
-	if user_status!=0{
-		temp :=fmt.Sprintf("AND t.status=%d ",user_status)
-		condition +=temp
+	if user_status != 0 {
+		temp := fmt.Sprintf("AND t.status=%d ", user_status)
+		condition += temp
 	}
-	if time!=0{
-		temp:=fmt.Sprintf(" AND us.verify_time BETWEEN %d AND %d ",time, time+86400)
-		condition+=temp
+	if time != 0 {
+		temp := fmt.Sprintf(" AND us.verify_time BETWEEN %d AND %d ", time, time+86400)
+		condition += temp
 	}
 
-	count:= &struct {
+	count := &struct {
 		Num int
 	}{}
 
-	_, err := engine.SQL(countSql+Value+condition).Get(count)
+	_, err := engine.SQL(countSql + Value + condition).Get(count)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("-------------->num=",count.Num)
+	fmt.Println("-------------->num=", count.Num)
 	offset, modellist := u.Paging(page, rows, int(count.Num))
-	type UserCer struct{
-		NickName                   string
-		SecurityAuth               int
-		TwoVerifyMark              int
-		Phone                      string
-		Email                      string
-		Account                    string
-		Status                     int
+	type UserCer struct {
+		NickName              string
+		SecurityAuth          int
+		TwoVerifyMark         int
+		Phone                 string
+		Email                 string
+		Account               string
+		Status                int
 		Uid                   int
 		VerifyCount           int
 		VerifyTime            int
 		VideoRecordingDigital string
 	}
-	list := make([] UserCer, 0)
-	limitSql:=fmt.Sprintf(" ORDER BY us.`uid`  DESC LIMIT %d OFFSET %d",modellist.PageSize,offset)
-	err =engine.SQL(sql+Value+condition+limitSql).Find(&list)
+	list := make([]UserCer, 0)
+	limitSql := fmt.Sprintf(" ORDER BY us.`uid`  DESC LIMIT %d OFFSET %d", modellist.PageSize, offset)
+	err = engine.SQL(sql + Value + condition + limitSql).Find(&list)
 	if err != nil {
 		return nil, err
 	}
 	for index, _ := range list {
-		if list[index].SecurityAuth & utils.AUTH_TWO == utils.AUTH_TWO {
-			fmt.Println("---> securityauth=",list[index].SecurityAuth )
+		if list[index].SecurityAuth&utils.AUTH_TWO == utils.AUTH_TWO {
+			fmt.Println("---> securityauth=", list[index].SecurityAuth)
 			list[index].TwoVerifyMark = 1
 		}
 	}

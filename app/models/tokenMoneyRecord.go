@@ -8,17 +8,23 @@ import (
 )
 
 type MoneyRecord struct {
-	BaseModel   `xorm:"-"`
-	Id          int64  `xorm:"pk autoincr BIGINT(20)" json:"id"`
-	Uid         int    `xorm:"comment('用户ID') unique(hash_index) INT(11)" json:"uid"`
-	TokenId     int    `xorm:"comment('代币ID') INT(11)" json:"token_id"`
-	Ukey        string `xorm:"comment('联合key') unique(hash_index) VARCHAR(128)" json:"ukey"`
-	Type        int    `xorm:"comment('流水类型1区块2委托') INT(11)" json:"type"`
-	Opt         int    `xorm:"comment('操作方向1加2减') unique(hash_index) TINYINT(4)" json:"opt"`
-	Num         int64  `xorm:"comment('数量') BIGINT(20)" json:"num"`
-	Balance     int64  `xorm:"comment('余额') BIGINT(20)" json:"surplus"`
-	CreatedTime int64  `xorm:"comment('操作时间') BIGINT(20)" json:"created_time"`
-	Comment     string `xorm:"comment('备注') varchar(255)" json:"comment"`
+	BaseModel    `xorm:"-"`
+	Id           int64  `xorm:"pk autoincr BIGINT(20)" json:"id"`
+	Uid          int    `xorm:"comment('用户ID') unique(hash_index) INT(11)" json:"uid"`
+	TokenId      int    `xorm:"comment('代币ID') INT(11)" json:"token_id"`
+	Ukey         string `xorm:"comment('联合key') unique(hash_index) VARCHAR(128)" json:"ukey"`
+	Type         int    `xorm:"comment('流水类型1区块2委托') INT(11)" json:"type"`
+	Opt          int    `xorm:"comment('操作方向1加2减') unique(hash_index) TINYINT(4)" json:"opt"`
+	Num          int64  `xorm:"comment('数量') BIGINT(20)" json:"num"`
+	Balance      int64  `xorm:"comment('余额') BIGINT(20)" json:"surplus"`
+	CreatedTime  int64  `xorm:"comment('操作时间') BIGINT(20)" json:"created_time"`
+	TransferTime int64  `xorm:"transfer_time"`
+	Comment      string `xorm:"comment('备注') varchar(255)" json:"comment"`
+}
+
+type MoneyRecordWithToken struct {
+	MoneyRecord `xorm:"extends"`
+	TokenName   string `xorm:"token_name" json:"token_name"`
 }
 
 func (m *MoneyRecord) TableName() string {
@@ -29,8 +35,6 @@ type MoneyRecordGroup struct {
 	MoneyRecord `xorm:"extends"`
 	UserInfo    `xorm:"extends"`
 }
-
-
 
 func (m *MoneyRecord) BackstagePut(count float64, uid, tid int, comment string) error {
 	opt := 1 //加
@@ -75,7 +79,7 @@ func (m *MoneyRecord) BackstagePut(count float64, uid, tid int, comment string) 
 		sess.Rollback()
 		return err
 	}
-	if cnt ==0{
+	if cnt == 0 {
 		sess.Rollback()
 		return errors.New("充值失败!!!")
 	}
@@ -142,104 +146,149 @@ func (m *MoneyRecord) GetMoneyListForDateOrType(page, rows, ty, status int, tid 
 
 }
 
+//流水列表
+func (s *MoneyRecord) List(pageIndex, pageSize int, filter map[string]interface{}) (*ModelList, []*MoneyRecordWithToken, error) {
+	query := utils.Engine_token.Alias("mr").Join("LEFT", []string{new(UserToken).TableName(), "ut"}, "ut.token_id=mr.token_id AND ut.uid=mr.uid").Where("1=1")
+
+	//筛选
+	orderBy := "mr.id DESC"
+	if _, ok := filter["uid"]; ok {
+		query.And("mr.uid=?", filter["uid"])
+	}
+	if _, ok := filter["transfer"]; ok { //划转流水
+		query.And("mr.type IN (?,?)", 10, 11)
+		orderBy = "mr.transfer_time DESC, mr.id DESC"
+	}
+	if v, ok := filter["type"]; ok {
+		query.And("mr.type=?", v)
+	}
+	if v, ok := filter["transfer_date"]; ok {
+		dayBeginTime, _ := time.Parse(utils.LAYOUT_DATE_TIME, v.(string)+" 00:00:00")
+		dayEndTime, _ := time.Parse(utils.LAYOUT_DATE_TIME, v.(string)+" 23:59:59")
+
+		query.And("mr.transfer_time>=?", dayBeginTime.Unix()).And("mr.transfer_time<=?", dayEndTime.Unix())
+	}
+	if v, ok := filter["transfer_time_begin"]; ok {
+		query.And("mr.transfer_time>=?", v)
+	}
+	if v, ok := filter["transfer_time_end"]; ok {
+		query.And("mr.transfer_time<=?", v)
+	}
+
+	//分页
+	tmpQuery := *query
+	total, err := tmpQuery.Count(s)
+	if err != nil {
+		return nil, nil, errors.NewSys(err)
+	}
+	offset, modelList := s.Paging(pageIndex, pageSize, int(total))
+
+	var list []*MoneyRecordWithToken
+	err = query.Select("mr.*, ut.token_name").OrderBy(orderBy).Limit(modelList.PageSize, offset).Find(&list)
+	if err != nil {
+		return nil, nil, errors.NewSys(err)
+	}
+	modelList.Items = list
+
+	return modelList, list, nil
+}
 
 //拉去平台内充值的所有记录 平台当天的单个币的充币数量
-func (m*MoneyRecord) GetPlatformAll(page,rows int ,tid,bt,et uint64)(*ModelList,error){
-	engine:=utils.Engine_token
-	sql :="SELECT FROM_UNIXTIME(created_time,'%Y%m%d') day,created_time `time` ,TYPE,SUM(num) total ,token_id tid,uid FROM g_token.money_record WHERE TYPE=14 "
+func (m *MoneyRecord) GetPlatformAll(page, rows int, tid, bt, et uint64) (*ModelList, error) {
+	engine := utils.Engine_token
+	sql := "SELECT FROM_UNIXTIME(created_time,'%Y%m%d') day,created_time `time` ,TYPE,SUM(num) total ,token_id tid,uid FROM g_token.money_record "
 	var condition string
-	if bt!=0{
-		if et!=0{
-			condition = fmt.Sprintf(" and created_time BETWEEN %d AND %d ",bt,et+86400)
-		}else{
-			condition = fmt.Sprintf("  and created_time BETWEEN %d AND %d ",bt,bt+86400)
+	if bt != 0 {
+		if et != 0 {
+			condition = fmt.Sprintf(" WHERE TYPE=6 and created_time BETWEEN %d AND %d ", bt, et+86400)
+		} else {
+			condition = fmt.Sprintf(" WHERE TYPE=6 and created_time BETWEEN %d AND %d ", bt, bt+86400)
 		}
 	}
-	if tid!=0{
-		condition +=fmt.Sprintf("  AND token_id=%d ",tid)
+	if tid != 0 {
+		condition += fmt.Sprintf("  AND token_id=%d ", tid)
 	}
 
-	condition +=" GROUP BY day , token_id"
-	count:=fmt.Sprintf("SELECT COUNT(*) COUNT FROM (%s)t",sql+condition)
-	num:=&struct {
+	condition += " GROUP BY day , token_id"
+	count := fmt.Sprintf("SELECT COUNT(*) COUNT FROM (%s)t", sql+condition)
+	num := &struct {
 		Count int
 	}{}
-	_,err:=engine.SQL(count).Get(num)
-	if err!=nil{
-		return nil,err
+	_, err := engine.SQL(count).Get(num)
+	if err != nil {
+		return nil, err
 	}
-	offset,mList:=m.Paging(page,rows,int(num.Count))
-	limit:=fmt.Sprintf(" limit %d offset %d ",mList.PageSize,offset)
+	offset, mList := m.Paging(page, rows, int(num.Count))
+	limit := fmt.Sprintf(" limit %d offset %d ", mList.PageSize, offset)
 	type temp struct {
-		Time int64 	`json:"day"`
-		Total int64 `json:"total"`
+		Time      int64   `json:"day"`
+		Total     int64   `json:"total"`
 		TotalTrue float64 `xorm:"-" json:"total_true"`
-		Name string ` xorm:"-" json:"name"`
-		Tid  int `json:"tid"`
+		Name      string  ` xorm:"-" json:"name"`
+		Tid       int     `json:"tid"`
 	}
-	list:=make([]temp,0)
-	err=engine.SQL(sql+condition+limit).Find(&list)
-	if err!=nil{
-		return nil,err
+	list := make([]temp, 0)
+	err = engine.SQL(sql + condition + limit).Find(&list)
+	if err != nil {
+		return nil, err
 	}
-	tl,err:=new(Tokens).GetTokensList()
-	if err!=nil{
-		return nil,err
+	tl, err := new(Tokens).GetTokensList()
+	if err != nil {
+		return nil, err
 	}
-	for i,v:=range list{
-		for _,tv:=range tl{
-			if v.Tid == tv.Id{
-				list[i].Name =tv.Mark
+	for i, v := range list {
+		for _, tv := range tl {
+			if v.Tid == tv.Id {
+				list[i].Name = tv.Mark
 				break
 			}
 		}
-		list[i].TotalTrue =m.Int64ToFloat64By8Bit(v.Total)
+		list[i].TotalTrue = m.Int64ToFloat64By8Bit(v.Total)
 	}
-	mList.Items =list
-return mList,nil
+	mList.Items = list
+	return mList, nil
 }
 
-
 //平台内充值明细
-func (m*MoneyRecord)GetPlatForTokenOfDay(page,rows,uid,tid int,date uint64)(*ModelList,error){
-	engine:=utils.Engine_token
-	sql:="SELECT  FROM_UNIXTIME(created_time,'%Y%m%d %I:%i:%s') DAY, SUM(num) total ,uid,comment FROM g_token.money_record  "
+func (m *MoneyRecord) GetPlatForTokenOfDay(page, rows, uid, tid int, date uint64) (*ModelList, error) {
+	engine := utils.Engine_token
+	sql := "SELECT  FROM_UNIXTIME(created_time,'%Y%m%d %I:%i:%s') DAY, SUM(num) total ,uid,comment FROM g_token.money_record  "
 
 	var condition string
-	condition= fmt.Sprintf("WHERE TYPE=14 AND token_id=%d AND created_time  BETWEEN %d AND %d ",tid,date, date+86400)
+	condition = fmt.Sprintf("WHERE TYPE=14 AND token_id=%d AND created_time  BETWEEN %d AND %d ", tid, date, date+86400)
 
-	if uid!=0{
-		condition+= fmt.Sprintf(" AND uid=%d ",uid)
+	if uid != 0 {
+		condition += fmt.Sprintf(" AND uid=%d ", uid)
 	}
-	sql +=condition
-	sql +=" GROUP BY uid , token_id "
-	countSql:=fmt.Sprintf("select count(*) count from (%s) t",sql)
-	num:=&struct {
+	sql += condition
+	sql += " GROUP BY uid , token_id "
+	countSql := fmt.Sprintf("select count(*) count from (%s) t", sql)
+	num := &struct {
 		Count int
 	}{}
-	_,err:=engine.SQL(countSql).Get(num)
-	if err!=nil{
-		return nil,err
+	_, err := engine.SQL(countSql).Get(num)
+	if err != nil {
+		return nil, err
 	}
 	fmt.Println(num.Count)
 	type tmep struct {
-		Day string `json:"day"`
-		Total int64 `json:"total"`
+		Day       string  `json:"day"`
+		Total     int64   `json:"total"`
 		TotalTrue float64 `xorm:"-" json:"total_true"`
-		Uid int64 `json:"uid"`
-		Comment string 	`json:"comment"`
+		Uid       int64   `json:"uid"`
+		Comment   string  `json:"comment"`
 	}
-	list:=make([]tmep,0)
-	offset,mList:=m.Paging(page,rows,int(num.Count))
-	limit:=fmt.Sprintf("limit %d offset %d",mList.PageSize,offset)
-	err=engine.SQL(sql+limit).Find(&list)
-	if err!=nil{
-		return nil,err
+	list := make([]tmep, 0)
+	offset, mList := m.Paging(page, rows, int(num.Count))
+	limit := fmt.Sprintf("limit %d offset %d", mList.PageSize, offset)
+	err = engine.SQL(sql + limit).Find(&list)
+	if err != nil {
+		return nil, err
 	}
-	for i,v:=range list{
-		list[i].TotalTrue =m.Int64ToFloat64By8Bit(v.Total)
+	for i, v := range list {
+		list[i].TotalTrue = m.Int64ToFloat64By8Bit(v.Total)
 	}
 	fmt.Println(len(list))
-	mList.Items =list
-	return mList,nil
+	mList.Items = list
+	return mList, nil
 }

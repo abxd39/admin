@@ -415,8 +415,8 @@ func (u *User) CheckPermission(ctx *gin.Context, uid int, api string) (bool, err
 	}
 }
 
-// 获取管理员拥有的左侧菜单
-func (u *User) MyLeftMenu(ctx *gin.Context) ([]Node, error) {
+// 获取管理员拥有的菜单
+func (u *User) MyMenu(ctx *gin.Context) ([]Node, error) {
 	// 表名
 	userTable := u.TableName()
 	roleUserTable := new(RoleUser).TableName()
@@ -432,7 +432,7 @@ func (u *User) MyLeftMenu(ctx *gin.Context) ([]Node, error) {
 		return nil, err
 	}
 	if isSuper { // 超管，直接返回所有左侧菜单
-		engine.Where("type=1").And("states=1").And("menu_type=1").Desc("weight").Find(&list)
+		engine.Where("type=1").And("states=1").Desc("weight").Find(&list)
 	} else {
 		uid, err := session.GetUid(ctx)
 		if err != nil {
@@ -448,55 +448,7 @@ func (u *User) MyLeftMenu(ctx *gin.Context) ([]Node, error) {
 			" AND n.type=1"+
 			" AND n.belong_super=0"+
 			" AND n.states=1"+
-			" AND n.menu_type=1"+
 			" ORDER BY n.weight DESC", userTable, roleUserTable, roleNodeTable, nodeTable, uid)).Find(&list)
-	}
-
-	return list, nil
-}
-
-// 获取管理员拥有的右侧菜单
-func (u *User) MyRightMenu(ctx *gin.Context, pid int) ([]Node, error) {
-	// 获取上级信息
-	parent, err := new(Node).Get(pid)
-	if err != nil {
-		return nil, err
-	}
-
-	// 表名
-	userTable := u.TableName()
-	roleUserTable := new(RoleUser).TableName()
-	roleNodeTable := new(RoleNode).TableName()
-	nodeTable := new(Node).TableName()
-
-	var list []Node
-
-	// 判断是否超管
-	engine := utils.Engine_backstage
-	isSuper, err := session.IsSuper(ctx)
-	if err != nil {
-		return nil, err
-	}
-	if isSuper { // 超管，直接返回所有左侧菜单
-		engine.Where("type=1").And("states=1").And("menu_type=2").And(fmt.Sprintf("full_id LIKE '%s%%'", parent.FullId)).Desc("weight").Find(&list)
-	} else {
-		uid, err := session.GetUid(ctx)
-		if err != nil {
-			return nil, err
-		}
-
-		engine.SQL(fmt.Sprintf("SELECT n.*"+
-			" FROM %s u"+
-			" JOIN %s ru ON ru.uid=u.uid"+
-			" JOIN %s rn ON rn.role_id=ru.role_id"+
-			" JOIN %s n ON n.id=rn.node_id"+
-			" WHERE u.uid=%d"+
-			" AND n.type=1"+
-			" AND n.belong_super=0"+
-			" AND n.states=1"+
-			" AND n.menu_type=2"+
-			" AND n.full_id LIKE '%s%%'"+
-			" ORDER BY n.weight DESC", userTable, roleUserTable, roleNodeTable, nodeTable, uid, parent.FullId)).Find(&list)
 	}
 
 	return list, nil
