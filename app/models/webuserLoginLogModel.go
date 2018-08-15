@@ -16,7 +16,7 @@ type UserLoginLog struct {
 }
 
 type UserLogInLogGroup struct {
-	UserLoginLog `xorm:"extends"`
+	//UserLoginLog `xorm:"extends"`
 	NickName     string `xorm:"not null default '' comment('用户昵称') VARCHAR(64)"`
 	Phone        string `xorm:"comment('手机') unique VARCHAR(64)"`
 	Email        string `xorm:"comment('邮箱') unique VARCHAR(128)"`
@@ -27,27 +27,9 @@ func (u *UserLogInLogGroup) TableName() string {
 	return "user_login_log"
 }
 
-type UserLoginTerminalType struct {
-	BaseModel    `xorm:"-"`
-	Id           int    `xorm:"not null pk autoincr comment('自增id') INT(10)"`
-	TerminalType int    `xorm:"not null comment('终端类型') TINYINT(4)"`
-	TerminalName string `xorm:"not null comment('终端的名称 例如:pc') VARCHAR(100)"`
-}
-
-func (u *UserLoginTerminalType) GetTerminalTypeList() (*ModelList, error) {
-	engine := utils.Engine_common
-	list := make([]UserLoginTerminalType, 0)
-	err := engine.Find(&list)
-	if err != nil {
-		return nil, err
-	}
-	ml := new(ModelList)
-	ml.Items = list
-	return ml, nil
-}
 
 //获取用户登录日志
-func (u *UserLogInLogGroup) GetUserLoginLogList(page, rows, terminal_type, status int, login_time uint64, search string) (*ModelList, error) {
+func (u *UserLoginLog) GetUserLoginLogList(page, rows, terminal_type, status int, login_time uint64, search string) (*ModelList, error) {
 	engine := utils.Engine_common
 
 	query := engine.Desc("id")

@@ -469,7 +469,7 @@ func (w *WebUserManageController) GetLoginList(c *gin.Context) {
 		w.RespErr(c, err)
 		return
 	}
-	list, err := new(models.UserLogInLogGroup).GetUserLoginLogList(req.Page, req.Rows, req.TerminalType, req.Status, req.LoginTime, req.Search)
+	list, err := new(models.UserLoginLog).GetUserLoginLogList(req.Page, req.Rows, req.TerminalType, req.Status, req.LoginTime, req.Search)
 	if err != nil {
 		w.RespErr(c, err)
 		return
