@@ -224,7 +224,7 @@ func (t *TokenInout) OptTakeToken(id, status int) error {
 		return err
 	}
 	if !has {
-		return errors.New("rescind failed !!")
+		return errors.New("订单不存在!!!")
 	}
 
 	sess := engine.NewSession()

@@ -158,7 +158,7 @@ func (VendorApi)GetTradeSigntx(uid,tid int, addr,mount string)(string,error)  {
   if rsp.Code!=0{
     return "",errors.New(rsp.Msg)
   }
-   v,ok:=rsp.Data["signtx"]
+   v,ok:=rsp.Data["addr"]
    if!ok{
      return "",errors.New("返回值错误")
    }

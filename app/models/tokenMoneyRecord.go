@@ -30,9 +30,7 @@ type MoneyRecordGroup struct {
 	UserInfo    `xorm:"extends"`
 }
 
-func (m *MoneyRecordGroup) TableName() string {
-	return "money_record"
-}
+
 
 func (m *MoneyRecord) BackstagePut(count float64, uid, tid int, comment string) error {
 	opt := 1 //加
@@ -64,7 +62,7 @@ func (m *MoneyRecord) BackstagePut(count float64, uid, tid int, comment string) 
 		Opt:         opt,
 		Num:         num,
 		Balance:     ut.Balance + num,
-		CreatedTime: time.Now().UnixNano(),
+		CreatedTime: time.Now().Unix(),
 		Comment:     comment,
 	})
 	if err != nil {
@@ -85,7 +83,7 @@ func (m *MoneyRecord) BackstagePut(count float64, uid, tid int, comment string) 
 	return nil
 }
 
-func (m *MoneyRecordGroup) GetMoneyList(page, rows int, uid []int64) (*ModelList, error) {
+func (m *MoneyRecord) GetMoneyList(page, rows int, uid []int64) (*ModelList, error) {
 	engine := utils.Engine_token
 	query := engine.Desc("id")
 	query = query.In("uid", uid)
@@ -106,7 +104,7 @@ func (m *MoneyRecordGroup) GetMoneyList(page, rows int, uid []int64) (*ModelList
 	return modelList, nil
 }
 
-func (m *MoneyRecordGroup) GetMoneyListForDateOrType(page, rows, ty, status int, tid int, search string) (*ModelList, error) {
+func (m *MoneyRecord) GetMoneyListForDateOrType(page, rows, ty, status int, tid int, search string) (*ModelList, error) {
 	engine := utils.Engine_token
 	query := engine.Alias("uch").Desc("id")
 	query = query.Join("LEFT", "g_common.user u ", "u.uid= uch.uid")
@@ -148,13 +146,13 @@ func (m *MoneyRecordGroup) GetMoneyListForDateOrType(page, rows, ty, status int,
 //拉去平台内充值的所有记录 平台当天的单个币的充币数量
 func (m*MoneyRecord) GetPlatformAll(page,rows int ,tid,bt,et uint64)(*ModelList,error){
 	engine:=utils.Engine_token
-	sql :="SELECT FROM_UNIXTIME(created_time,'%Y%m%d') day,created_time `time` ,TYPE,SUM(num) total ,token_id tid,uid FROM g_token.money_record "
+	sql :="SELECT FROM_UNIXTIME(created_time,'%Y%m%d') day,created_time `time` ,TYPE,SUM(num) total ,token_id tid,uid FROM g_token.money_record WHERE TYPE=14 "
 	var condition string
 	if bt!=0{
 		if et!=0{
-			condition = fmt.Sprintf(" WHERE TYPE=6 and created_time BETWEEN %d AND %d ",bt,et+86400)
+			condition = fmt.Sprintf(" and created_time BETWEEN %d AND %d ",bt,et+86400)
 		}else{
-			condition = fmt.Sprintf(" WHERE TYPE=6 and created_time BETWEEN %d AND %d ",bt,bt+86400)
+			condition = fmt.Sprintf("  and created_time BETWEEN %d AND %d ",bt,bt+86400)
 		}
 	}
 	if tid!=0{
@@ -173,7 +171,7 @@ func (m*MoneyRecord) GetPlatformAll(page,rows int ,tid,bt,et uint64)(*ModelList,
 	offset,mList:=m.Paging(page,rows,int(num.Count))
 	limit:=fmt.Sprintf(" limit %d offset %d ",mList.PageSize,offset)
 	type temp struct {
-		Day int64 	`json:"day"`
+		Time int64 	`json:"day"`
 		Total int64 `json:"total"`
 		TotalTrue float64 `xorm:"-" json:"total_true"`
 		Name string ` xorm:"-" json:"name"`
@@ -208,7 +206,7 @@ func (m*MoneyRecord)GetPlatForTokenOfDay(page,rows,uid,tid int,date uint64)(*Mod
 	sql:="SELECT  FROM_UNIXTIME(created_time,'%Y%m%d %I:%i:%s') DAY, SUM(num) total ,uid,comment FROM g_token.money_record  "
 
 	var condition string
-	condition= fmt.Sprintf("WHERE token_id=%d AND created_time  BETWEEN %d AND %d ",tid,date, date+86400)
+	condition= fmt.Sprintf("WHERE TYPE=14 AND token_id=%d AND created_time  BETWEEN %d AND %d ",tid,date, date+86400)
 
 	if uid!=0{
 		condition+= fmt.Sprintf(" AND uid=%d ",uid)
