@@ -772,7 +772,31 @@ func (t *TokenController) ListTransfer(ctx *gin.Context) {
 	}
 
 	// 调用model
-	modelList, _, err := new(models.MoneyRecord).List(page, rows, filter)
+	modelList, list, err := new(models.MoneyRecord).List(page, rows, filter)
+
+	// 重组data
+	type item struct {
+		Id           int64  `json:"id"`
+		Uid          int64  `json:"uid"`
+		TokenId      int32  `json:"token_id"`
+		TokenName    string `json:"token_name"`
+		Type         int8   `json:"type"`
+		Num          string `json:"num"`
+		TransferTime int64  `json:"transfer_time"`
+	}
+
+	newItems := make([]*item, len(list))
+	for k, v := range list {
+		newItems[k] = &item{
+			Id:           v.Id,
+			TokenId:      int32(v.TokenId),
+			TokenName:    v.TokenName,
+			Type:         int8(v.Type),
+			Num:          convert.Int64ToStringBy8Bit(v.Num),
+			TransferTime: v.TransferTime,
+		}
+	}
+	modelList.Items = newItems
 
 	// 设置返回数据
 	t.Put(ctx, "list", modelList)

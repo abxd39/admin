@@ -8,17 +8,18 @@ import (
 )
 
 type MoneyRecord struct {
-	BaseModel   `xorm:"-"`
-	Id          int64  `xorm:"pk autoincr BIGINT(20)" json:"id"`
-	Uid         int    `xorm:"comment('用户ID') unique(hash_index) INT(11)" json:"uid"`
-	TokenId     int    `xorm:"comment('代币ID') INT(11)" json:"token_id"`
-	Ukey        string `xorm:"comment('联合key') unique(hash_index) VARCHAR(128)" json:"ukey"`
-	Type        int    `xorm:"comment('流水类型1区块2委托') INT(11)" json:"type"`
-	Opt         int    `xorm:"comment('操作方向1加2减') unique(hash_index) TINYINT(4)" json:"opt"`
-	Num         int64  `xorm:"comment('数量') BIGINT(20)" json:"num"`
-	Balance     int64  `xorm:"comment('余额') BIGINT(20)" json:"surplus"`
-	CreatedTime int64  `xorm:"comment('操作时间') BIGINT(20)" json:"created_time"`
-	Comment     string `xorm:"comment('备注') varchar(255)" json:"comment"`
+	BaseModel    `xorm:"-"`
+	Id           int64  `xorm:"pk autoincr BIGINT(20)" json:"id"`
+	Uid          int    `xorm:"comment('用户ID') unique(hash_index) INT(11)" json:"uid"`
+	TokenId      int    `xorm:"comment('代币ID') INT(11)" json:"token_id"`
+	Ukey         string `xorm:"comment('联合key') unique(hash_index) VARCHAR(128)" json:"ukey"`
+	Type         int    `xorm:"comment('流水类型1区块2委托') INT(11)" json:"type"`
+	Opt          int    `xorm:"comment('操作方向1加2减') unique(hash_index) TINYINT(4)" json:"opt"`
+	Num          int64  `xorm:"comment('数量') BIGINT(20)" json:"num"`
+	Balance      int64  `xorm:"comment('余额') BIGINT(20)" json:"surplus"`
+	CreatedTime  int64  `xorm:"comment('操作时间') BIGINT(20)" json:"created_time"`
+	TransferTime int64  `xorm:"transfer_time"`
+	Comment      string `xorm:"comment('备注') varchar(255)" json:"comment"`
 }
 
 type MoneyRecordWithToken struct {
