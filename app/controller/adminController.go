@@ -471,6 +471,7 @@ func (a *AdminController) MyMenu(ctx *gin.Context) {
 		Depth    int    `json:"depth"`
 		MenuUrl  string `json:"menu_url"`
 		MenuIcon string `json:"menu_icon"`
+		MenuType int    `json:"menu_type"`
 		FullId   string `json:"full_id"`
 	}
 
@@ -484,6 +485,7 @@ func (a *AdminController) MyMenu(ctx *gin.Context) {
 			Depth:    v.Depth,
 			MenuUrl:  v.MenuUrl,
 			MenuIcon: v.MenuIcon,
+			MenuType: v.MenuType,
 			FullId:   v.FullId,
 		}
 	}
