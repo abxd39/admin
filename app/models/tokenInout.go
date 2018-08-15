@@ -243,9 +243,9 @@ func (t *TokenInout) OptTakeToken(id, status int) error {
 	//审核通过
 	if status == utils.VERIFY_OUT_TOKEN_MARK {
 		mount := t.Int64ToFloat64By8Bit(t.Amount)
-		//if mount == 0 {
-		//	mount = 0.9999999999
-		//}
+		if mount == 0 {
+			mount = 0.9999999999
+		}
 		////fmt.Println("num=",)
 		strMount := fmt.Sprintf("%.10f", mount)
 		if t.Tokenid ==3 {//eth

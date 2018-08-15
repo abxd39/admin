@@ -32,7 +32,7 @@ type TokenInoutDailySheet struct {
 	TotalPut       int64  `xorm:"not null comment('充币累计总额') BIGINT(20)" json:"total_put"`
 	TotalDayPut    int64  `xorm:"not null comment('日充币总额') BIGINT(20)" json:"total_day_put"`
 	TotalDayPutCny int64  `xorm:"not null default 0 comment('日充币折合') BIGINT(20)" json:"total_day_put_cny"`
-	Date           int64  `xorm:"not null comment('时间戳') BIGINT(20)" json:"date"`
+	Date           string  `xorm:"not null comment('时间戳') datetime" json:"date"`
 }
 
 type FeeTotalSheet struct {
@@ -110,19 +110,19 @@ func (this *TokenInoutDailySheet) TableName() string {
 //}
 
 //提币手续费汇总表
-func (this *TokenInoutDailySheet) GetInOutDailySheetList(page, rows, tokenId int, bt, et uint64) (*ModelList, error) {
+func (this *TokenInoutDailySheet) GetInOutDailySheetList(page, rows, tokenId int, bt, et string) (*ModelList, error) {
 
 	engine := utils.Engine_wallet
 	query := engine.Desc("id")
 	if tokenId != 0 {
 		query = query.Where("token_id=?", tokenId)
 	}
-
-	if bt != 0 {
-		if et != 0 {
-			query = query.Where("date between ? and ?", bt, et+86400)
+	//substr := st[:11] + "23:59:59"
+	if bt != `` {
+		if et != `` {
+			query = query.Where("date between ? and ?", bt, et[:11]+ "23:59:59")
 		} else {
-			query = query.Where("date between ? and ?", bt, bt+86400)
+			query = query.Where("date between ? and ?", bt, bt[:11]+ "23:59:59")
 		}
 	}
 	//query = query.Where("id>?", 0)
@@ -150,18 +150,18 @@ func (this *TokenInoutDailySheet) GetInOutDailySheetList(page, rows, tokenId int
 }
 
 //日冲币汇总表
-func (t *TokenInoutDailySheet) DayPutDailySheet(page, rows, tid int, bt, et uint64) (*ModelList, error) {
+func (t *TokenInoutDailySheet) DayPutDailySheet(page, rows, tid int, bt, et string) (*ModelList, error) {
 	engine := utils.Engine_wallet
 	query := engine.Desc("id")
 	if tid != 0 {
 		query = query.Where("token_id=?", tid)
 	}
 
-	if bt != 0 {
-		if et != 0 {
-			query = query.Where("date between ? and ?", bt, et+86400)
+	if bt != `` {
+		if et != `` {
+			query = query.Where("date between ? and ?", bt, et[:11]+ "23:59:59")
 		} else {
-			query = query.Where("date between ? and ?", bt, bt+86400)
+			query = query.Where("date between ? and ?", bt, bt[:11]+ "23:59:59")
 		}
 	}
 
@@ -179,7 +179,7 @@ func (t *TokenInoutDailySheet) DayPutDailySheet(page, rows, tid int, bt, et uint
 		TokenId         int     `json:"token_id"`
 		TotalPutTrue    float64 `xorm:"-" json:"total_true"`
 		TotalDayPutTrue float64 `xorm:"-" json:"total_day_true"`
-		Date            int64   ` json:"date"`
+		Date            string   ` json:"date"`
 	}
 	list := make([]temp, 0)
 
@@ -196,18 +196,18 @@ func (t *TokenInoutDailySheet) DayPutDailySheet(page, rows, tid int, bt, et uint
 }
 
 //日提币
-func (t *TokenInoutDailySheet) DayOutDailySheet(page, rows, tid int, bt, et uint64) (*ModelList, error) {
+func (t *TokenInoutDailySheet) DayOutDailySheet(page, rows, tid int, bt, et string) (*ModelList, error) {
 	engine := utils.Engine_wallet
 	query := engine.Desc("id")
 	if tid != 0 {
 		query = query.Where("token_id=?", tid)
 	}
 
-	if bt != 0 {
-		if et != 0 {
-			query = query.Where("date between ? and ?", bt, et+86400)
+	if bt != `` {
+		if et != `` {
+			query = query.Where("date between ? and ?", bt, et[:11]+ "23:59:59")
 		} else {
-			query = query.Where("date between ? and ?", bt, bt+86400)
+			query = query.Where("date between ? and ?", bt, bt[:11]+ "23:59:59")
 		}
 	}
 
@@ -225,7 +225,7 @@ func (t *TokenInoutDailySheet) DayOutDailySheet(page, rows, tid int, bt, et uint
 		TokenId      int     `json:"token_id"`
 		TotalTrue    float64 `xorm:"-" json:"total_true"`
 		TotalNumTrue float64 `xorm:"-" json:"total_day_true"`
-		Date         int64   ` json:"date"`
+		Date         string   ` json:"date"`
 	}
 	list := make([]temp, 0)
 	err = query.Table("token_inout_daily_sheet").Limit(mList.PageSize, offset).Find(&list)

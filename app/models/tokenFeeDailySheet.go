@@ -22,7 +22,7 @@ type TokenDailySheet struct {
 	FeeSellCny   int64 `xorm:"not null comment('卖手续费折合cny') BIGINT(20)" json:"fee_sell_cny"`
 	FeeSellTotal int64 `xorm:"not null comment('卖手续费总额') BIGINT(20)" json:"fee_sell_total"`
 	BuyTotal     int64 `xorm:"not null comment('买总额') BIGINT(20)" json:"buy_total"`
-	ButTotalCny  int64 `xorm:"not null comment('买总额折合') BIGINT(20)" json:"but_total_cny"`
+	BuyTotalCny  int64 `xorm:"not null comment('买总额折合') BIGINT(20)" json:"but_total_cny"`
 	SellTotalCny int64 `xorm:"not null comment('卖总额折合') BIGINT(20)" json:"sell_total_cny"`
 	SellTotal    int64 `xorm:"not null comment('卖总额') BIGINT(20)" json:"sell_total"`
 	Date         int64 `xorm:"not null comment('时间戳，精确到天') BIGINT(10)" json:"date"`
@@ -162,16 +162,15 @@ func (this *TokenDailySheet) GetDailySheetList(page, rows int, date uint64) (*Mo
 		return nil, nil, err
 	}
 	mList.Items = list
-	result, err := engine.Sums(this, "buy_balance", "sell_balance", "total_balance")
+	result, err := engine.SumsInt(this, "buy_total", "sell_total")
 	if err != nil {
 		return nil, nil, err
 	}
-	total := result[2]
 	totalBuy := result[1]
 	totalSell := result[0]
 	return mList, &TokenFeeDailySheetGroup{
-		Total:     total,
-		TotalBuy:  totalBuy,
-		TotalSell: totalSell,
+		Total:     this.Int64ToFloat64By8Bit(totalBuy+totalSell),
+		TotalBuy:  this.Int64ToFloat64By8Bit(totalBuy),
+		TotalSell: this.Int64ToFloat64By8Bit(totalSell),
 	}, nil
 }

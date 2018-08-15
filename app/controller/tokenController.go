@@ -10,8 +10,9 @@ import (
 
 	"admin/constant"
 	"digicon/common/convert"
-	"github.com/gin-gonic/gin"
 	"regexp"
+
+	"github.com/gin-gonic/gin"
 )
 
 type TokenController struct {
@@ -178,8 +179,8 @@ func (this *TokenController) GetTokenInOutDailySheetList(c *gin.Context) {
 	req := struct {
 		Page    int    `form:"page" json:"page" binding:"required"`
 		Rows    int    `form:"rows" json:"rows" `
-		Bt      uint64 `form:"bt" json:"bt"` //日期
-		Et      uint64 `form:"et" json:"et"`
+		Bt      string `form:"bt" json:"bt"` //日期
+		Et      string `form:"et" json:"et"`
 		TokenId int    `form:"tid" json:"tid"`
 	}{}
 	err := c.ShouldBind(&req)
@@ -229,8 +230,8 @@ func (this *TokenController) GetTotalTokenList(c *gin.Context) {
 		Page    int    `form:"page" json:"page" binding:"required"`
 		Rows    int    `form:"rows" json:"rows" `
 		TokenId int    `form:"tokenId" json:"tokenId" ` //货币id
-		Bt      uint64 `form:"bt" json:"bt"`            //筛选开始日期
-		Et      uint64 `form:"et" json:"et"`            //筛选结束日期
+		Bt      string `form:"bt" json:"bt"`            //筛选开始日期
+		Et      string `form:"et" json:"et"`            //筛选结束日期
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
