@@ -52,6 +52,7 @@ func (this *TokenController) Router(r *gin.Engine) {
 		g.GET("/test1", this.test1)
 
 		g.GET("/list_transfer_daily_sheet", this.ListTransferDailySheet)
+		g.GET("/list_transfer", this.ListTransfer)
 
 	}
 }
@@ -729,6 +730,45 @@ func (t *TokenController) ListTransferDailySheet(ctx *gin.Context) {
 		}
 	}
 	modelList.Items = newItems
+
+	// 设置返回数据
+	t.Put(ctx, "list", modelList)
+
+	// 返回
+	t.RespOK(ctx)
+	return
+}
+
+// 划转明细
+func (t *TokenController) ListTransfer(ctx *gin.Context) {
+	// 获取参数
+	page, err := t.GetInt(ctx, "page", 1)
+	if err != nil {
+		t.RespErr(ctx, "参数page格式错误")
+		return
+	}
+	rows, err := t.GetInt(ctx, "rows", 10)
+	if err != nil {
+		t.RespErr(ctx, "参数rows格式错误")
+		return
+	}
+
+	// 筛选
+	filter := map[string]interface{}{
+		"transfer": true,
+	}
+	if v := t.GetString(ctx, "uid"); v != "" {
+		filter["uid"] = v
+	}
+	if v := t.GetString(ctx, "token_id"); v != "" {
+		filter["token_id"] = v
+	}
+	if v := t.GetString(ctx, "transfer_date"); v != "" {
+		filter["transfer_date"] = v
+	}
+
+	// 调用model
+	modelList, _, err := new(models.MoneyRecord).List(page, rows, filter)
 
 	// 设置返回数据
 	t.Put(ctx, "list", modelList)
