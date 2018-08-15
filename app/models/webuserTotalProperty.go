@@ -1,10 +1,9 @@
 package models
 
 import (
-	"fmt"
 	"admin/utils"
-	)
-
+	"fmt"
+)
 
 type TotalProperty struct {
 	BaseModel `xorm:"-"`

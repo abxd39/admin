@@ -1,9 +1,9 @@
 package models
 
 import (
-	"fmt"
 	"admin/utils"
 	"errors"
+	"fmt"
 )
 
 type UserEx struct {
@@ -29,9 +29,9 @@ type FirstDetail struct {
 	VerifyMark   int    //一级实名认证状态
 }
 
-func (f *FirstDetail) TableName() string {
-	return "user_ex"
-}
+//func (f *FirstDetail) TableName() string {
+//	return "user_ex"
+//}
 
 type InviteGroup struct {
 	UserEx      `xorm:"extends"`
@@ -42,9 +42,9 @@ type InviteGroup struct {
 	InviteCount int
 }
 
-func (w *UserEx) TableName() string {
-	return "user_ex"
-}
+//func (w *UserEx) TableName() string {
+//	return "user_ex"
+//}
 
 //邀请人统计表—账号：18888888888
 func (w *UserEx) GetInviteInfoList(uid, page, rows int, date uint64, name, account string) (*ModelList, error) {
@@ -118,7 +118,7 @@ func (w *UserEx) GetInViteList(page, rows int, search string) (*ModelList, error
 }
 
 //单个用户的认证详情
-func (w *FirstDetail) GetFirstDetail(uid int) (*FirstDetail, error) {
+func (w *UserEx) GetFirstDetail(uid int) (*FirstDetail, error) {
 	engine := utils.Engine_common
 	query := engine.Desc("user_ex.uid")
 	query = query.Join("INNER", "user", "user.uid=user_ex.uid")

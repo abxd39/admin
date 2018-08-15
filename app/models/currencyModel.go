@@ -8,18 +8,17 @@ import (
 
 // 用户虚拟货币资产表
 type UserCurrency struct {
-	BaseModel    `xorm:"-"`
-	Id        uint64 `xorm:"not null pk autoincr INT(10)" json:"id"`
-	Uid       uint64 `xorm:"INT(10)"     json:"uid"`                                          // 用户ID
-	TokenId   uint32 `xorm:"INT(10)"     json:"token_id"`                                     // 虚拟货币类型
-	TokenName string `xorm:"VARCHAR(36)" json:"token_name"`                                   // 虚拟货币名字
-	Freeze    int64  `xorm:"BIGINT not null default 0"   json:"freeze"`                       // 冻结
-	Balance   int64  `xorm:"not null default 0 comment('余额') BIGINT"   json:"balance"`        // 余额
-	Address   string `xorm:"not null default '' comment('充值地址') VARCHAR(255)" json:"address"` // 充值地址
-	Version   int64  `xorm:"version"`
+	BaseModel  `xorm:"-"`
+	Id         uint64 `xorm:"not null pk autoincr INT(10)" json:"id"`
+	Uid        uint64 `xorm:"INT(10)"     json:"uid"`                                          // 用户ID
+	TokenId    uint32 `xorm:"INT(10)"     json:"token_id"`                                     // 虚拟货币类型
+	TokenName  string `xorm:"VARCHAR(36)" json:"token_name"`                                   // 虚拟货币名字
+	Freeze     int64  `xorm:"BIGINT not null default 0"   json:"freeze"`                       // 冻结
+	Balance    int64  `xorm:"not null default 0 comment('余额') BIGINT"   json:"balance"`        // 余额
+	Address    string `xorm:"not null default '' comment('充值地址') VARCHAR(255)" json:"address"` // 充值地址
+	Version    int64  `xorm:"version"`
 	BalanceCny int64  `xorm:"default 0 comment('折合的余额人民币') BIGINT(20)"`
 	FreezeCny  int64  `xorm:"default 0 comment('冻结折合人民币') BIGINT(20)"`
-
 }
 
 //折合 rmb
@@ -39,14 +38,14 @@ func (this *AmountToCny) TableName() string {
 	return "user_currency"
 }
 
-
-type DetailCurrency struct{
+type DetailCurrency struct {
 	UserCurrency `xorm:"extends"`
-	BalanceTrue float64 `xorm:"-" json:"balance_true"`
-	FreezeTrue float64 `xorm:"-" json:"freeze_true" `
+	BalanceTrue  float64 `xorm:"-" json:"balance_true"`
+	FreezeTrue   float64 `xorm:"-" json:"freeze_true" `
 	AmountTo     float64 `xorm:"-"json:"amount_to"` //折合人民币
 }
-func (this *DetailCurrency)TableName()string  {
+
+func (this *DetailCurrency) TableName() string {
 	return "user_currency"
 }
 
@@ -54,30 +53,30 @@ func (this *DetailCurrency)TableName()string  {
 func (this *DetailCurrency) GetCurrencyList(page, rows, uid, tokenId int) (*ModelList, error) {
 	engine := utils.Engine_currency
 
-	query :=engine.Where("uid=?",uid)
+	query := engine.Where("uid=?", uid)
 	if tokenId != 0 {
 		query = query.Where(" token_id=?", tokenId)
 
 	}
 	//根据uid 和 token_id 查询
-	queryCount:=*query
+	queryCount := *query
 	count, err := queryCount.Count(&DetailCurrency{})
 	if err != nil {
 		return nil, err
 	}
-	offset,mList:=this.Paging(page,rows,int(count))
-	list:=make([]DetailCurrency,0)
+	offset, mList := this.Paging(page, rows, int(count))
+	list := make([]DetailCurrency, 0)
 
-	err = query.Limit(mList.PageSize,offset ).Find(&list)
+	err = query.Limit(mList.PageSize, offset).Find(&list)
 	if err != nil {
 		return nil, err
 	}
-	for i,v:=range list{
+	for i, v := range list {
 		list[i].BalanceTrue = this.Int64ToFloat64By8Bit(v.Balance)
-		list[i].FreezeTrue =this.Int64ToFloat64By8Bit(v.Freeze)
-		list[i].AmountTo = this.Int64ToFloat64By8Bit(v.BalanceCny) +this.Int64ToFloat64By8Bit(v.FreezeCny)
+		list[i].FreezeTrue = this.Int64ToFloat64By8Bit(v.Freeze)
+		list[i].AmountTo = this.Int64ToFloat64By8Bit(v.BalanceCny) + this.Int64ToFloat64By8Bit(v.FreezeCny)
 	}
-	mList.Items =list
+	mList.Items = list
 	return mList, nil
 }
 
@@ -133,16 +132,15 @@ func (this *AmountToCny) CurrencyBalance(page, rows, status int, search string) 
 		return nil, err
 	}
 
-	for i,v:=range list  {
-		list[i].AmountTo = v.BalanceCny +v.FreezeCny
+	for i, v := range list {
+		list[i].AmountTo = v.BalanceCny + v.FreezeCny
 	}
 	mList.Items = list
-
 
 	return mList, nil
 }
 
-func (this *AmountToCny)Decimal(value float64) float64 {
+func (this *AmountToCny) Decimal(value float64) float64 {
 	value, _ = strconv.ParseFloat(fmt.Sprintf("%.2f", value), 64)
 	return value
 }

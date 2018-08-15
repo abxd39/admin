@@ -10,7 +10,6 @@ import (
 	"time"
 )
 
-
 type WebUser struct {
 	BaseModel        `xorm:"-"`
 	Uid              int64  `xorm:"not null pk autoincr comment('用户ID') BIGINT(11)"`
@@ -24,7 +23,7 @@ type WebUser struct {
 	GoogleVerifyId   string `xorm:"comment('谷歌私钥') VARCHAR(128)"`
 	GoogleVerifyTime int    `xorm:"comment('谷歌验证时间') INT(255)"`
 	SmsTip           int    `xorm:"default 0 comment('短信提醒') TINYINT(1)"`
-	PayPwd           string `xorm:"comment('支付密码') VARCHAR(255)"`
+	PayPwd           string `xorm:"comment('支付密码') VARCHAR(255)" json:"-"`
 	NeedPwd          int    `xorm:"comment('免密设置1开启0关闭') TINYINT(1)"`
 	NeedPwdTime      int    `xorm:"comment('免密周期') INT(11)"`
 	Status           int    `xorm:"default 1 comment('用户状态，1正常，2冻结') INT(11)"`
@@ -53,7 +52,6 @@ type UserGroup struct {
 
 }
 
-
 func (w *WebUser) TableName() string {
 	return "user"
 }
@@ -61,8 +59,6 @@ func (w *WebUser) TableName() string {
 //func (w *UserGroup) TableName() string {
 //	return "user"
 //}
-
-
 
 //二级认证审核
 func (w *WebUser) SecondAffirmLimit(uid, status int) error {
@@ -239,7 +235,6 @@ func (w *WebUser) FirstAffirmLimit(uid, status int) error {
 
 	return nil
 }
-
 
 //拉取一级实名认证列表
 func (w *WebUser) GetFirstList(page, rows, status, cstatus int, time uint64, search string) (*ModelList, error) {
@@ -559,4 +554,3 @@ func (w *WebUser) GetUserListForUid(uid []uint64) ([]UserGroup, error) {
 	}
 	return list, nil
 }
-
