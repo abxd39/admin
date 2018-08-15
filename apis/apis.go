@@ -17,14 +17,18 @@ var awardUrl="/admin/register_reward?"
 var awardKey="hhhhhhhhhhhhhhhhhh"
 var privateKey = "hhhhhhhhhhhhhhhhhh"
 
+var walletUrl=""
+
 func InitUserUrl(remoteUrl,localUrl,key string)  {
   if key!=``{
     privateKey = key
   }
   if os.Getenv("ADMIN_API_ENV") == "prod" {
     userUrl= remoteUrl+userUrl
+    walletUrl =remoteUrl
   } else {
     userUrl= localUrl+userUrl
+    walletUrl = localUrl
   }
 
 }
@@ -108,4 +112,57 @@ func (VendorApi)AddAwardToken(uid int)error{
 		return errors.New("failed!!!")
 	}
   return nil
+}
+
+//提币审核
+//wallet/signtx
+func (VendorApi)GetTradeSigntx(uid,tid int, addr,mount string)(string,error)  {
+  fmt.Println("xxxxxxxxxxxxxxxxxxx1")
+  params := make(map[string]interface{})
+  params["uid"]=uid
+  params["token_id"]=tid
+  params["to"]=addr
+  params["amount"]=mount
+  params["gasprice"]=100
+  paramByts ,err:=json.Marshal(params)
+  reader := bytes.NewReader(paramByts)
+  //url :=userHost
+  fmt.Println(params)
+  fmt.Println(walletUrl+"/wallet/signtx")
+  request, err := http.NewRequest("POST", walletUrl+"/wallet/signtx?", reader)
+  if err != nil {
+    return "",err
+  }
+  request.Header.Set("Content-Type", "application/json;charset=UTF-8")
+  client := http.Client{}
+  result, err := client.Do(request)
+  if err != nil {
+
+    return "",err
+  }
+  rsp:=&struct {
+    Code int `json:"code"`
+    Data map[string]string `json:"data"`
+    Msg string `json:"msg"`
+  }{}
+  body ,err:=ioutil.ReadAll(result.Body)
+  if err!=nil{
+    return "",err
+  }
+
+  err=json.Unmarshal(body,rsp)
+  if err!=nil{
+    return "",err
+  }
+  fmt.Println("xxxxxxxxxxxxxxxxxxx2")
+  if rsp.Code!=0{
+    return "",errors.New(rsp.Msg)
+  }
+   v,ok:=rsp.Data["signtx"]
+   if!ok{
+     return "",errors.New("返回值错误")
+   }
+   fmt.Printf(v)
+   return v,nil
+
 }

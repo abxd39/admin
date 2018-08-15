@@ -50,18 +50,93 @@ func (this *TokenController) Router(r *gin.Engine) {
 		//手续费走势图
 		g.GET("/fee_trend_map", this.GetFeeTrendMap)
 		g.GET("/test1", this.test1)
-
+		//划转
 		g.GET("/list_transfer_daily_sheet", this.ListTransferDailySheet)
 		g.GET("/list_transfer", this.ListTransfer)
-
+		//后台充值
+		g.POST("/backstage_put",this.BackstagePut)
+		//平台充值总表
+		g.GET("/platform_all",this.PlatformAllSheet)
+		//每天平台内充币详细信息
+		g.GET("/platform_day",this.PlatformDay)
 	}
 }
 
+func (this*TokenController)PlatformDay(c*gin.Context){
+	req := struct {
+		Page int    `form:"page" json:"page" binding:"required"`
+		Rows int    `form:"rows" json:"rows" `
+		Date uint64 `form:"date" json:"date" binding:"required"`
+		Tid int `form:"tid" json:"tid" binding:"required"`
+		Uid int 	`form:"uid" json:"uid"`
+	}{}
+	err := c.ShouldBind(&req)
+	if err != nil {
+		utils.AdminLog.Errorf(err.Error())
+		this.RespErr(c, err)
+		return
+	}
+	list,err:=new(models.MoneyRecord).GetPlatForTokenOfDay(req.Page,req.Rows,req.Uid,req.Tid,req.Date)
+	if err!=nil{
+		this.RespErr(c,err)
+		return
+	}
+	this.Put(c,"list",list)
+	this.RespOK(c)
+	return
+}
+
+func (this* TokenController)PlatformAllSheet(c*gin.Context)  {
+	req := struct {
+		Page int    `form:"page" json:"page" binding:"required"`
+		Rows int    `form:"rows" json:"rows" `
+		Bt uint64 `form:"bt" json:"bt"` //日期
+		Et uint64 `form:"et" json:"et"`
+		Tid uint64 `form:"tid" json:"tid"`
+	}{}
+	err := c.ShouldBind(&req)
+	if err != nil {
+		utils.AdminLog.Errorf(err.Error())
+		this.RespErr(c, err)
+		return
+	}
+	list,err:=new(models.MoneyRecord).GetPlatformAll(req.Page,req.Rows,req.Tid,req.Bt,req.Et)
+	if err!=nil{
+		this.RespErr(c,err)
+		return
+	}
+	this.Put(c,"list",list)
+	this.RespOK(c)
+	return
+}
+
+func (this* TokenController) BackstagePut(c*gin.Context)  {
+	req := struct {
+		Comment   string    `form:"comment" json:"comment" binding:"required"`
+		Count   float64    `form:"count" json:"count" binding:"required" `
+		TokenId int    `form:"tid" json:"tid" binding:"required"`
+		Uid   int `form:"uid" json:"uid" binding:"required" `
+	}{}
+	err := c.ShouldBind(&req)
+	if err != nil {
+		utils.AdminLog.Errorf(err.Error())
+		this.RespErr(c, err)
+		return
+	}
+	err=new(models.MoneyRecord).BackstagePut(req.Count,req.Uid,req.TokenId,req.Comment)
+	if err!=nil {
+		this.RespErr(c,err)
+		return
+	}
+	this.RespOK(c)
+	return
+}
+
 func (this *TokenController) test1(c *gin.Context) {
-	new(models.TokenFeeDailySheet).Test1()
-	new(models.CurencyFeeDailySheet).BoottimeTimingSettlement()
-	new(models.WalletInoutDailySheet).BoottimeTimingSettlement()
-	new(models.TokenFeeDailySheet).BoottimeTimingSettlement()
+	//new(models.TokenFeeDailySheet).Test1()
+	//new(models.CurencyFeeDailySheet).BoottimeTimingSettlement()
+	//new(models.WalletInoutDailySheet).BoottimeTimingSettlement()
+	//new(models.TokenFeeDailySheet).BoottimeTimingSettlement()
 	this.RespOK(c)
 	return
 }
@@ -103,8 +178,9 @@ func (this *TokenController) GetTokenInOutDailySheetList(c *gin.Context) {
 	req := struct {
 		Page    int    `form:"page" json:"page" binding:"required"`
 		Rows    int    `form:"rows" json:"rows" `
-		Date    string `form:"date",json:"date"` //日期
-		TokenId int    `form:"tid",json:"tid"`
+		Bt    uint64    `form:"bt" json:"bt"` //日期
+		Et  uint64      `form:"et" json:"et"`
+		TokenId int    `form:"tid" json:"tid"`
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
@@ -112,7 +188,7 @@ func (this *TokenController) GetTokenInOutDailySheetList(c *gin.Context) {
 		this.RespErr(c, err)
 		return
 	}
-	list, err := new(models.WalletInoutDailySheet).GetInOutDailSheetList(req.Page, req.Rows, req.TokenId, req.Date)
+	list, err := new(models.TokenInoutDailySheet).GetInOutDailySheetList(req.Page, req.Rows, req.TokenId, req.Bt,req.Et)
 	if err != nil {
 		this.RespErr(c, err)
 		return
@@ -127,7 +203,7 @@ func (this *TokenController) GetOderFeeTotalList(c *gin.Context) {
 	req := struct {
 		Page int    `form:"page" json:"page" binding:"required"`
 		Rows int    `form:"rows" json:"rows" `
-		Date uint64 `form:"date",json:"date"` //日期
+		Date uint64 `form:"date" json:"date"` //日期
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
@@ -135,7 +211,7 @@ func (this *TokenController) GetOderFeeTotalList(c *gin.Context) {
 		this.RespErr(c, err)
 		return
 	}
-	list, data, err := new(models.TokenFeeDailySheet).GetDailySheetList(req.Page, req.Rows, req.Date)
+	list, data, err := new(models.TokenDailySheet).GetDailySheetList(req.Page, req.Rows, req.Date)
 	if err != nil {
 		this.RespErr(c, err)
 		return
@@ -146,14 +222,15 @@ func (this *TokenController) GetOderFeeTotalList(c *gin.Context) {
 	return
 }
 
-//冲提币汇总
+//提 充 币汇总
 func (this *TokenController) GetTotalTokenList(c *gin.Context) {
 	req := struct {
 		Opt     int    `form:"opt" json:"opt" binding:"required"` //1充 2 提币
 		Page    int    `form:"page" json:"page" binding:"required"`
 		Rows    int    `form:"rows" json:"rows" `
 		TokenId int    `form:"tokenId" json:"tokenId" ` //货币id
-		Date    string `form:"date",json:"date"`        //日期
+		Bt    uint64 `form:"bt" json:"bt"`        //筛选开始日期
+		Et uint64 `form:"et" json:"et"`   //筛选结束日期
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
@@ -161,14 +238,30 @@ func (this *TokenController) GetTotalTokenList(c *gin.Context) {
 		this.RespErr(c, err)
 		return
 	}
-	list, err := new(models.TokenInout).GetTotalList(req.Page, req.Rows, req.TokenId, req.Opt, req.Date)
-	if err != nil {
-		this.RespErr(c, err)
+	//list, err := new(models.TokenInout).GetTotalList(req.Page, req.Rows, req.TokenId, req.Opt, req.Date)
+	if req.Opt ==2{ //提币
+		list,err:=new(models.TokenInoutDailySheet).DayOutDailySheet(req.Page,req.Rows,req.TokenId,req.Bt,req.Et)
+		if err != nil {
+			this.RespErr(c, err)
+			return
+		}
+		this.Put(c, "list", list)
+		this.RespOK(c)
 		return
 	}
-	this.Put(c, "list", list)
-	this.RespOK(c)
+	if req.Opt ==1{ //充币
+		list,err:=new(models.TokenInoutDailySheet).DayPutDailySheet(req.Page,req.Rows,req.TokenId,req.Bt,req.Et)
+		if err != nil {
+			this.RespErr(c, err)
+			return
+		}
+		this.Put(c, "list", list)
+		this.RespOK(c)
+		return
+	}
+	return
 }
+
 
 func (this *TokenController) GetTotalTokenInfoList(c *gin.Context) {
 	req := struct {
@@ -176,8 +269,7 @@ func (this *TokenController) GetTotalTokenInfoList(c *gin.Context) {
 		Page    int    `form:"page" json:"page" binding:"required"`
 		Rows    int    `form:"rows" json:"rows" `
 		TokenId int    `form:"tokenId" json:"tokenId" `              //货币id
-		Date    string `form:"date",json:"date"  binding:"required"` //日期
-		Search  string `form:"search",json:"search"`                 //输入uid 搜索
+		Search  string `form:"search" json:"search"`                 //输入uid 搜索
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
@@ -185,7 +277,7 @@ func (this *TokenController) GetTotalTokenInfoList(c *gin.Context) {
 		this.RespErr(c, err)
 		return
 	}
-	list, err := new(models.TokenInout).GetTotalInfoList(req.Page, req.Rows, req.TokenId, req.Opt, req.Date, req.Search)
+	list, err := new(models.TokenInout).GetTotalInfoList(req.Page, req.Rows, req.TokenId, req.Opt, req.Search)
 	if err != nil {
 		this.RespErr(c, err)
 		return
@@ -194,7 +286,7 @@ func (this *TokenController) GetTotalTokenInfoList(c *gin.Context) {
 	this.RespOK(c)
 }
 
-//充提币管理
+//充提币管理列表
 func (this *TokenController) GetTokenInList(c *gin.Context) {
 	req := struct {
 		Page    int    `form:"page" json:"page" binding:"required"`
@@ -204,7 +296,7 @@ func (this *TokenController) GetTokenInList(c *gin.Context) {
 		TokenId int    `form:"tokenId" json:"tokenId" ` //货币id
 		Opt     int    `form:"opt" json:"opt"  `        //操作方向
 		Search  string `form:"search" json:"search" `   //筛选
-		Date    string `form:"date",json:"date"`        //日期
+		//Date    string `form:"date",json:"date"`        //日期
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
@@ -212,7 +304,7 @@ func (this *TokenController) GetTokenInList(c *gin.Context) {
 		this.RespErr(c, err)
 		return
 	}
-	list, err := new(models.TokenInout).GetTokenInList(req.Page, req.Rows, req.Ustatus, req.Status, req.TokenId, req.Opt, req.Search, req.Date)
+	list, err := new(models.TokenInoutGroup).GetTokenInList(req.Page, req.Rows, req.Ustatus, req.Status, req.TokenId, req.Opt, req.Search)
 	if err != nil {
 		utils.AdminLog.Println(err.Error())
 		this.RespErr(c, err)
@@ -223,10 +315,11 @@ func (this *TokenController) GetTokenInList(c *gin.Context) {
 	return
 }
 
+// 提币审核
 func (this *TokenController) OptTakeToken(c *gin.Context) {
 	req := struct {
 		Id  int `form:"id" json:"id" binding:"required"`
-		Uid int `form:"uid" json:"uid" binding:"required"`
+		Status int `form:"status" json:"status" binding:"required"`
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
@@ -234,7 +327,7 @@ func (this *TokenController) OptTakeToken(c *gin.Context) {
 		this.RespErr(c, err)
 		return
 	}
-	err = new(models.TokenInout).OptTakeToken(req.Id, req.Uid)
+	err = new(models.TokenInout).OptTakeToken(req.Id,req.Status)
 	if err != nil {
 		this.RespErr(c, err)
 		return
@@ -271,9 +364,8 @@ func (this *TokenController) GetAddTakeList(c *gin.Context) {
 	req := struct {
 		Page     int    `form:"page" json:"page" binding:"required"`
 		Rows     int    `form:"rows" json:"rows" `
-		Token_id int    `form:"token_id" json:"token_id" ` //币种
+		TokenId int    `form:"token_id" json:"token_id" binding:"required"` //币种
 		Uid      int    `form:"uid" json:"uid" `
-		Date     uint64 `form:"date",json:"date"`
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
@@ -281,7 +373,7 @@ func (this *TokenController) GetAddTakeList(c *gin.Context) {
 		this.RespErr(c, err)
 		return
 	}
-	list, err := new(models.TokenHistoryGroup).GetAddTakeList(req.Page, req.Rows, req.Token_id, req.Uid, req.Date)
+	list, err := new(models.TokenHistoryGroup).GetAddTakeList(req.Page, req.Rows, req.TokenId, req.Uid)
 	if err != nil {
 		utils.AdminLog.Println(err.Error())
 		this.RespErr(c, err)
@@ -402,7 +494,7 @@ func (this *TokenController) ChangeDetail(c *gin.Context) {
 	req := struct {
 		Page   int    `form:"page" json:"page" binding:"required"`
 		Rows   int    `form:"rows" json:"rows" `
-		Date   uint64 `form:"date" json:"date" binding:"required"`
+		Tid   int `form:"tid" json:"tid" binding:"required"`
 		Search string `form:"search" json:"search" ` //刷选
 		Type   int    `form:"type" json:"type" `     //交易方向 买 卖 划转
 		Status int    `form:"status" json:"status" ` //用户状态
@@ -420,12 +512,12 @@ func (this *TokenController) ChangeDetail(c *gin.Context) {
 		return
 	}
 	fmt.Println("------------------------>what funck you ", req.Status)
-	mlist, err := new(models.MoneyRecord).GetMoneyListForDateOrType(req.Page, req.Rows, req.Type, req.Status, req.Date, req.Search)
+	mlist, err := new(models.MoneyRecordGroup).GetMoneyListForDateOrType(req.Page, req.Rows, req.Type, req.Status, req.Tid, req.Search)
 	if err != nil {
 		this.RespErr(c, err)
 		return
 	}
-	list, Ok := mlist.Items.([]models.MoneyRecord)
+	list, Ok := mlist.Items.([]models.MoneyRecordGroup)
 	if !Ok {
 		this.RespErr(c, errors.New("assert type UserGroup failed!!"))
 		return
@@ -438,94 +530,7 @@ func (this *TokenController) ChangeDetail(c *gin.Context) {
 			}
 		}
 	}
-	//没写完
-	//在此分道扬镳
-	//if req.Search != `` || req.Status != 0 {
-	//	list, err := new(models.UserGroup).GetAllUser(req.Page, req.Rows, req.Status, req.Search)
-	//	if err != nil {
-	//		this.RespErr(c, err)
-	//		return
-	//	}
-	//	value, Ok := list.Items.([]models.UserGroup)
-	//	if !Ok {
-	//		this.RespErr(c, errors.New("assert type UserGroup failed!!"))
-	//		return
-	//	}
-	//	uidlist := make([]int64, 0)
-	//	for _, v := range value {
-	//		uidlist = append(uidlist, v.Uid)
-	//	}
-	//	monerylist, err := new(models.MoneyRecord).GetMoneyList(req.Page, req.Rows, uidlist)
-	//	if err != nil {
-	//		this.RespErr(c, err)
-	//		return
-	//	}
-	//	tokenValue, ok := monerylist.Items.([]models.MoneyRecord)
-	//	if !ok {
-	//		this.RespErr(c, errors.New("assert type MoneyRecord failed!!"))
-	//		return
-	//	}
-	//	for i, _ := range tokenValue {
-	//		for _, v := range value {
-	//			if int(v.Uid) == tokenValue[i].Uid {
-	//				tokenValue[i].NickName = v.NickName
-	//				tokenValue[i].Email = v.Email
-	//				tokenValue[i].Phone = v.Phone
-	//				tokenValue[i].Status = v.Status
-	//				break
-	//			}
-	//		}
-	//		for _, tv := range tokenlist {
-	//			if int(tv.Id) == tokenValue[i].TokenId {
-	//				tokenValue[i].TokenName = tv.Name
-	//				break
-	//			}
-	//		}
-	//	}
-	//	monerylist.Items = tokenValue
-	//	this.Put(c, "list", monerylist)
-	//	this.RespOK(c)
-	//	return
-	//} else {
-	//	fmt.Println("1111111111111111111111111", err)
-	//	list, err := new(models.MoneyRecord).GetMoneyListForDateOrType(req.Page, req.Rows, req.Type, req.Date)
-	//	if err != nil {
-	//		this.RespErr(c, err)
-	//		return
-	//	}
-	//	uidList := make([]uint64, 0)
-	//	Value, ok := list.Items.([]models.MoneyRecord)
-	//	if !ok {
-	//		this.RespErr(c, err)
-	//		return
-	//	}
-	//	for _, v := range Value {
-	//		uidList = append(uidList, uint64(v.Uid))
-	//	}
-	//	ulist, err := new(models.UserGroup).GetUserListForUid(uidList)
-	//	if err != nil {
-	//		this.RespErr(c, err)
-	//		return
-	//	}
-	//	for i, _ := range Value {
-	//		for _, v := range ulist {
-	//			if Value[i].Uid == int(v.Uid) {
-	//				Value[i].NickName = v.NickName
-	//				Value[i].Phone = v.Phone
-	//				Value[i].Email = v.Email
-	//				Value[i].Status = v.Status
-	//				break
-	//			}
-	//		}
-	//		for _, vt := range tokenlist {
-	//			if int(vt.Id) == Value[i].TokenId {
-	//				Value[i].TokenName = vt.Name
-	//				break
-	//			}
-	//
-	//		}
-	//
-	//	}
+
 
 	mlist.Items = list
 	this.Put(c, "list", mlist)
@@ -612,7 +617,8 @@ func (this *TokenController) GetRecordList(c *gin.Context) {
 		Page     int    `form:"page" json:"page" binding:"required"`
 		Page_num int    `form:"rows" json:"rows" `
 		Uid      int    `form:"uid" json:"uid" `
-		Date     uint64 `form:"date" json:"date" `
+		Bt     uint64 `form:"bt" json:"bt" `
+		Et     uint64 `form:"et" json:"et" `
 		Name     string `form:"name" json:"name" binding:"required" ` //交易对
 		Opt      int    `form:"opt" json:"opt" `                      //买卖方向
 	}{}
@@ -622,8 +628,8 @@ func (this *TokenController) GetRecordList(c *gin.Context) {
 		this.RespErr(c, err)
 		return
 	}
-	fmt.Println("start_t=", req.Date)
-	list, err := new(models.Trade).GetTokenRecordList(req.Page, req.Page_num, req.Opt, req.Uid, req.Date, req.Name)
+
+	list, err := new(models.Trade).GetTokenRecordList(req.Page, req.Page_num, req.Opt, req.Uid, req.Bt,req.Et, req.Name)
 	if err != nil {
 		this.RespErr(c, err)
 		return

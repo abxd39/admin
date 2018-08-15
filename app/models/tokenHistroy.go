@@ -21,14 +21,16 @@ type TokenHistory struct {
 }
 type TokenHistoryGroup struct {
 	TokenHistory `xorm:"extends"`
-	Name string
+	Mark string `json:"name`
+	NumTrue float64 `json:"num_true"`
+	FeeTrue float64 `json:"fee_true"`
 }
 
 func (this*TokenHistoryGroup)TableName()string  {
 		return "token_history"
 }
 //p5-1-1-1提币手续费明细
-func (this *TokenHistory) GetAddTakeList(page, rows, tid, uid int, date uint64) (*ModelList, error) {
+func (this *TokenHistory) GetAddTakeList(page, rows, tid, uid int) (*ModelList, error) {
 	fmt.Println("p5-1-1-1提币手续费明细")
 	engine := utils.Engine_token
 	query := engine.Desc("token_history.id")
@@ -39,9 +41,9 @@ func (this *TokenHistory) GetAddTakeList(page, rows, tid, uid int, date uint64) 
 	if uid != 0 {
 		query = query.Where("uid=?", uid)
 	}
-	if date != 0 {
-		query = query.Where("check_time BETWEEN ? AND ?", date, date+864000)
-	}
+	//if date != 0 {
+	//	query = query.Where("check_time BETWEEN ? AND ?", date, date+864000)
+	//}
 	countQuery:=*query
 	count,err:=countQuery.Count(&TokenHistory{})
 	if err!=nil{
@@ -53,6 +55,10 @@ func (this *TokenHistory) GetAddTakeList(page, rows, tid, uid int, date uint64) 
 	err=query.Limit(mlist.PageSize,offset).Find(&list)
 	if err!=nil{
 		return nil,err
+	}
+	for i,v:=range list{
+		list[i].FeeTrue = this.Int64ToFloat64By8Bit(v.Fee)
+		list[i].NumTrue =this.Int64ToFloat64By8Bit(v.Num)
 	}
 	mlist.Items = list
 	return  mlist,nil

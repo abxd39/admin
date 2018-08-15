@@ -63,8 +63,8 @@ func (t *TradeReturn) TableName() string {
 type TradeEx struct {
 	Trade          `xorm:"extends"`
 	ConfigTokenCny `xorm:"extends"`
-	TotalCny       string //交易总额
-	FeeCny         string //交易手续费
+	TotalTrue       float64 //交易总额
+	FeeTrue         float64 //交易手续费
 }
 
 type TotalTradeCNY struct {
@@ -152,7 +152,7 @@ func (this *Trade) TotalTotalTradeList(page, rows int, date uint64) (*ModelList,
 	return nil, nil
 }
 
-func (this *Trade) GetTokenRecordList(page, rows, opt, uid int, date uint64, name string) (*ModelList, error) {
+func (this *Trade) GetTokenRecordList(page, rows, opt, uid int, bt,et uint64, name string) (*ModelList, error) {
 	engine := utils.Engine_token
 	query := engine.Desc("t.entrust_id")
 	query = query.Alias("t").Join("left", "entrust_detail e", "e.entrust_id= t.entrust_id")
@@ -163,8 +163,13 @@ func (this *Trade) GetTokenRecordList(page, rows, opt, uid int, date uint64, nam
 	if uid != 0 {
 		query = query.Where("t.uid=?", uid)
 	}
-	if date != 0 {
-		query = query.Where("t.deal_time BETWEEN ? AND ? ", date, date+86400)
+	if bt != 0 {
+		if et!=0{
+			query = query.Where("t.deal_time BETWEEN ? AND ? ", bt, et+86400)
+		}else {
+			query = query.Where("t.deal_time BETWEEN ? AND ? ", bt, bt+86400)
+		}
+
 	}
 	tempQuery := *query
 
@@ -228,8 +233,8 @@ func (this *Trade) GetFeeInfoList(page, rows, uid, opt int, date uint64, name st
 	//未完待续 折合成人民币
 	//fmt.Println("len=",len(list))
 	for i, v := range list {
-		list[i].TotalCny = this.Int64MulInt64By8BitString(v.ConfigTokenCny.Price, v.Num)
-		list[i].FeeCny = this.Int64MulInt64By8BitString(v.ConfigTokenCny.Price, v.Fee)
+		list[i].TotalTrue = this.Int64ToFloat64By8Bit(v.Num)
+		list[i].FeeTrue = this.Int64ToFloat64By8Bit(v.Fee)
 	}
 	mlist.Items = list
 	return mlist, nil

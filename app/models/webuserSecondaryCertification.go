@@ -136,7 +136,7 @@ func (u *UserSecondaryCertification) GetSecondaryCertificationList(page, rows, v
 		VideoRecordingDigital string
 	}
 	list := make([] UserCer, 0)
-	limitSql:=fmt.Sprintf("LIMIT %d OFFSET %d",modellist.PageSize,offset)
+	limitSql:=fmt.Sprintf(" ORDER BY us.`uid`  DESC LIMIT %d OFFSET %d",modellist.PageSize,offset)
 	err =engine.SQL(sql+Value+condition+limitSql).Find(&list)
 	if err != nil {
 		return nil, err

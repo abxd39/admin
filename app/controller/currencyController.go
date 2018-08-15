@@ -42,7 +42,7 @@ func (cu *CurrencyController) GetCurrencyChangeHistory(c *gin.Context) {
 		Rows   int    `form:"rows" json:"rows" `
 		Search string `form:"search" json:"search" `               //搜索的内容
 		Status int    `form:"status" json:"status" `               //用户账号状态
-		Date   string `form:"date" json:"date" binding:"required"` //日期
+		Tid   int `form:"tid" json:"tid" binding:"required"` //货币id
 		Chtype int    `form:"type" json:"type"`                    // 买入 卖出 提币 充币 划转
 	}{}
 	err := c.ShouldBind(&req)
@@ -57,7 +57,7 @@ func (cu *CurrencyController) GetCurrencyChangeHistory(c *gin.Context) {
 		cu.RespErr(c, err)
 		return
 	}
-	ulist, err := new(models.UserCurrencyHistory).GetListForUid(req.Page, req.Rows, req.Status, req.Chtype, req.Search, req.Date)
+	ulist, err := new(models.UserCurrencyHistory).GetListForUid(req.Page, req.Rows, req.Tid,req.Status,req.Chtype, req.Search)
 	if err != nil {
 		utils.AdminLog.Errorf(err.Error())
 		cu.RespErr(c, err)
@@ -237,7 +237,7 @@ func (cu *CurrencyController) GetTradeList(c *gin.Context) {
 		Ustatus int    `form:"status" json:"status" ` //用户登录状态
 		Search  string `form:"search" json:"search" `
 		Verify  int    `form:"verify" json:"verify" `     //实名认证 二级认证 google 验证  交易权限
-		Date    string `form:"date" json:"date" `         //挂单日期
+		//Date    string `form:"date" json:"date" `         //挂单日期
 		TokenId int    `form:"token_id" json:"token_id" ` //货币名称
 		TradeId int    `form:"tid" json:"tid" `           //交易方向
 	}{}
@@ -247,7 +247,7 @@ func (cu *CurrencyController) GetTradeList(c *gin.Context) {
 		cu.RespErr(c, err)
 		return
 	}
-	list, err := new(models.Ads).GetAdsList(req.Page, req.PageNum, req.Ustatus, req.TokenId, req.TradeId, req.Verify, req.Search, req.Date)
+	list, err := new(models.Ads).GetAdsList(req.Page, req.PageNum, req.Ustatus, req.TokenId, req.TradeId, req.Verify, req.Search)
 	if err != nil {
 		cu.RespErr(c, err)
 		return
@@ -273,12 +273,12 @@ func (cu *CurrencyController) GetOderList(c *gin.Context) {
 	//参数一大堆
 	req := struct {
 		Page     int    `form:"page" json:"page" binding:"required"`
-		Page_num int    `form:"rows" json:"rows" `
-		Start_t  string `form:"start_t" json:"start_t" `
+		Rows int    `form:"rows" json:"rows" `
+		//Start_t  string `form:"start_t" json:"start_t" `
 		Search   string `form:"search" json:"search" `     //筛选
 		Status   int    `form:"status" json:"status" `     //订单状态
-		Token_id int    `form:"token_id" json:"token_id" ` //货币名称
-		Ad_type  int    `form:"adtype" json:"adtype" `     //买卖方向
+		TokenId int    `form:"token_id" json:"token_id" ` //货币名称
+		AdType  int    `form:"adtype" json:"adtype" `     //买卖方向
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
@@ -286,7 +286,7 @@ func (cu *CurrencyController) GetOderList(c *gin.Context) {
 		cu.RespErr(c, err)
 		return
 	}
-	list, err := new(models.Order).GetOrderList(req.Page, req.Page_num, req.Ad_type, req.Status, req.Token_id, req.Start_t, req.Search)
+	list, err := new(models.Order).GetOrderList(req.Page, req.Rows, req.AdType, req.Status, req.TokenId,req.Search)
 	if err != nil {
 		cu.RespErr(c, err)
 		return

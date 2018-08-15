@@ -4,7 +4,6 @@ import "fmt"
 import "admin/utils"
 import (
 	"errors"
-	"strconv"
 )
 
 //bibi委托表
@@ -116,7 +115,7 @@ func (this *EntrustDetail) GetTokenOrderList(page, rows, adId, status, bt,et, ui
 
 	for i, v := range list {
 		list[i].PriceTrue = this.Int64ToFloat64By8Bit(v.Price)
-		list[i].FeeTrue = this.Decimal(this.Int64ToFloat64By8Bit(v.Fee))
+		list[i].FeeTrue = this.Int64ToFloat64By8Bit(v.Fee)
 		list[i].AllNumTrue = this.Int64ToFloat64By8Bit(v.AllNum)
 		list[i].OnPriceTrue = this.Int64ToFloat64By8Bit(v.OnPrice)
 		list[i].SurplusNumTrue = this.Int64ToFloat64By8Bit(v.SurplusNum)
@@ -127,7 +126,7 @@ func (this *EntrustDetail) GetTokenOrderList(page, rows, adId, status, bt,et, ui
 	return modelList, nil
 }
 
-func (this *EntrustDetail)Decimal(value float64) float64 {
-	value, _ = strconv.ParseFloat(fmt.Sprintf("%.4f", value), 64)
-	return value
-}
+//func (this *EntrustDetail)Decimal(value float64) float64 {
+//	value, _ = strconv.ParseFloat(fmt.Sprintf("%.4f", value), 64)
+//	return value
+//}

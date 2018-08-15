@@ -246,7 +246,7 @@ func (a *AdminController) Add(ctx *gin.Context) {
 	}
 
 	pwd := a.GetString(ctx, "pwd")
-	if matched, err := regexp.MatchString(`^[a-zA-Z0-9~!@#$%^&*_\-=+:;|,.?]{6,20}$`, pwd); err != nil || !matched {
+	if matched, err := regexp.MatchString (`^[a-zA-Z0-9~!@#$%^&*_\-=+:;|,.?]{6,20}$`, pwd); err != nil || !matched {
 		a.RespErr(ctx, "密码格式错误，6-20个字符")
 		return
 	}
