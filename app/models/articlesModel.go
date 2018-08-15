@@ -87,9 +87,9 @@ func (a *ArticleList) GetArticleList(page, rows, tp, status int, title, st strin
 		temp := fmt.Sprintf(" concat(IFNULL(title,'')) LIKE '%%%s%%'  ", title)
 		query = query.Where(temp)
 	}
-	if st!= `` {
+	if st != `` {
 		substr := st[:11] + "23:59:59"
-		temp:= fmt.Sprintf("create_time BETWEEN '%s' AND '%s' ", st, substr)
+		temp := fmt.Sprintf("create_time BETWEEN '%s' AND '%s' ", st, substr)
 		query = query.Where(temp)
 	}
 
@@ -99,17 +99,17 @@ func (a *ArticleList) GetArticleList(page, rows, tp, status int, title, st strin
 		return nil, err
 	}
 	offset, modelList := a.Paging(page, rows, int(count))
-	fmt.Println("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",offset,modelList.PageSize)
-	u := make([]Article,count)
+	fmt.Println("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", offset, modelList.PageSize)
+	u := make([]Article, count)
 	err = query.Limit(modelList.PageSize, offset).Find(&u)
 	if err != nil {
 		utils.AdminLog.Errorln(err.Error())
 		return nil, err
 	}
-	fmt.Println("111111111111111111111111111111111111",len(u))
+	fmt.Println("111111111111111111111111111111111111", len(u))
 	list := make([]ArticleList, 0)
 	for _, v := range u {
-		if v.Id==0{
+		if v.Id == 0 {
 			continue
 		}
 		ret := ArticleList{
@@ -142,12 +142,12 @@ func (a *Article) UpArticle(id, status int) error {
 	current := time.Now().Format("2006-01-02 15:04:05")
 	//下架
 	_, err := engine.Id(id).Update(&Article{
-		Astatus:   status ,
+		Astatus:    status,
 		UpdateTime: current,
-		})
-		if err != nil {
-			return err
-		}
+	})
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

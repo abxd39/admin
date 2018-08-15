@@ -8,7 +8,7 @@ import (
 )
 
 type MoneyRecord struct {
-	BaseModel          `xorm:"-"`
+	BaseModel   `xorm:"-"`
 	Id          int64  `xorm:"pk autoincr BIGINT(20)" json:"id"`
 	Uid         int    `xorm:"comment('用户ID') unique(hash_index) INT(11)" json:"uid"`
 	TokenId     int    `xorm:"comment('代币ID') INT(11)" json:"token_id"`
@@ -22,8 +22,8 @@ type MoneyRecord struct {
 }
 
 type MoneyRecordWithToken struct {
-	MoneyRecord      `xorm:"extends"`
-	TokenName string `xorm:"token_name" json:"token_name"`
+	MoneyRecord `xorm:"extends"`
+	TokenName   string `xorm:"token_name" json:"token_name"`
 }
 
 func (m *MoneyRecord) TableName() string {

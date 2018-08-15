@@ -28,7 +28,6 @@ type TokenDailySheet struct {
 	Date         int64 `xorm:"not null comment('时间戳，精确到天') BIGINT(10)" json:"date"`
 }
 
-
 type TokenFeeDailySheetGroup struct {
 	TotalBuy  float64 `json:"total_buy"`
 	TotalSell float64 `json:"total_sell"`

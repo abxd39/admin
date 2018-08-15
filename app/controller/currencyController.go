@@ -40,10 +40,10 @@ func (cu *CurrencyController) GetCurrencyChangeHistory(c *gin.Context) {
 	req := struct {
 		Page   int    `form:"page" json:"page" binding:"required"`
 		Rows   int    `form:"rows" json:"rows" `
-		Search string `form:"search" json:"search" `               //搜索的内容
-		Status int    `form:"status" json:"status" `               //用户账号状态
-		Tid   int `form:"tid" json:"tid" binding:"required"` //货币id
-		Chtype int    `form:"type" json:"type"`                    // 买入 卖出 提币 充币 划转
+		Search string `form:"search" json:"search" `             //搜索的内容
+		Status int    `form:"status" json:"status" `             //用户账号状态
+		Tid    int    `form:"tid" json:"tid" binding:"required"` //货币id
+		Chtype int    `form:"type" json:"type"`                  // 买入 卖出 提币 充币 划转
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
@@ -57,7 +57,7 @@ func (cu *CurrencyController) GetCurrencyChangeHistory(c *gin.Context) {
 		cu.RespErr(c, err)
 		return
 	}
-	ulist, err := new(models.UserCurrencyHistory).GetListForUid(req.Page, req.Rows, req.Tid,req.Status,req.Chtype, req.Search)
+	ulist, err := new(models.UserCurrencyHistory).GetListForUid(req.Page, req.Rows, req.Tid, req.Status, req.Chtype, req.Search)
 	if err != nil {
 		utils.AdminLog.Errorf(err.Error())
 		cu.RespErr(c, err)
@@ -77,8 +77,7 @@ func (cu *CurrencyController) GetCurrencyChangeHistory(c *gin.Context) {
 		}
 	}
 
-
-	ulist.Items =list
+	ulist.Items = list
 	cu.Put(c, "list", ulist)
 	cu.RespOK(c)
 	return
@@ -178,9 +177,9 @@ func (cu *CurrencyController) GetBuySellList(c *gin.Context) {
 
 func (cu *CurrencyController) GetUserDetailList(c *gin.Context) {
 	req := struct {
-		Uid      int `form:"uid" json:"uid" binding:"required"`
-		Page     int `form:"page" json:"page" binding:"required"`
-		Rows     int `form:"rows" json:"rows" `
+		Uid     int `form:"uid" json:"uid" binding:"required"`
+		Page    int `form:"page" json:"page" binding:"required"`
+		Rows    int `form:"rows" json:"rows" `
 		TokenId int `form:"token_id" json:"token_id"`
 	}{}
 	err := c.ShouldBind(&req)
@@ -190,12 +189,12 @@ func (cu *CurrencyController) GetUserDetailList(c *gin.Context) {
 		return
 	}
 
-	list,err := new(models.DetailCurrency).GetCurrencyList(req.Page, req.Rows, req.Uid, req.TokenId)
+	list, err := new(models.DetailCurrency).GetCurrencyList(req.Page, req.Rows, req.Uid, req.TokenId)
 	if err != nil {
 		cu.RespErr(c, err)
 		return
 	}
-	cu.Put(c,"list",list)
+	cu.Put(c, "list", list)
 	cu.RespOK(c)
 	return
 }
@@ -236,10 +235,10 @@ func (cu *CurrencyController) GetTradeList(c *gin.Context) {
 		PageNum int    `form:"rows" json:"rows" `
 		Ustatus int    `form:"status" json:"status" ` //用户登录状态
 		Search  string `form:"search" json:"search" `
-		Verify  int    `form:"verify" json:"verify" `     //实名认证 二级认证 google 验证  交易权限
+		Verify  int    `form:"verify" json:"verify" ` //实名认证 二级认证 google 验证  交易权限
 		//Date    string `form:"date" json:"date" `         //挂单日期
-		TokenId int    `form:"token_id" json:"token_id" ` //货币名称
-		TradeId int    `form:"tid" json:"tid" `           //交易方向
+		TokenId int `form:"token_id" json:"token_id" ` //货币名称
+		TradeId int `form:"tid" json:"tid" `           //交易方向
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
@@ -272,11 +271,11 @@ func (cu *CurrencyController) GetTokensList(c *gin.Context) {
 func (cu *CurrencyController) GetOderList(c *gin.Context) {
 	//参数一大堆
 	req := struct {
-		Page     int    `form:"page" json:"page" binding:"required"`
-		Rows int    `form:"rows" json:"rows" `
+		Page int `form:"page" json:"page" binding:"required"`
+		Rows int `form:"rows" json:"rows" `
 		//Start_t  string `form:"start_t" json:"start_t" `
-		Search   string `form:"search" json:"search" `     //筛选
-		Status   int    `form:"status" json:"status" `     //订单状态
+		Search  string `form:"search" json:"search" `     //筛选
+		Status  int    `form:"status" json:"status" `     //订单状态
 		TokenId int    `form:"token_id" json:"token_id" ` //货币名称
 		AdType  int    `form:"adtype" json:"adtype" `     //买卖方向
 	}{}
@@ -286,7 +285,7 @@ func (cu *CurrencyController) GetOderList(c *gin.Context) {
 		cu.RespErr(c, err)
 		return
 	}
-	list, err := new(models.Order).GetOrderList(req.Page, req.Rows, req.AdType, req.Status, req.TokenId,req.Search)
+	list, err := new(models.Order).GetOrderList(req.Page, req.Rows, req.AdType, req.Status, req.TokenId, req.Search)
 	if err != nil {
 		cu.RespErr(c, err)
 		return

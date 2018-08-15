@@ -1,9 +1,9 @@
 package models
 
 import (
+	"fmt"
 	"github.com/shopspring/decimal"
 	"strconv"
-	"fmt"
 )
 
 type BaseModel struct {
@@ -58,7 +58,7 @@ func (b *BaseModel) Float64ToInt64By8Bit(s float64) int64 {
 	return l
 }
 
-func (bb*BaseModel) Int64ToFloat64By8Bit(b int64) (x float64) {
+func (bb *BaseModel) Int64ToFloat64By8Bit(b int64) (x float64) {
 	//fmt.Println("传入的参数值=",b)
 	a := decimal.New(b, -8)
 	x, _ = a.Float64()
@@ -82,8 +82,7 @@ func (b *BaseModel) SubductionZeroMethodInt64(num, price int64) (rNum, rPrice fl
 	return
 }
 
-func (b *BaseModel)decimal(value float64) float64 {
+func (b *BaseModel) decimal(value float64) float64 {
 	value, _ = strconv.ParseFloat(fmt.Sprintf("%.4f", value), 64)
 	return value
 }
-
