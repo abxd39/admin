@@ -778,7 +778,7 @@ func (t *TokenController) ListTransfer(ctx *gin.Context) {
 	// 重组data
 	type item struct {
 		Id           int64  `json:"id"`
-		Uid          int64  `json:"uid"`
+		Uid          int    `json:"uid"`
 		TokenId      int32  `json:"token_id"`
 		TokenName    string `json:"token_name"`
 		Type         int8   `json:"type"`
@@ -790,6 +790,7 @@ func (t *TokenController) ListTransfer(ctx *gin.Context) {
 	for k, v := range list {
 		newItems[k] = &item{
 			Id:           v.Id,
+			Uid:          v.Uid,
 			TokenId:      int32(v.TokenId),
 			TokenName:    v.TokenName,
 			Type:         int8(v.Type),
