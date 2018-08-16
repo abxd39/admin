@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"admin/app/controller"
+	"admin/app/models/backstage"
 	"admin/constant"
 
 	"github.com/gin-contrib/sessions"
@@ -26,7 +27,7 @@ func CheckLogin() gin.HandlerFunc {
 			"admin/logout": true,
 		}
 
-		//var uid int
+		var uid int
 		if _, ok := noNeedLoginAPIs[api]; !ok { // !ok
 			session := sessions.Default(ctx)
 			uidInterface := session.Get("uid")
@@ -36,10 +37,10 @@ func CheckLogin() gin.HandlerFunc {
 				return
 			}
 
-			//uid = uidInterface.(int)
+			uid = uidInterface.(int)
 		}
 
-		/*// 2. 验证权限
+		// 2. 验证权限
 		// 无需验证权限的api
 		noNeedAuthAPIs := map[string]bool{
 			"admin/my_menu":   true,
@@ -63,7 +64,7 @@ func CheckLogin() gin.HandlerFunc {
 				ctx.Abort()
 				return
 			}
-		}*/
+		}
 
 		ctx.Next()
 	}
