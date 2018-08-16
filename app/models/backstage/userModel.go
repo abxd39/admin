@@ -61,6 +61,9 @@ func (u *User) Login(name, pwd string) (bool, string, int, error) {
 		return false, "", 0, errors.New("密码不对！！")
 	}
 
+	// 更新最后登录时间
+	engine.Table(u).Where("uid=?", user.Uid).Update(map[string]interface{}{"last_login_time": time.Now().Unix()})
+
 	// 是否超管
 	var isSuper bool
 	if user.IsSuper == 1 {
