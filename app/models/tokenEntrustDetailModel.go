@@ -27,14 +27,14 @@ type EntrustDetail struct {
 
 type ReturnValueOperator struct {
 	EntrustDetail  `xorm:"extends"`
-	AllNumTrue     float64 `json:"all_num_true"`
-	SurplusNumTrue float64 `json:"surplus_num_true"` //剩余
-	PriceTrue      float64 `json:"price_true"`
-	OnPriceTrue    float64 `json:"on_price_true"` //
-	FeeTrue        float64 `json:"fee_true"`      //手续费
+	AllNumTrue     float64 `xorm:"-" json:"all_num_true"`
+	SurplusNumTrue float64 `xorm:"-" json:"surplus_num_true"` //剩余
+	PriceTrue      float64 `xorm:"-" json:"price_true"`
+	OnPriceTrue    float64 `xorm:"-" json:"on_price_true"` //
+	//FeeTrue        float64 `json:"fee_true"`      //手续费
 	//MountTrue      float64 `json:"mount_true"`
-	FinishCount float64 `json:"finish_count"` //已成
-	Fee         int64   `json:"fee"`          //手续费
+	FinishCount float64 `xorm:"-" json:"finish_count"` //已成
+	//Fee         int64   `xorm:"-"  json:"fee"`          //手续费
 }
 
 func (this *ReturnValueOperator) TableName() string {
@@ -75,7 +75,7 @@ func (this *EntrustDetail) GetTokenOrderList(page, rows, adId, status, bt, et, u
 	query := engine.Desc("en.entrust_id")
 	query = query.Alias("en")
 	query = query.Desc("en.entrust_id ")
-	query = query.Join("left", "trade t", "t.entrust_id = en.entrust_id ")
+	//query = query.Join("left", "trade t", "t.entrust_id = en.entrust_id ")
 	query = query.Where("en.symbol=?", symbol)
 	if tradeId != `` {
 		query = query.Where("en.entrust_id=?", tradeId)
@@ -114,7 +114,7 @@ func (this *EntrustDetail) GetTokenOrderList(page, rows, adId, status, bt, et, u
 
 	for i, v := range list {
 		list[i].PriceTrue = this.Int64ToFloat64By8Bit(v.Price)
-		list[i].FeeTrue = this.Int64ToFloat64By8Bit(v.Fee)
+		//list[i].FeeTrue = this.Int64ToFloat64By8Bit(v.Fee)
 		list[i].AllNumTrue = this.Int64ToFloat64By8Bit(v.AllNum)
 		list[i].OnPriceTrue = this.Int64ToFloat64By8Bit(v.OnPrice)
 		list[i].SurplusNumTrue = this.Int64ToFloat64By8Bit(v.SurplusNum)

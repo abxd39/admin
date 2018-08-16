@@ -24,14 +24,14 @@ type UserCurrency struct {
 //折合 rmb
 type AmountToCny struct {
 	UserCurrency `xorm:"extends"`
-	AmountTo     float64 `xorm:"-"json:"amount_to"` //折合人民币
-	Email        string  `json:"email"`
-	Phone        string  `json:"phone"`
-	Status       int     `json:"status"`
-	NickName     string  `json:"nick_name"`
-	Account      string  `json:"account"`
-	BalanceCny   float64 `xorm:"-" json:"balance_cny"`
-	FreezeCny    float64 `xorm:"-" json:"freeze_cny"`
+	AmountTo   float64 `xorm:"-"json:"amount_to"` //折合人民币
+	Email      string  `json:"email"`
+	Phone      string  `json:"phone"`
+	Status     int     `json:"status"`
+	NickName   string  `json:"nick_name"`
+	Account    string  `json:"account"`
+	BalanceCny float64 `xorm:"-" json:"balance_cny"`
+	FreezeCny  float64 `xorm:"-" json:"freeze_cny"`
 }
 
 func (this *AmountToCny) TableName() string {
@@ -40,9 +40,9 @@ func (this *AmountToCny) TableName() string {
 
 type DetailCurrency struct {
 	UserCurrency `xorm:"extends"`
-	BalanceTrue  float64 `xorm:"-" json:"balance_true"`
-	FreezeTrue   float64 `xorm:"-" json:"freeze_true" `
-	AmountTo     float64 `xorm:"-"json:"amount_to"` //折合人民币
+	BalanceTrue float64 `xorm:"-" json:"balance_true"`
+	FreezeTrue  float64 `xorm:"-" json:"freeze_true" `
+	AmountTo    float64 `xorm:"-"json:"amount_to"` //折合人民币
 }
 
 func (this *DetailCurrency) TableName() string {
@@ -50,7 +50,7 @@ func (this *DetailCurrency) TableName() string {
 }
 
 //获取单个用户的所有法币资产
-func (this *DetailCurrency) GetCurrencyList(page, rows, uid, tokenId int) (*ModelList, error) {
+func (this *UserCurrency) GetCurrencyList(page, rows, uid, tokenId int) (*ModelList, error) {
 	engine := utils.Engine_currency
 
 	query := engine.Where("uid=?", uid)
@@ -103,7 +103,7 @@ func (this *UserCurrency) GetBalance(uid, token_id int) (*UserCurrency, error) {
 
 //p2-3-1法币账户统计列表
 
-func (this *AmountToCny) CurrencyBalance(page, rows, status int, search string) (*ModelList, error) {
+func (this *UserCurrency) CurrencyBalance(page, rows, status int, search string) (*ModelList, error) {
 	engine := utils.Engine_currency
 	query := engine.Alias("uc").Desc("uc.uid")
 	//query = query.Cols()
@@ -140,7 +140,7 @@ func (this *AmountToCny) CurrencyBalance(page, rows, status int, search string) 
 	return mList, nil
 }
 
-func (this *AmountToCny) Decimal(value float64) float64 {
+func (this *UserCurrency) Decimal(value float64) float64 {
 	value, _ = strconv.ParseFloat(fmt.Sprintf("%.2f", value), 64)
 	return value
 }

@@ -189,7 +189,7 @@ func (cu *CurrencyController) GetUserDetailList(c *gin.Context) {
 		return
 	}
 
-	list, err := new(models.DetailCurrency).GetCurrencyList(req.Page, req.Rows, req.Uid, req.TokenId)
+	list, err := new(models.UserCurrency).GetCurrencyList(req.Page, req.Rows, req.Uid, req.TokenId)
 	if err != nil {
 		cu.RespErr(c, err)
 		return
@@ -215,7 +215,7 @@ func (cu *CurrencyController) GetTotalCurrencyBalance(c *gin.Context) {
 	}
 	fmt.Println(".0.................0.0.0.0.0.0.0.0.......")
 	//result, err := new(models.UserGroup).GetAllUser(req.Page, req.Page_num, req.Status, req.Search)
-	result, err := new(models.AmountToCny).CurrencyBalance(req.Page, req.Page_num, req.Status, req.Search)
+	result, err := new(models.UserCurrency).CurrencyBalance(req.Page, req.Page_num, req.Status, req.Search)
 	if err != nil {
 		cu.RespErr(c, err)
 	}

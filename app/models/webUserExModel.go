@@ -29,9 +29,9 @@ type FirstDetail struct {
 	VerifyMark   int    //一级实名认证状态
 }
 
-//func (f *FirstDetail) TableName() string {
-//	return "user_ex"
-//}
+func (f *FirstDetail) TableName() string {
+	return "user_ex"
+}
 
 type InviteGroup struct {
 	UserEx      `xorm:"extends"`
@@ -42,9 +42,9 @@ type InviteGroup struct {
 	InviteCount int
 }
 
-//func (w *UserEx) TableName() string {
-//	return "user_ex"
-//}
+func (w *InviteGroup) TableName() string {
+	return "user_ex"
+}
 
 //邀请人统计表—账号：18888888888
 func (w *UserEx) GetInviteInfoList(uid, page, rows int, date uint64, name, account string) (*ModelList, error) {
