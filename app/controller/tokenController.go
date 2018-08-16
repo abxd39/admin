@@ -25,6 +25,7 @@ func (this *TokenController) Router(r *gin.Engine) {
 		g.GET("/list", this.GetTokenOderList)            //bibi p4-1-0 币币委托管理 挂单信息
 		g.POST("/evacuate_order", this.EvacuateOder)     // p4-1-0 币币委托管理 挂单信息 撤单
 		g.GET("/record_list", this.GetRecordList)        //bibi p4-1-1 成交记录
+		g.GET("/export_record_list", this.ExportRecordList)        //bibi p4-1-1 成交记录 导出
 		g.GET("/total_balance", this.GetTokenBalance)    //bibi p2-3-2币币账户统计列表
 		g.GET("/user_token_detail", this.GetTokenDetail) //p2-3-2-1查看币币账户资产
 		g.GET("/token_cash_list", this.GetTokenCashList) //p4-1-2币兑管理
@@ -612,6 +613,14 @@ func (this *TokenController) GetTokenBalance(c *gin.Context) {
 
 //bibi 成交记录
 func (this *TokenController) GetRecordList(c *gin.Context) {
+	this.getRecordList(c)
+}
+
+//bibi 成交记录
+func (this *TokenController) ExportRecordList(c *gin.Context) {
+	this.getRecordList(c)
+}
+func (this*TokenController)getRecordList (c *gin.Context){
 	req := struct {
 		Page     int    `form:"page" json:"page" binding:"required"`
 		Page_num int    `form:"rows" json:"rows" `

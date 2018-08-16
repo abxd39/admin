@@ -70,6 +70,7 @@ func (bb *BaseModel) Int64ToFloat64By8Bit(b int64) (x float64) {
 
 func (b *BaseModel) SubductionZeroMethod(num, price uint64) (rNum, rPrice float64) {
 	rNum = b.Int64ToFloat64By8Bit(int64(num))
+	rNum = b.decimal(rNum)
 	rPrice = b.Int64ToFloat64By8Bit(int64(price))
 	rPrice = b.decimal(rPrice)
 	return
@@ -77,6 +78,7 @@ func (b *BaseModel) SubductionZeroMethod(num, price uint64) (rNum, rPrice float6
 
 func (b *BaseModel) SubductionZeroMethodInt64(num, price int64) (rNum, rPrice float64) {
 	rNum = b.Int64ToFloat64By8Bit(num)
+	rNum = b.decimal(rNum)
 	rPrice = b.Int64ToFloat64By8Bit(price)
 	rPrice = b.decimal(rPrice)
 	return
