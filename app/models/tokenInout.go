@@ -224,9 +224,19 @@ func (t *TokenInout) OptTakeToken(id, status int) error {
 		return err
 	}
 	if !has {
-		return errors.New("订单不存在!!!")
+		strErr:=fmt.Sprintf("订单不存在!!! id=%d",id)
+		return errors.New(strErr)
 	}
-
+	engineToken:=utils.Engine_common
+	token:=new(Tokens)
+	has,err=engineToken.Table("tokens").Where("token_id=?",t.Tokenid).Get(token)
+	if err!=nil{
+		return err
+	}
+	if !has{
+		strErr:=fmt.Sprintf("数字货币不存在!!!token_id=%d",t.Tokenid)
+		return errors.New(strErr)
+	}
 	sess := engine.NewSession()
 	if err = sess.Begin(); err != nil {
 		return err
@@ -243,12 +253,9 @@ func (t *TokenInout) OptTakeToken(id, status int) error {
 	//审核通过
 	if status == utils.VERIFY_OUT_TOKEN_MARK {
 		mount := t.Int64ToFloat64By8Bit(t.Amount)
-		if mount == 0 {
-			mount = 0.9999999999
-		}
 		////fmt.Println("num=",)
 		strMount := fmt.Sprintf("%.10f", mount)
-		if t.Tokenid ==3 {//eth
+		if token.Signature =="eip155" || token.Signature=="eip" {//ERC20
 			fmt.Sprintf(strMount)
 			sign, err := new(apis.VendorApi).GetTradeSigntx(t.Uid, t.Tokenid, t.To, strMount)
 			if err != nil {
@@ -261,7 +268,7 @@ func (t *TokenInout) OptTakeToken(id, status int) error {
 				return err
 			}
 		}
-		if t.Tokenid == 2 {//btc
+		if token.Signature == "btc" {//btc
 			err =new(apis.VendorApi).PostOutTokenBtc(t.Uid,t.Tokenid,t.Id,t.To,strMount)
 			if err!=nil{
 				sess.Rollback()

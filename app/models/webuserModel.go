@@ -56,9 +56,9 @@ func (w *WebUser) TableName() string {
 	return "user"
 }
 
-//func (w *UserGroup) TableName() string {
-//	return "user"
-//}
+func (w *UserGroup) TableName() string {
+	return "user"
+}
 
 //二级认证审核
 func (w *WebUser) SecondAffirmLimit(uid, status int) error {
