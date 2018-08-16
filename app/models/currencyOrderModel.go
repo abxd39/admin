@@ -187,27 +187,58 @@ func (o *OrderGroup) TableName() string {
 
 func (this *Order) GetOrderListOfUid(page, rows, uid, token_id int) (*ModelList, error) {
 
-	//engine := utils.Engine_currency
-	//
-	////查询所有币种名称及Id
-	//reslt, err := new(CommonTokens).GetTokenList()
-	//if err != nil {
-	//	return nil, err
-	//}
-	//for index, tokenid := range list {
-	//	//根据token_id 查找货币名称
-	//	for _, value := range reslt {
-	//		if value.Id == uint32(tokenid.TokenId) {
-	//			list[index].TokenName = value.Mark
-	//			break
-	//		}
-	//	}
-	//}
-	////计算所有token_id 相同的 数量和单价
-	//
-	//fmt.Println("list=", len(list))
-	//modeList.Items = list
-	return nil, nil
+	engine := utils.Engine_currency
+	//统计
+	type statistics struct {
+		TokenId int `json:"token_id"`
+		TokenName string `json:"token_name"`
+		BuyTotal float64 	`json:"buy_toal"` //累计买入
+		BuyTotalCny float64 `json:"buy_toal_cny"` //累计买入折合
+		SellTotal float64 `json:"sell_total"` //累计卖出
+		SellTotalCny float64 `json:"sell_total_cny"`//累计卖出折合
+		Transfer       float64 `json:"transfer"`  //累计划转
+	}
+	sql:="SELECT o.token_id,SUM( IF( o.`ad_type` =1, o.num_total_price, 0)) DIV 100000000 AS sell_total_cny , SUM( IF( o.`ad_type` =1, o.num, 0)) DIV 100000000 AS sell_total, SUM( IF( o.`ad_type` =2, o.num_total_price, 0))DIV 100000000 AS buy_total_cny, SUM( IF( o.`ad_type` =2, o.num, 0))DIV 100000000 AS buy_total, SUM( IF( h.operator = 4, h.num, 0))DIV 100000000 AS transfer FROM `order` o LEFT JOIN user_currency_history h ON h.`token_id` = o.`token_id` "
+	condition:=""
+	if token_id!=0{
+		condition=fmt.Sprintf("WHERE o.`states`=3 AND uid=%d and o.token_id=%d GROUP BY o.token_id ",uid,token_id)
+	}else {
+		condition = fmt.Sprintf("WHERE o.`states`=3 AND uid=%d GROUP BY o.token_id ",uid)
+	}
+	countSql:=fmt.Sprintf("select count(t.token_id) num from(%s) t",sql+condition)
+	count:=&struct {
+		Num int
+	}{}
+	_,err:=engine.SQL(countSql).Get(count)
+	if err!=nil{
+		return nil,err
+	}
+	offset,mList:=this.Paging(page,rows,count.Num)
+	limitStr:=fmt.Sprintf("LIMIT %d, %d; ",offset,mList.PageSize)
+	list:=make([]statistics,0)
+	err=engine.SQL(sql+condition+limitStr).Find(&list)
+	if err!=nil{
+		return nil,err
+	}
+	//查询所有币种名称及Id
+	reslt, err := new(CommonTokens).GetTokenList()
+	if err != nil {
+		return nil, err
+	}
+	for index, tokenid := range list {
+		//根据token_id 查找货币名称
+		for _, value := range reslt {
+			if value.Id == uint32(tokenid.TokenId) {
+				list[index].TokenName = value.Mark
+				break
+			}
+		}
+	}
+	//计算所有token_id 相同的 数量和单价
+
+	fmt.Println("list=", len(list))
+	mList.Items = list
+	return mList, nil
 }
 
 //

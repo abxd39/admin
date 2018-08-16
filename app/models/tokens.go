@@ -5,22 +5,47 @@ import (
 	"admin/utils"
 )
 
+//type Tokens struct {
+//	BaseModel `xorm:"-"`
+//	Id        int    `xorm:"not null pk autoincr INT(11)" json:"id" `
+//	Mark      string `xorm:"not null default '' comment('货币名称') VARCHAR(10)" json:"mark" `
+//	Detail    string `xorm:"not null default '' comment('法币交易说明') VARCHAR(255)" json:"detail"`
+//	Logo      string `xorm:"comment('货币logobase64') TINYTEXT"  json:"logo" `
+//	//Decimal               int     `xorm:"default 1 comment('精度 1个eos最小精度的10的18次方') INT(11)" form:"decimal"  binding:"required" json:"decimal"`
+//	Status               int     `xorm:"not null comment('是否可用 1 可用2 不可用') TINYINT(4)"  json:"status" `
+//	InTokenMark          int     `xorm:"not null comment('') TINYINT(4)"  json:"in_mark"`
+//	InTokenLeastBalance  int64   `xorm:"not null comment('') BIGINT(20)" json:"in_least_balance"`
+//	OutTokenMark         int     `xorm:"not null comment('') TINYINT(4)"  json:"out_mark"`
+//	OutTokenLeastBalance int64   `xorm:"not null comment('') BIGINT(20)"  json:"out_least_balance"`
+//	OutTokenFee          float32 `xorm:"not null comment('') FLOAT" json:"out_fee"`
+//	InRemarks            string  `xorm:"not null default '' comment('法币交易说明') VARCHAR(255)"  json:"in_remarks"`
+//	OutRemarks           string  `xorm:"not null default '' comment('法币交易说明') VARCHAR(255)"  json:"out_remarks"`
+//}
+
 type Tokens struct {
 	BaseModel `xorm:"-"`
-	Id        int    `xorm:"not null pk autoincr INT(11)" json:"id" `
-	Mark      string `xorm:"not null default '' comment('货币名称') VARCHAR(10)" json:"mark" `
-	Detail    string `xorm:"not null default '' comment('法币交易说明') VARCHAR(255)" json:"detail"`
-	Logo      string `xorm:"comment('货币logobase64') TINYTEXT"  json:"logo" `
-	//Decimal               int     `xorm:"default 1 comment('精度 1个eos最小精度的10的18次方') INT(11)" form:"decimal"  binding:"required" json:"decimal"`
-	Status               int     `xorm:"not null comment('是否可用 1 可用2 不可用') TINYINT(4)"  json:"status" `
-	InTokenMark          int     `xorm:"not null comment('') TINYINT(4)"  json:"in_mark"`
-	InTokenLeastBalance  int64   `xorm:"not null comment('') BIGINT(20)" json:"in_least_balance"`
-	OutTokenMark         int     `xorm:"not null comment('') TINYINT(4)"  json:"out_mark"`
-	OutTokenLeastBalance int64   `xorm:"not null comment('') BIGINT(20)"  json:"out_least_balance"`
-	OutTokenFee          float32 `xorm:"not null comment('') FLOAT" json:"out_fee"`
-	InRemarks            string  `xorm:"not null default '' comment('法币交易说明') VARCHAR(255)"  json:"in_remarks"`
-	OutRemarks           string  `xorm:"not null default '' comment('法币交易说明') VARCHAR(255)"  json:"out_remarks"`
+	Id                   int     `xorm:"not null pk autoincr INT(11)"`
+	Name                 string  `xorm:"default '' comment('货币名称') VARCHAR(64)"`
+	Detail               string  `xorm:"default '' comment('详情地址') VARCHAR(255)"`
+	Signature            string  `xorm:"default '' comment('签名方式(eth,eip155,btc)') VARCHAR(255)"`
+	Chainid              int     `xorm:"default 0 comment('链id') INT(11)"`
+	Github               string  `xorm:"default '' comment('项目地址') VARCHAR(255)"`
+	Web                  string  `xorm:"default '' VARCHAR(255)"`
+	Mark                 string  `xorm:"comment('英文标识') CHAR(10)"`
+	Logo                 string  `xorm:"comment('货币logo oss图片路径') VARCHAR(100)"`
+	Contract             string  `xorm:"default '' comment('合约地址') VARCHAR(255)"`
+	Node                 string  `xorm:"default '' comment('节点地址') VARCHAR(100)"`
+	Decimal              int     `xorm:"not null default 1 comment('精度 1个eos最小精度的10的18次方') INT(11)"`
+	Status               int     `xorm:"not null comment('是否可用 1 可用2 不可用') TINYINT(4)"`
+	InTokenMark          int     `xorm:"not null comment('是否可充币 1可充币2不可充币') TINYINT(4)"`
+	InTokenLeastBalance  int64   `xorm:"not null comment('充币最低限额(货币数量)度 保留小数点后8位。以整数形式保存') BIGINT(20)"`
+	OutTokenMark         int     `xorm:"not null comment('是否可提币 1可提币2不可提币') TINYINT(4)"`
+	OutTokenLeastBalance int64   `xorm:"not null comment('提币最小额度 保留小数点后8位。以整数形式保存') BIGINT(20)"`
+	OutTokenFee          float32 `xorm:"not null comment('提币手续费百分比') FLOAT"`
+	InRemarks            string  `xorm:"not null comment('充币备注') VARCHAR(255)"`
+	OutRemarks           string  `xorm:"not null comment('提币备注') VARCHAR(255)"`
 }
+
 
 type TokensGroup struct {
 	Tokens   `xorm:"extends"`
