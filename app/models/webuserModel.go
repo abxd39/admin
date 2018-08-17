@@ -44,19 +44,35 @@ type UserGroup struct {
 	TWOVerifyMark      int    //二级认证
 	PhoneVerifyMark    int    //电话认证
 	EMAILVerifyMark    int    //邮箱认证
-	TotalCNY           int64  // 账户的折合总资产
-	TotalCurrentCNY    int64  //法币账户折合
-	LockCurrentCNY     int64  // 法币折合冻结CNY
-	TotalTokenCNY      int64  //币币账户折合
-	LockTokenCNY       int64  //bibi 折合冻结CNY
+	//TotalCNY           int64  // 账户的折合总资产
+	//TotalCurrentCNY    int64  //法币账户折合
+	//LockCurrentCNY     int64  // 法币折合冻结CNY
+	//TotalTokenCNY      int64  //币币账户折合
+	//LockTokenCNY       int64  //bibi 折合冻结CNY
 
 }
 
+type Total struct {
+	Uid              int64 `json:"uid"`
+	Phone            string `json:"phone"`
+	Email            string	 `json:"email"`
+	NickName          string `json:"nick_name"`
+	Status           int `json:"status"`
+	TotalCNY           float64 `json:"total_cny"` // 账户的折合总资产
+	TotalCurrentCNY    string `json:"total_current_cny"` //法币账户折合
+	LockCurrentCNY     string  `json:"lock_current_cny"`// 法币折合冻结CNY
+	TotalTokenCNY      string  `json:"total_token_cny"`//币币账户折合
+	LockTokenCNY       string  `json:"lock_token_cny"`//bibi 折合冻结CNY
+}
 func (w *WebUser) TableName() string {
 	return "user"
 }
 
 func (w *UserGroup) TableName() string {
+	return "user"
+}
+
+func (t*Total) TableName()string{
 	return "user"
 }
 
@@ -406,7 +422,7 @@ func (w *WebUser) GetTotalUser() (int, int, int, error) {
 	return Count.TotalCount, upDay, upWeek, nil
 }
 
-func (w *WebUser) GetAllUser(page, rows, status int, search string) (*ModelList, error) {
+func (w *WebUser) GetAllUser1(page, rows, status int, search string) (*ModelList, error) {
 	engine := utils.Engine_common
 
 	query := engine.Desc("user.uid")
@@ -418,13 +434,13 @@ func (w *WebUser) GetAllUser(page, rows, status int, search string) (*ModelList,
 		temp := fmt.Sprintf(" concat(IFNULL(`user`.`uid`,''),IFNULL(`user`.`phone`,''),IFNULL(`user_ex`.`nick_name`,''),IFNULL(`user`.`email`,'')) LIKE '%%%s%%'  ", search)
 		query = query.Where(temp)
 	}
-	tempquery := *query
-	count, err := tempquery.Count(&WebUser{})
+	tempQuery := *query
+	count, err := tempQuery.Count(&WebUser{})
 	if err != nil {
 		return nil, err
 	}
 	offset, modelList := w.Paging(page, rows, int(count))
-	users := make([]UserGroup, 0)
+	users := make([]Total, 0)
 	err = query.Limit(modelList.PageSize, offset).Find(&users)
 	if err != nil {
 		return nil, err

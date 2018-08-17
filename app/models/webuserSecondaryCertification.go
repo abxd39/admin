@@ -110,12 +110,18 @@ func (u *UserSecondaryCertification) GetSecondaryCertificationList(page, rows, v
 		temp := fmt.Sprintf(" AND us.verify_time BETWEEN %d AND %d ", time, time+86400)
 		condition += temp
 	}
+	if search != `` {
+		temp := fmt.Sprintf(" and concat(IFNULL(t.`uid`,''),IFNULL(t.`phone`,''),IFNULL(ex.`nick_name`,''),IFNULL(t.`email`,'')) LIKE '%%%s%%'  ", search)
+		condition +=temp
+	}
 
 	count := &struct {
 		Num int
 	}{}
 
-	_, err := engine.SQL(countSql + Value + condition).Get(count)
+	str:=countSql + Value + condition
+	fmt.Println(str)
+	_, err := engine.SQL(str).Get(count)
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +142,9 @@ func (u *UserSecondaryCertification) GetSecondaryCertificationList(page, rows, v
 	}
 	list := make([]UserCer, 0)
 	limitSql := fmt.Sprintf(" ORDER BY us.`uid`  DESC LIMIT %d OFFSET %d", modellist.PageSize, offset)
-	err = engine.SQL(sql + Value + condition + limitSql).Find(&list)
+	str=sql + Value + condition + limitSql
+	fmt.Println(str)
+	err = engine.SQL(str).Find(&list)
 	if err != nil {
 		return nil, err
 	}

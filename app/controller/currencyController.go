@@ -7,6 +7,9 @@ import (
 	"fmt"
 	"net/http"
 
+	"admin/apis"
+	"strconv"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -97,34 +100,62 @@ func (cu *CurrencyController) Total(c *gin.Context) {
 		cu.RespErr(c, err)
 		return
 	}
-	result, err := new(models.UserGroup).GetAllUser(req.Page, req.Rows, req.Status, req.Search)
+
+	result, err := new(models.UserGroup).GetAllUser1(req.Page, req.Rows, req.Status, req.Search)
 	if err != nil {
 		cu.RespErr(c, err)
 	}
-	uidlist := make([]int64, 0)
-	value, OK := result.Items.([]models.UserGroup)
+
+	uidList := make([]uint64, 0)
+	value, OK := result.Items.([]models.Total)
 	if !OK {
-		cu.RespErr(c, errors.New("assert [] userGroup failed!!"))
+		cu.RespErr(c, errors.New("assert failed"))
 		return
 	}
 	for _, value := range value {
-		uidlist = append(uidlist, value.Uid)
+		uidList = append(uidList, uint64(value.Uid))
+	}
+	fmt.Println("uid",uidList)
+	//总资产折合
+	//币币账户折合
+	tokenList, err := new(apis.VendorApi).GetCny(uidList, 1)
+	if err != nil {
+		utils.AdminLog.Errorln(err.Error())
+		cu.RespErr(c, err.Error())
+		return
 	}
 	//资产总折合
 	//法币账户折合
-	currencylist, err := new(models.UserCurrency).GetAll(uidlist)
-	for i, _ := range value {
-		for _, v := range currencylist {
-			if value[i].Uid == int64(v.Uid) {
-				value[i].TotalCurrentCNY = v.Balance
-				value[i].LockCurrentCNY = v.Freeze
+	currencyList, err := new(apis.VendorApi).GetCny(uidList, 2)
+	if err != nil {
+		utils.AdminLog.Errorln(err.Error())
+		cu.RespErr(c, err)
+		return
+	}
+	fmt.Println(currencyList)
+	for i, v := range value {
+		for _, vt := range tokenList {
+			if vt.Uid == uint64(v.Uid) {
+				value[i].LockTokenCNY = vt.FrozenCny
+				value[i].TotalTokenCNY = vt.BalanceCny
+				value[i].TotalCNY, _ = strconv.ParseFloat(vt.TotalCny, 64)
+				break
+			}
+		}
+		for _, vc := range currencyList {
+			if vc.Uid == uint64(v.Uid) {
+				value[i].LockCurrentCNY = vc.FrozenCny
+				value[i].TotalCurrentCNY = vc.BalanceCny
+				temp, _ := strconv.ParseFloat(vc.TotalCny, 64)
+				value[i].TotalCNY += temp
 				break
 			}
 		}
 	}
-	//币币账户折合
+	result.Items = value
 	cu.Put(c, "list", result)
 	cu.RespOK(c)
+	return
 }
 
 func (cu *CurrencyController) DownTradeAds(c *gin.Context) {
@@ -150,10 +181,10 @@ func (cu *CurrencyController) DownTradeAds(c *gin.Context) {
 //查看法币统计买入_卖出_划转
 func (cu *CurrencyController) GetBuySellList(c *gin.Context) {
 	req := struct {
-		Uid      int `form:"uid" json:"uid" binding:"required"`
-		Page     int `form:"page" json:"page" binding:"required"`
-		Rows     int `form:"rows" json:"rows" `
-		Token_id int `form:"token_id" json:"token_id"`
+		Uid     int `form:"uid" json:"uid" binding:"required"`
+		Page    int `form:"page" json:"page" binding:"required"`
+		Rows    int `form:"rows" json:"rows" `
+		TokenId int `form:"token_id" json:"token_id"`
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
@@ -164,7 +195,7 @@ func (cu *CurrencyController) GetBuySellList(c *gin.Context) {
 	uid := make([]int, 0)
 	uid = append(uid, req.Uid)
 	fmt.Printf("GetBuySellList%#v\n", uid)
-	list, err := new(models.Order).GetOrderListOfUid(req.Page, req.Rows, req.Uid, req.Token_id)
+	list, err := new(models.Order).GetOrderListOfUid(req.Page, req.Rows, req.Uid, req.TokenId)
 	if err != nil {
 		cu.RespErr(c, err)
 		return
