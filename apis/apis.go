@@ -57,9 +57,24 @@ func (VendorApi) Reflash(uid int) error {
 	}
 	request.Header.Set("Content-Type", "application/json;charset=UTF-8")
 	client := http.Client{}
-	_, err = client.Do(request)
+	result, err := client.Do(request)
 	if err != nil {
 		return err
+	}
+	body,err:=ioutil.ReadAll(result.Body)
+	if err!=nil{
+		return err
+	}
+	rsp:= struct {
+		Code int
+		Msg string
+	}{}
+	err=json.Unmarshal(body,rsp)
+	if err!=nil{
+		return err
+	}
+	if rsp.Code!=0{
+		return errors.New(rsp.Msg)
 	}
 	return nil
 }

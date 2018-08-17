@@ -78,13 +78,7 @@ func (t*Total) TableName()string{
 
 //二级认证审核
 func (w *WebUser) SecondAffirmLimit(uid, status int) error {
-	//err :=new(apis.VendorApi).AddAwardToken(uid)
-	//if err!=nil{
-	//	//sess.Rollback()
-	//	fmt.Println(err.Error())
-	//	fmt.Println("赠送奖励失败")
-	//}
-	//return nil
+
 	engine := utils.Engine_common
 	sess := engine.NewSession()
 	defer sess.Close()
@@ -149,11 +143,14 @@ func (w *WebUser) SecondAffirmLimit(uid, status int) error {
 			sess.Rollback()
 			return err
 		}
-		sess.Commit()
+
 		err = new(apis.VendorApi).Reflash(uid)
 		if err != nil {
 			fmt.Println("缓存清理失败!!!")
+			sess.Rollback()
+			return err
 		}
+		sess.Commit()
 		return nil
 	}
 	if status == utils.AUTH_TWO {
@@ -175,13 +172,16 @@ func (w *WebUser) SecondAffirmLimit(uid, status int) error {
 	if err != nil {
 		sess.Rollback()
 		fmt.Println("赠送奖励失败")
-	}
-	sess.Commit()
-	err = new(apis.VendorApi).Reflash(uid)
-	if err != nil {
-		fmt.Println("缓存清理失败!!!")
+		return err
 	}
 
+	err = new(apis.VendorApi).Reflash(uid)
+	if err != nil {
+		sess.Rollback()
+		fmt.Println("缓存清理失败!!!")
+		return err
+	}
+	sess.Commit()
 	return nil
 }
 
@@ -243,12 +243,13 @@ func (w *WebUser) FirstAffirmLimit(uid, status int) error {
 		sess.Rollback()
 		return err
 	}
-	sess.Commit()
+
 	err = new(apis.VendorApi).Reflash(uid)
 	if err != nil {
 		fmt.Println("缓存清理失败!!!")
+		return err
 	}
-
+	sess.Commit()
 	return nil
 }
 
