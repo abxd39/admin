@@ -33,12 +33,51 @@ func (this *CurrencyController) Router(r *gin.Engine) {
 		//划转到币币账户货币数量日统计
 		g.GET("/layoff_list", this.GetLayOffList)
 		//法币成交管理 放行 取消
-
+		g.GET("/revoke_currency",this.SetRevokeCurrency)//撤单
+		g.GET("/verify_pass_currency",this.SetCurrencyToPass)//审核通过
 	}
+}
+//撤单
+func (cu *CurrencyController) SetRevokeCurrency(c *gin.Context) {
+	req := struct {
+		Id   int64    `form:"id" json:"id" binding:"required"`
+	}{}
+	err := c.ShouldBind(&req)
+	if err != nil {
+		utils.AdminLog.Errorf(err.Error())
+		cu.RespErr(c, err)
+		return
+	}
+	err=new(apis.VendorApi).CurrencyRevoke(req.Id)
+	if err!=nil{
+		cu.RespErr(c,err)
+		return
+	}
+	cu.RespOK(c)
+	return
+}
+
+func (cu *CurrencyController) SetCurrencyToPass(c *gin.Context) {
+	req := struct {
+		Id   int64    `form:"id" json:"id" binding:"required"`
+	}{}
+	err := c.ShouldBind(&req)
+	if err != nil {
+		utils.AdminLog.Errorf(err.Error())
+		cu.RespErr(c, err)
+		return
+	}
+	err=new(apis.VendorApi).CurrencyVerityPass(req.Id)
+	if err!=nil{
+		cu.RespErr(c,err)
+		return
+	}
+	cu.RespOK(c)
+	return
 }
 
 func (cu *CurrencyController) GetLayOffList(c *gin.Context) {
-
+	return
 }
 
 func (cu *CurrencyController) GetCurrencyChangeHistory(c *gin.Context) {

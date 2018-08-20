@@ -273,7 +273,8 @@ type Price struct {
 	CnyPrice    string `json:"cny_price"`
 	UsdPrice    string `json:"usd_price"`
 	TokenId     int    `json:"token_id"`
-	CnyPriceInt int    `json:"cny_price_int"`
+	CnyPriceInt int64    `json:"cny_price_int"`
+	UsdPriceInt int64	`json:"usd_price_int"`
 }
 type temp struct {
 	List []Price `json:"list"`
@@ -286,8 +287,9 @@ func (VendorApi) GetTokenCnyPriceList(tid []int) ([]Price, error) {
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println(userUrl+"/market/cny_prices?")
 	reader := bytes.NewReader(bytesData)
-	request, err := http.NewRequest("POST", walletUrl+"market/cny_prices?", reader)
+	request, err := http.NewRequest("POST", userUrl+"/market/cny_prices?", reader)
 	if err != nil {
 		return nil, err
 	}
@@ -392,4 +394,96 @@ func (VendorApi) GetCny(uid []uint64, mark int) ([]Cny, error) {
 	//}
 	fmt.Println("result.Data.list", result.Data.List)
 	return result.Data.List, nil
+}
+
+
+//法币后台审核
+//admin/currency_order_confirm
+func (VendorApi)CurrencyVerityPass(id int64)error{
+	params := make(map[string]interface{})
+	params["id"] = id
+	params["key"] = privateKey
+	fmt.Println(params)
+	bytesData, err := json.Marshal(params)
+	if err != nil {
+		return err
+	}
+	reader := bytes.NewReader(bytesData)
+	//url :=userHost
+	fmt.Println(userUrl+"/admin/currency_order_confirm")
+	request, err := http.NewRequest("POST", userUrl+"/admin/currency_order_confirm", reader)
+	if err != nil {
+		return err
+	}
+	request.Header.Set("Content-Type", "application/json;charset=UTF-8")
+	client := http.Client{}
+	result, err := client.Do(request)
+	if err != nil {
+		return err
+	}
+
+	body,err:=ioutil.ReadAll(result.Body)
+	if err!=nil{
+		return err
+	}
+	rsp:=&struct {
+		Code int
+		Msg string
+	}{}
+	fmt.Println(string(body))
+	err=json.Unmarshal(body,rsp)
+	if err!=nil{
+		return err
+	}
+	fmt.Println(rsp)
+	if rsp.Code!=0{
+		return errors.New(rsp.Msg)
+	}
+	return nil
+}
+
+
+//法币后台审核撤销
+//admin/currency_order_cancel
+func (VendorApi)CurrencyRevoke(id int64)error{
+	params := make(map[string]interface{})
+	params["id"] = id
+	params["key"] = privateKey
+	fmt.Println(params)
+	bytesData, err := json.Marshal(params)
+	if err != nil {
+		return err
+	}
+	reader := bytes.NewReader(bytesData)
+	//url :=userHost
+	fmt.Println(userUrl+"/admin/currency_order_cancel")
+	request, err := http.NewRequest("POST", userUrl+"/admin/currency_order_cancel", reader)
+	if err != nil {
+		return err
+	}
+	request.Header.Set("Content-Type", "application/json;charset=UTF-8")
+	client := http.Client{}
+	result, err := client.Do(request)
+	if err != nil {
+		return err
+	}
+
+	body,err:=ioutil.ReadAll(result.Body)
+	if err!=nil{
+		return err
+	}
+	rsp:=&struct {
+		Code int
+		Msg string
+	}{}
+	fmt.Println( string(body))
+	err=json.Unmarshal(body,rsp)
+	if err!=nil{
+		return err
+	}
+	fmt.Println(rsp)
+	if rsp.Code!=0{
+		return errors.New(rsp.Msg)
+	}
+	return nil
 }

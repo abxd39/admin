@@ -3,6 +3,8 @@ package models
 import (
 	"admin/utils"
 	"fmt"
+	"admin/apis"
+	"admin/errors"
 )
 
 type UserToken struct {
@@ -39,7 +41,7 @@ type PersonalProperty struct {
 type DetailToken struct {
 	UserToken   `xorm:"extends"`
 	Mark        string  `json:"mark" `
-	AmountTo    float64 `xorm:"-"json:"amount_to"` //折合人民币
+	AmountTo    string `xorm:"-"json:"amount_to"` //折合人民币
 	BalanceTrue float64 `xorm:"-" json:"balance_true"`
 	FrozenTrue  float64 `xorm:"-" json:"frozen_true"`
 }
@@ -66,11 +68,30 @@ func (u *DetailToken) GetTokenDetailOfUid(page, rows, uid, tokenId int) (*ModelL
 	if err != nil {
 		return nil, err
 	}
+	tidList:=make([]int,0)
+	for _,v:=range list{
+		tidList = append(tidList,v.TokenId)
+	}
+	fmt.Println(tidList)
+	priceList,err:=new(apis.VendorApi).GetTokenCnyPriceList(tidList)
+	if err!=nil{
+		utils.AdminLog.Errorln(err.Error())
+		return nil,errors.New(err.Error())
+	}
 	//注 折合为空是因为 还没有计算折合
 	for i, v := range list {
+
 		list[i].BalanceTrue = u.Int64ToFloat64By8Bit(v.Balance)
 		list[i].FrozenTrue = u.Int64ToFloat64By8Bit(v.Frozen)
-		list[i].AmountTo = u.Int64ToFloat64By8Bit(v.BalanceCny) + u.Int64ToFloat64By8Bit(v.FrozenCny)
+		for _,pv:=range priceList{
+			if v.TokenId == pv.TokenId{
+				//list[i].AmountTo = u.Int64ToFloat64By8Bit(v.BalanceCny) + u.Int64ToFloat64By8Bit(v.FrozenCny)
+				temp :=u.Int64MulInt64By8BitString(pv.CnyPriceInt,v.Balance)
+				fmt.Println(temp)
+				list[i].AmountTo = temp
+			}
+		}
+
 	}
 	mList.Items = list
 

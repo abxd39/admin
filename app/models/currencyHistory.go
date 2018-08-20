@@ -59,7 +59,7 @@ func (u *UserCurrencyHistory) GetList(page, rows, ot int, date string) (*ModelLi
 func (u *UserCurrencyHistory) GetListForUid(page, rows, tid, status, chType int, search string) (*ModelList, error) {
 	engine := utils.Engine_currency
 	fmt.Println("------------------------>")
-	query := engine.Alias("uch").Desc("id")
+	query := engine.Alias("uch").Desc("u.uid")
 	query = query.Join("LEFT", "g_common.user u ", "u.uid= uch.uid")
 	query = query.Join("LEFT", "g_common.user_ex ex", "uch.uid=ex.uid")
 	//substr := date[:11] + "23:59:59"

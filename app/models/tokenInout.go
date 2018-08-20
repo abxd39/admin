@@ -229,8 +229,9 @@ func (t *TokenInout) OptTakeToken(id, status int) error {
 	}
 	engineToken:=utils.Engine_common
 	token:=new(Tokens)
-	has,err=engineToken.Table("tokens").Where("token_id=?",t.Tokenid).Get(token)
+	has,err=engineToken.Table("tokens").Where("id=?",t.Tokenid).Get(token)
 	if err!=nil{
+		fmt.Println(err.Error())
 		return err
 	}
 	if !has{
