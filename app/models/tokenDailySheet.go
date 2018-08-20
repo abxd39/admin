@@ -196,12 +196,12 @@ func (tk*TokenDailySheet) TimingFunc(begin, end int64) {
 			return
 		}
 	*/
-
-	//be:=begin+86400
-	//if be>time.Now().Unix() {
-	//	return
-	//}
-	//tk.TimingFunc(begin+86400,end+86400)
+	//如果日期设置的是十天前那么会从十天前统计到现在
+	be:=begin+86400
+	if be>time.Now().Unix() {
+		return
+	}
+	tk.TimingFunc(begin+86400,end+86400)
 	fmt.Println("successful!!!!")
 }
 
@@ -219,7 +219,7 @@ func (t *TokenDailySheet ) Run(){
 
 //启动
 func DailyStart() {
-	fmt.Println("daily count start ....")
+	//fmt.Println("daily count start ....")
 	log.Println("daily count start ....")
 
 	i := 0

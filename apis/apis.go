@@ -41,16 +41,18 @@ func InitAwardUrl(url, key string) {
 }
 
 func (VendorApi) Reflash(uid int) error {
-	fmt.Println(userUrl)
+	//fmt.Println(userUrl)
 	params := make(map[string]interface{})
 	params["uid"] = uid
 	params["key"] = privateKey
+	fmt.Println(params)
 	bytesData, err := json.Marshal(params)
 	if err != nil {
 		return err
 	}
 	reader := bytes.NewReader(bytesData)
 	//url :=userHost
+	fmt.Println(userUrl+"/admin/refresh?")
 	request, err := http.NewRequest("POST", userUrl+"/admin/refresh?", reader)
 	if err != nil {
 		return err
@@ -65,7 +67,7 @@ func (VendorApi) Reflash(uid int) error {
 	if err!=nil{
 		return err
 	}
-	rsp:= struct {
+	rsp:=&struct {
 		Code int
 		Msg string
 	}{}
@@ -73,6 +75,7 @@ func (VendorApi) Reflash(uid int) error {
 	if err!=nil{
 		return err
 	}
+	fmt.Println(rsp)
 	if rsp.Code!=0{
 		return errors.New(rsp.Msg)
 	}
@@ -130,7 +133,6 @@ func (VendorApi) AddAwardToken(uid int) error {
 //提币审核 获取签名
 //wallet/signtx
 func (VendorApi) GetTradeSigntx(uid, tid int, addr, mount string) (string, error) {
-	fmt.Println("xxxxxxxxxxxxxxxxxxx1")
 	params := make(map[string]interface{})
 	params["uid"] = uid
 	params["token_id"] = tid
@@ -168,7 +170,6 @@ func (VendorApi) GetTradeSigntx(uid, tid int, addr, mount string) (string, error
 	if err != nil {
 		return "", err
 	}
-	fmt.Println("xxxxxxxxxxxxxxxxxxx2")
 	if rsp.Code != 0 {
 		return "", errors.New(rsp.Msg)
 	}

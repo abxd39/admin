@@ -143,14 +143,12 @@ func (w *WebUser) SecondAffirmLimit(uid, status int) error {
 			sess.Rollback()
 			return err
 		}
-
+		sess.Commit()
 		err = new(apis.VendorApi).Reflash(uid)
 		if err != nil {
 			fmt.Println("缓存清理失败!!!")
-			sess.Rollback()
 			return err
 		}
-		sess.Commit()
 		return nil
 	}
 	if status == utils.AUTH_TWO {
@@ -174,14 +172,13 @@ func (w *WebUser) SecondAffirmLimit(uid, status int) error {
 		fmt.Println("赠送奖励失败")
 		return err
 	}
-
+	sess.Commit()
 	err = new(apis.VendorApi).Reflash(uid)
 	if err != nil {
-		sess.Rollback()
 		fmt.Println("缓存清理失败!!!")
 		return err
 	}
-	sess.Commit()
+
 	return nil
 }
 
@@ -230,8 +227,8 @@ func (w *WebUser) FirstAffirmLimit(uid, status int) error {
 	}
 	if status == utils.AUTH_FIRST {
 		wu.SecurityAuth = wu.SecurityAuth ^ utils.AUTH_FIRST // 16 为实名状态标识
-		wu.SetTardeMark = wu.SetTardeMark &^ utils.APPLY_FOR_FIRST
-		wu.SetTardeMark = wu.SetTardeMark &^ utils.APPLY_FOR_FIRST_NOT_ALREADY //没有通过
+		wu.SetTardeMark = wu.SetTardeMark &^ utils.APPLY_FOR_FIRST //删除 申请状态
+		wu.SetTardeMark = wu.SetTardeMark &^ utils.APPLY_FOR_FIRST_NOT_ALREADY //上出没有通过状态
 	}
 	//删除 申请状态
 
@@ -243,13 +240,13 @@ func (w *WebUser) FirstAffirmLimit(uid, status int) error {
 		sess.Rollback()
 		return err
 	}
-
+	sess.Commit()
 	err = new(apis.VendorApi).Reflash(uid)
 	if err != nil {
+
 		fmt.Println("缓存清理失败!!!")
 		return err
 	}
-	sess.Commit()
 	return nil
 }
 

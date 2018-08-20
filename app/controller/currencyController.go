@@ -32,6 +32,8 @@ func (this *CurrencyController) Router(r *gin.Engine) {
 		//g.GET("/")                                               //p2-3-0-0币数统计列表
 		//划转到币币账户货币数量日统计
 		g.GET("/layoff_list", this.GetLayOffList)
+		//法币成交管理 放行 取消
+
 	}
 }
 
@@ -116,8 +118,10 @@ func (cu *CurrencyController) Total(c *gin.Context) {
 		uidList = append(uidList, uint64(value.Uid))
 	}
 	fmt.Println("uid",uidList)
+
 	//总资产折合
 	//币币账户折合
+	//tk :=make(chan int,2)
 	tokenList, err := new(apis.VendorApi).GetCny(uidList, 1)
 	if err != nil {
 		utils.AdminLog.Errorln(err.Error())
@@ -132,6 +136,7 @@ func (cu *CurrencyController) Total(c *gin.Context) {
 		cu.RespErr(c, err)
 		return
 	}
+
 	fmt.Println(currencyList)
 	for i, v := range value {
 		for _, vt := range tokenList {
