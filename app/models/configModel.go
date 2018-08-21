@@ -52,6 +52,7 @@ type KefuConfig struct {
 	Phone   string `json:"phone"`
 	Email   string `json:"email"`
 	Address string `json:"address"`
+	Dianbao string `json:"dianbao"`
 }
 
 // 获取配置

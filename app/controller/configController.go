@@ -55,66 +55,58 @@ func (c *ConfigController) GetSite(ctx *gin.Context) {
 func (c *ConfigController) SetSite(ctx *gin.Context) {
 	// 获取参数
 	name := c.GetString(ctx, "name")
+	englishName := c.GetString(ctx, "english_name")
+	title := c.GetString(ctx, "title")
+	englishTitle := c.GetString(ctx, "english_title")
+	logo := c.GetString(ctx, "logo")
+	keyword := c.GetString(ctx, "keyword")
+	englishKeyword := c.GetString(ctx, "english_keyword")
+	desc := c.GetString(ctx, "desc")
+	englishDesc := c.GetString(ctx, "english_desc")
+	beian := c.GetString(ctx, "beian")
+	statisticScript := c.GetString(ctx, "statistic_script")
+
+	// 验证参数
 	if strLen := utf8.RuneCountInString(name); strLen < 1 {
 		c.RespErr(ctx, "参数name格式错误")
 		return
 	}
-
-	englishName := c.GetString(ctx, "english_name")
 	if strLen := len(englishName); strLen < 1 {
 		c.RespErr(ctx, "参数english_name格式错误")
 		return
 	}
-
-	title := c.GetString(ctx, "title")
 	if strLen := utf8.RuneCountInString(title); strLen < 1 {
 		c.RespErr(ctx, "参数title格式错误")
 		return
 	}
-
-	englishTitle := c.GetString(ctx, "english_title")
 	if strLen := len(englishTitle); strLen < 1 {
 		c.RespErr(ctx, "参数english_title格式错误")
 		return
 	}
-
-	logo := c.GetString(ctx, "logo")
 	if strLen := len(logo); strLen < 1 {
 		c.RespErr(ctx, "参数logo格式错误")
 		return
 	}
-
-	keyword := c.GetString(ctx, "keyword")
 	if strLen := utf8.RuneCountInString(keyword); strLen < 1 {
 		c.RespErr(ctx, "参数keyword格式错误")
 		return
 	}
-
-	englishKeyword := c.GetString(ctx, "english_keyword")
 	if strLen := len(englishKeyword); strLen < 1 {
 		c.RespErr(ctx, "参数english_keyword格式错误")
 		return
 	}
-
-	desc := c.GetString(ctx, "desc")
 	if strLen := utf8.RuneCountInString(desc); strLen < 1 {
 		c.RespErr(ctx, "参数desc格式错误")
 		return
 	}
-
-	englishDesc := c.GetString(ctx, "english_desc")
 	if strLen := len(englishDesc); strLen < 1 {
 		c.RespErr(ctx, "参数english_desc格式错误")
 		return
 	}
-
-	beian := c.GetString(ctx, "beian")
 	if strLen := len(beian); strLen < 1 {
 		c.RespErr(ctx, "参数beian格式错误")
 		return
 	}
-
-	statisticScript := c.GetString(ctx, "statistic_script")
 	if strLen := len(statisticScript); strLen < 1 {
 		c.RespErr(ctx, "参数statistic_script格式错误")
 		return
@@ -187,18 +179,18 @@ func (c *ConfigController) GetSms(ctx *gin.Context) {
 func (c *ConfigController) SetSms(ctx *gin.Context) {
 	// 获取参数
 	url := c.GetString(ctx, "url")
+	userName := c.GetString(ctx, "user_name")
+	password := c.GetString(ctx, "password")
+
+	// 验证参数
 	if strLen := utf8.RuneCountInString(url); strLen < 1 {
 		c.RespErr(ctx, "参数url格式错误")
 		return
 	}
-
-	userName := c.GetString(ctx, "user_name")
 	if strLen := utf8.RuneCountInString(userName); strLen < 1 {
 		c.RespErr(ctx, "参数user_name格式错误")
 		return
 	}
-
-	password := c.GetString(ctx, "password")
 	if strLen := utf8.RuneCountInString(password); strLen < 1 {
 		c.RespErr(ctx, "参数password格式错误")
 		return
@@ -263,28 +255,16 @@ func (c *ConfigController) GetKefu(ctx *gin.Context) {
 func (c *ConfigController) SetKefu(ctx *gin.Context) {
 	// 获取参数
 	phone := c.GetString(ctx, "phone")
-	if strLen := utf8.RuneCountInString(phone); strLen < 1 {
-		c.RespErr(ctx, "参数url格式错误")
-		return
-	}
-
 	email := c.GetString(ctx, "email")
-	if strLen := utf8.RuneCountInString(email); strLen < 1 {
-		c.RespErr(ctx, "参数email格式错误")
-		return
-	}
-
 	address := c.GetString(ctx, "address")
-	if strLen := utf8.RuneCountInString(address); strLen < 1 {
-		c.RespErr(ctx, "参数address格式错误")
-		return
-	}
+	dianbao := c.GetString(ctx, "dianbao")
 
 	// 序列化成json
 	valueBytes, err := json.Marshal(models.KefuConfig{
 		Phone:   phone,
 		Email:   email,
 		Address: address,
+		Dianbao: dianbao,
 	})
 	if err != nil {
 		c.RespErr(ctx, errors.NewSys(err))
