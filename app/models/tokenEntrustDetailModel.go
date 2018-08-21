@@ -50,8 +50,8 @@ func (this *EntrustDetail) IsExist(symbol string) (bool, error) {
 func (this *EntrustDetail) EvacuateOder(uid int, odid string) error {
 	engine := utils.Engine_token
 	//query := engine.Desc("")
-	temp := fmt.Sprintf("uid=%d AND entrust_id =%s", uid, odid)
-	query := engine.Where(temp)
+	//temp := fmt.Sprintf("uid=%d AND entrust_id =%s", uid, odid)
+	query := engine.Where("uid=? AND entrust_id =?", uid, odid)
 	TempQuery := *query
 	has, err := TempQuery.Exist(&EntrustDetail{})
 	if err != nil {
@@ -61,7 +61,7 @@ func (this *EntrustDetail) EvacuateOder(uid int, odid string) error {
 		return errors.New("订单不存在！！")
 	}
 	_, err = query.Update(&EntrustDetail{
-		States: -1,
+		States: 3,
 	})
 	if err != nil {
 		return err

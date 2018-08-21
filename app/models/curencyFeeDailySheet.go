@@ -7,17 +7,39 @@ import (
 	"time"
 )
 
-type CurencyFeeDailySheet struct {
+//type CurencyFeeDailySheet struct {
+//	BaseModel  `xorm:"-"`
+//	Id         int   `xorm:"not null pk comment('自增id') TINYINT(4)"`
+//	FeeBuyCny  int64 `xorm:"not null comment('法币手买续费折合cny') BIGINT(20)"`
+//	FeeSellCny int64 `xorm:"not null comment('法币手卖续费折合cny') BIGINT(20)"`
+//	BalanceCny int64 `xorm:"not null comment('法币交易总额折合cny') BIGINT(20)"`
+//	Date       int64 `xorm:"not null comment('日期例如20180801') BIGINT(10)"`
+//}
+
+type CurrencyDailySheet struct {
 	BaseModel  `xorm:"-"`
-	Id         int   `xorm:"not null pk comment('自增id') TINYINT(4)"`
-	FeeBuyCny  int64 `xorm:"not null comment('法币手买续费折合cny') BIGINT(20)"`
-	FeeSellCny int64 `xorm:"not null comment('法币手卖续费折合cny') BIGINT(20)"`
-	BalanceCny int64 `xorm:"not null comment('法币交易总额折合cny') BIGINT(20)"`
-	Date       int64 `xorm:"not null comment('日期例如20180801') BIGINT(10)"`
+	Id              int   `xorm:"not null pk autoincr comment('自增id') TINYINT(4)"`
+	TokenId         int   `xorm:"not null comment('币种ID') INT(11)"`
+	SellTotal       int64 `xorm:"not null default 0 comment('法币卖出总数') BIGINT(20)"`
+	SellCny         int64 `xorm:"not null comment('法币卖出总额折合cny') BIGINT(20)"`
+	BuyTotal        int64 `xorm:"not null default 0 comment('法币买入总数') BIGINT(20)"`
+	BuyCny          int64 `xorm:"not null default 0 comment('法币买入总额折合cny') BIGINT(20)"`
+	FeeSellTotal    int64 `xorm:"not null default 0 comment('法币卖出手续费总数') BIGINT(20)"`
+	FeeSellCny      int64 `xorm:"not null comment('法币卖出手续费折合cny') BIGINT(20)"`
+	FeeBuyTotal     int64 `xorm:"not null default 0 comment('法币买入手续费总数') BIGINT(20)"`
+	FeeBuyCny       int64 `xorm:"not null default 0 comment('法币买入手续费折合cny') BIGINT(20)"`
+	BuyTotalAll     int64 `xorm:"not null comment('累计买入总额') BIGINT(20)"`
+	BuyTotalAllCny  int64 `xorm:"not null comment('累计买入总额折合cny') BIGINT(20)"`
+	SellTotalAll    int64 `xorm:"not null comment('累计卖出总额') BIGINT(20)"`
+	SellTotalAllCny int64 `xorm:"not null comment('累计卖出总额折合') BIGINT(20)"`
+	Total           int64 `xorm:"not null comment('总数') BIGINT(20)"`
+	TotalCny        int64 `xorm:"not null comment('总数折合') BIGINT(20)"`
+	Date            int64 `xorm:"not null comment('时间戳，精确到天') BIGINT(10)"`
 }
 
+
 //定时结算bibi 日交易报表表数据
-func (this *CurencyFeeDailySheet) BoottimeTimingSettlement() {
+func (this *CurrencyDailySheet) BootTimeTimingSettlement() {
 
 	for {
 		now := time.Now()
@@ -48,7 +70,7 @@ func (this *CurencyFeeDailySheet) BoottimeTimingSettlement() {
 			utils.AdminLog.Println(err.Error())
 			continue
 		}
-		var cfds CurencyFeeDailySheet
+		var cfds CurrencyDailySheet
 		date, _ := strconv.Atoi(current[:10])
 		cfds.Date = int64(date)
 		for _, v := range listSell {
@@ -66,7 +88,7 @@ func (this *CurencyFeeDailySheet) BoottimeTimingSettlement() {
 				utils.AdminLog.Println(err.Error())
 				continue
 			}
-			cfds.BalanceCny += this.Float64ToInt64By8Bit(fResult)
+			cfds.TotalCny += this.Float64ToInt64By8Bit(fResult)
 		}
 		//buy ad_type=2
 		buySql := fmt.Sprintf("pay_status=3 AND ad_type=2) tWHERE t.days ='%s' ", current[:10])
@@ -91,7 +113,7 @@ func (this *CurencyFeeDailySheet) BoottimeTimingSettlement() {
 				utils.AdminLog.Println(err.Error())
 				continue
 			}
-			cfds.BalanceCny += this.Float64ToInt64By8Bit(fResult)
+			cfds.TotalCny += this.Float64ToInt64By8Bit(fResult)
 		}
 		_, err = engine.AllCols().InsertOne(&cfds)
 		if err != nil {

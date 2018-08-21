@@ -180,10 +180,10 @@ func (this *Order) GetOrderList(Page, PageNum, AdType, States, TokenId int, sear
 		query = query.Where("ad_type=?", AdType)
 	}
 	if States == 5 {
-		query = query.Cols("states").Where("states=?", 0)
+		query = query.AllCols().Where("states=?", 0)
 	}
 	if States != 0 {
-		query = query.Cols("states").Where("states=?", States)
+		query = query.AllCols().Where("states=?", States)
 	}
 	if TokenId != 0 {
 		query = query.Where("token_id=?", TokenId)

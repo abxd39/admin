@@ -17,7 +17,7 @@ type ConfigQuenes struct {
 	MinOrderUnm          int64   `xorm:"comment('最小交易量') BIGINT(20)" json:"min_order_unm"`
 	Switch               int     `xorm:"comment('开关0关1开') TINYINT(4)" jons:"switch"`
 	Price                int64   `xorm:"comment('初始价格') BIGINT(20)" jons:"price"`
-	Scope                string  `xorm:"comment('振幅') DECIMAL(6,2)" jons:"scope"`
+	//Scope                string  `xorm:"comment('振幅') DECIMAL(6,2)" jons:"scope"`
 	Name                 string  `xorm:"comment('USDT/BTC') VARCHAR(32)" jons:"name"`
 	Low                  int64   `xorm:"comment('最低价') BIGINT(20)" jons:"low"`
 	High                 int64   `xorm:"comment('最高价') BIGINT(20)" jons:"high"`
@@ -94,6 +94,7 @@ func (q *ConfigQuenes) DeleteCash(id int) error {
 
 //修改
 func (q *ConfigQuenes) ModifyCash(id int) (*ConfigQuenesEx, error) {
+	fmt.Println("2222222222222222222222222222222222222222")
 	engine := utils.Engine_token
 	query := engine.Desc("id")
 	query = query.Where("id=?", id)
@@ -137,7 +138,7 @@ func (q *ConfigQuenes) AddCash(c *ConfigQuenes) error {
 			TokenTradeId:         c.TokenTradeId,
 			Switch:               c.Switch,
 			Price:                c.Price,
-			Scope:                c.Scope,
+			//Scope:                c.Scope,
 			Name:                 c.Name,
 			Low:                  c.Low,
 			High:                 c.High,
@@ -156,14 +157,14 @@ func (q *ConfigQuenes) AddCash(c *ConfigQuenes) error {
 			SundaySwitch:         c.SundaySwitch,
 		})
 		if err != nil {
-			fmt.Println("0000000000000001")
+			//fmt.Println("0000000000000001")
 			return err
 		}
-		fmt.Println("11111111111111111")
+		//fmt.Println("11111111111111111")
 		return nil
 	} else {
 		//新曾
-		fmt.Println("2222222222222222")
+		//fmt.Println("2222222222222222")
 		_, err := engine.InsertOne(c)
 		if err != nil {
 			return err

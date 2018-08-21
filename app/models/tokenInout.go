@@ -41,7 +41,7 @@ type TokenInoutGroup struct {
 	Status     int     `json:"status"`
 	AmountTrue float64 `xorm:"-" json:"amount_ture"`
 	FeeTrue    float64 `xorm:"-" json:"fee_true"`
-	ToCount    float64 `xorm:"-" json:"to_count"`
+	OutCount    float64 `xorm:"-" json:"out_count"`//提币数量
 }
 
 func (t *TokenInoutGroup) TableName() string {
@@ -176,7 +176,7 @@ func (t *TokenInoutGroup) GetTokenInList(page, rows, uStatus, status, tokenId, o
 		query = query.Where("t.tokenid=?", tokenId)
 	}
 	if status != 0 {
-		query = query.Where("u.states=?", status)
+		query = query.Where("t.states=?", status)
 	}
 	if opt != 0 {
 		query = query.Where("t.opt=?", opt)
@@ -187,8 +187,8 @@ func (t *TokenInoutGroup) GetTokenInList(page, rows, uStatus, status, tokenId, o
 	//	sql := fmt.Sprintf("t.create_time  BETWEEN '%s' AND '%s' ", date, subst)
 	//	query = query.Where(sql)
 	//}
-	if status != 0 {
-		query = query.Where("u.status=?", status)
+	if uStatus != 0 {
+		query = query.Where("u.status=?", uStatus)
 	}
 	if len(search) != 0 {
 		temp := fmt.Sprintf(" concat(IFNULL(u.`uid`,''),IFNULL(u.`phone`,''),IFNULL(ex.`nick_name`,''),IFNULL(u.`email`,'')) LIKE '%%%s%%'  ", search)
@@ -208,7 +208,7 @@ func (t *TokenInoutGroup) GetTokenInList(page, rows, uStatus, status, tokenId, o
 	for i, v := range list {
 		list[i].FeeTrue = t.Int64ToFloat64By8Bit(v.Fee)
 		list[i].AmountTrue = t.Int64ToFloat64By8Bit(v.Amount)
-		list[i].ToCount = list[i].AmountTrue - list[i].FeeTrue
+		list[i].OutCount = list[i].AmountTrue + list[i].FeeTrue
 	}
 	mList.Items = list
 
@@ -229,8 +229,9 @@ func (t *TokenInout) OptTakeToken(id, status int) error {
 	}
 	engineToken:=utils.Engine_common
 	token:=new(Tokens)
-	has,err=engineToken.Table("tokens").Where("token_id=?",t.Tokenid).Get(token)
+	has,err=engineToken.Table("tokens").Where("id=?",t.Tokenid).Get(token)
 	if err!=nil{
+		fmt.Println(err.Error())
 		return err
 	}
 	if !has{
@@ -252,6 +253,7 @@ func (t *TokenInout) OptTakeToken(id, status int) error {
 	}
 	//审核通过
 	if status == utils.VERIFY_OUT_TOKEN_MARK {
+		fmt.Println("审核通过")
 		mount := t.Int64ToFloat64By8Bit(t.Amount)
 		////fmt.Println("num=",)
 		strMount := fmt.Sprintf("%.10f", mount)
@@ -277,6 +279,16 @@ func (t *TokenInout) OptTakeToken(id, status int) error {
 		}
 
 
+	}
+	//审核撤销
+	if status == utils.VERIFY_REVOKE_TOKEN_MARK{
+		//需要王炳雨提供接口
+		err:=new(apis.VendorApi).RevokeOutToken(int64(t.Uid),int64(t.Tokenid),t.Amount+t.Fee)
+		if err!=nil{
+			sess.Rollback()
+			utils.AdminLog.Error(err.Error())
+			return err
+		}
 	}
 	sess.Commit()
 	return nil

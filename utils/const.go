@@ -18,4 +18,8 @@ const (
 	APPLY_FOR_FIRST_NOT_ALREADY  = 16 //一级认证状态未通过
 )
 
-const VERIFY_OUT_TOKEN_MARK = 5 // 审核通过
+const(
+	VERIFY_OUT_TOKEN_MARK = 5 // 审核通过
+	VERIFY_REVOKE_TOKEN_MARK=6 //审核撤销
+)
+

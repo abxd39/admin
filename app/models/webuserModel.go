@@ -44,14 +44,26 @@ type UserGroup struct {
 	TWOVerifyMark      int    //二级认证
 	PhoneVerifyMark    int    //电话认证
 	EMAILVerifyMark    int    //邮箱认证
-	TotalCNY           int64  // 账户的折合总资产
-	TotalCurrentCNY    int64  //法币账户折合
-	LockCurrentCNY     int64  // 法币折合冻结CNY
-	TotalTokenCNY      int64  //币币账户折合
-	LockTokenCNY       int64  //bibi 折合冻结CNY
+	//TotalCNY           int64  // 账户的折合总资产
+	//TotalCurrentCNY    int64  //法币账户折合
+	//LockCurrentCNY     int64  // 法币折合冻结CNY
+	//TotalTokenCNY      int64  //币币账户折合
+	//LockTokenCNY       int64  //bibi 折合冻结CNY
 
 }
 
+type Total struct {
+	Uid              int64 `json:"uid"`
+	Phone            string `json:"phone"`
+	Email            string	 `json:"email"`
+	NickName          string `json:"nick_name"`
+	Status           int `json:"status"`
+	TotalCNY           float64 `json:"total_cny"` // 账户的折合总资产
+	TotalCurrentCNY    string `json:"total_current_cny"` //法币账户折合
+	LockCurrentCNY     string  `json:"lock_current_cny"`// 法币折合冻结CNY
+	TotalTokenCNY      string  `json:"total_token_cny"`//币币账户折合
+	LockTokenCNY       string  `json:"lock_token_cny"`//bibi 折合冻结CNY
+}
 func (w *WebUser) TableName() string {
 	return "user"
 }
@@ -60,15 +72,13 @@ func (w *UserGroup) TableName() string {
 	return "user"
 }
 
+func (t*Total) TableName()string{
+	return "user"
+}
+
 //二级认证审核
 func (w *WebUser) SecondAffirmLimit(uid, status int) error {
-	//err :=new(apis.VendorApi).AddAwardToken(uid)
-	//if err!=nil{
-	//	//sess.Rollback()
-	//	fmt.Println(err.Error())
-	//	fmt.Println("赠送奖励失败")
-	//}
-	//return nil
+
 	engine := utils.Engine_common
 	sess := engine.NewSession()
 	defer sess.Close()
@@ -137,6 +147,7 @@ func (w *WebUser) SecondAffirmLimit(uid, status int) error {
 		err = new(apis.VendorApi).Reflash(uid)
 		if err != nil {
 			fmt.Println("缓存清理失败!!!")
+			return err
 		}
 		return nil
 	}
@@ -159,11 +170,13 @@ func (w *WebUser) SecondAffirmLimit(uid, status int) error {
 	if err != nil {
 		sess.Rollback()
 		fmt.Println("赠送奖励失败")
+		return err
 	}
 	sess.Commit()
 	err = new(apis.VendorApi).Reflash(uid)
 	if err != nil {
 		fmt.Println("缓存清理失败!!!")
+		return err
 	}
 
 	return nil
@@ -214,8 +227,8 @@ func (w *WebUser) FirstAffirmLimit(uid, status int) error {
 	}
 	if status == utils.AUTH_FIRST {
 		wu.SecurityAuth = wu.SecurityAuth ^ utils.AUTH_FIRST // 16 为实名状态标识
-		wu.SetTardeMark = wu.SetTardeMark &^ utils.APPLY_FOR_FIRST
-		wu.SetTardeMark = wu.SetTardeMark &^ utils.APPLY_FOR_FIRST_NOT_ALREADY //没有通过
+		wu.SetTardeMark = wu.SetTardeMark &^ utils.APPLY_FOR_FIRST //删除 申请状态
+		wu.SetTardeMark = wu.SetTardeMark &^ utils.APPLY_FOR_FIRST_NOT_ALREADY //上出没有通过状态
 	}
 	//删除 申请状态
 
@@ -230,9 +243,10 @@ func (w *WebUser) FirstAffirmLimit(uid, status int) error {
 	sess.Commit()
 	err = new(apis.VendorApi).Reflash(uid)
 	if err != nil {
-		fmt.Println("缓存清理失败!!!")
-	}
 
+		fmt.Println("缓存清理失败!!!")
+		return err
+	}
 	return nil
 }
 
@@ -406,7 +420,7 @@ func (w *WebUser) GetTotalUser() (int, int, int, error) {
 	return Count.TotalCount, upDay, upWeek, nil
 }
 
-func (w *WebUser) GetAllUser(page, rows, status int, search string) (*ModelList, error) {
+func (w *WebUser) GetAllUser1(page, rows, status int, search string) (*ModelList, error) {
 	engine := utils.Engine_common
 
 	query := engine.Desc("user.uid")
@@ -418,13 +432,13 @@ func (w *WebUser) GetAllUser(page, rows, status int, search string) (*ModelList,
 		temp := fmt.Sprintf(" concat(IFNULL(`user`.`uid`,''),IFNULL(`user`.`phone`,''),IFNULL(`user_ex`.`nick_name`,''),IFNULL(`user`.`email`,'')) LIKE '%%%s%%'  ", search)
 		query = query.Where(temp)
 	}
-	tempquery := *query
-	count, err := tempquery.Count(&WebUser{})
+	tempQuery := *query
+	count, err := tempQuery.Count(&WebUser{})
 	if err != nil {
 		return nil, err
 	}
 	offset, modelList := w.Paging(page, rows, int(count))
-	users := make([]UserGroup, 0)
+	users := make([]Total, 0)
 	err = query.Limit(modelList.PageSize, offset).Find(&users)
 	if err != nil {
 		return nil, err

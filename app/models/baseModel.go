@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"github.com/shopspring/decimal"
 	"strconv"
+	"reflect"
+	"unsafe"
 )
 
 type BaseModel struct {
@@ -88,3 +90,45 @@ func (b *BaseModel) decimal(value float64) float64 {
 	value, _ = strconv.ParseFloat(fmt.Sprintf("%.4f", value), 64)
 	return value
 }
+
+func (ba*BaseModel)BytesToStringAscii(b []byte) string {
+	bh := (*reflect.SliceHeader)(unsafe.Pointer(&b))
+	sh := reflect.StringHeader{bh.Data, bh.Len}
+	return *(*string)(unsafe.Pointer(&sh))
+}
+
+func (ba *BaseModel)BytesToInt64Ascii(b []byte) int64 {
+	if len(b)==0 {
+		return 0
+	}
+	h:=ba.BytesToStringAscii(b)
+	if h=="0" {
+		return 0
+	}
+	a ,err := decimal.NewFromString(h)
+	if err!=nil {
+		panic("err b")
+	}
+	return a.IntPart()
+}
+
+
+func (ba*BaseModel)BytesToIntAscii(b []byte) int {
+	if len(b)==0 {
+		return 0
+	}
+	h:=ba.BytesToStringAscii(b)
+	if h=="0" {
+		return 0
+	}
+	r,err:=strconv.Atoi(h)
+	if err!=nil {
+		panic("err b")
+	}
+	return r
+}
+//func (*BaseModel)BytesToStringAscii(b []byte) string {
+//	bh := (*reflect.SliceHeader)(unsafe.Pointer(&b))
+//	sh := reflect.StringHeader{bh.Data, bh.Len}
+//	return *(*string)(unsafe.Pointer(&sh))
+//}

@@ -5,21 +5,20 @@ import (
 	"os"
 
 	"admin/app"
+	"admin/app/models"
 	"admin/middleware"
 	"admin/session"
 	"admin/utils"
-
+	"admin/cron"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 
-	"admin/cron"
 )
 
 func main() {
 	if os.Getenv("ADMIN_API_ENV") == "" {
 		panic("环境变量ADMIN_API_ENV未设置")
 	}
-
 	// 定时任务
 	cron.InitCron()
 
@@ -30,7 +29,8 @@ func main() {
 
 	// 配置gin
 	r := gin.Default()
-
+	//定时任务
+	go models.DailyStart()
 	// session
 	r.Use(sessions.Sessions("mysession", session.Store))
 

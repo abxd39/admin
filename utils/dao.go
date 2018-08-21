@@ -119,11 +119,12 @@ func init() {
 	apis.InitUserUrl(remote,local,key)
 	award:=Cfg.MustValue("award","url")
 	awardKey:=Cfg.MustValue("award","key")
+	verifyKey:=Cfg.MustValue("award","verifykey")
 	if award ==``{
 		fmt.Printf(err.Error())
 		panic(err)
 	}
-	apis.InitAwardUrl(award,awardKey)
+	apis.InitAwardUrl(award,awardKey,verifyKey)
 	return
 
 }
