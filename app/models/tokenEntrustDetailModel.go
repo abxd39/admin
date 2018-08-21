@@ -61,7 +61,7 @@ func (this *EntrustDetail) EvacuateOder(uid int, odid string) error {
 		return errors.New("订单不存在！！")
 	}
 	_, err = query.Update(&EntrustDetail{
-		States: -1,
+		States: 3,
 	})
 	if err != nil {
 		return err

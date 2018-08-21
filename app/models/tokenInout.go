@@ -253,6 +253,7 @@ func (t *TokenInout) OptTakeToken(id, status int) error {
 	}
 	//审核通过
 	if status == utils.VERIFY_OUT_TOKEN_MARK {
+		fmt.Println("审核通过")
 		mount := t.Int64ToFloat64By8Bit(t.Amount)
 		////fmt.Println("num=",)
 		strMount := fmt.Sprintf("%.10f", mount)
@@ -282,6 +283,12 @@ func (t *TokenInout) OptTakeToken(id, status int) error {
 	//审核撤销
 	if status == utils.VERIFY_REVOKE_TOKEN_MARK{
 		//需要王炳雨提供接口
+		err:=new(apis.VendorApi).RevokeOutToken(int64(t.Uid),int64(t.Tokenid),t.Amount+t.Fee)
+		if err!=nil{
+			sess.Rollback()
+			utils.AdminLog.Error(err.Error())
+			return err
+		}
 	}
 	sess.Commit()
 	return nil

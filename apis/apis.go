@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"time"
 )
 
 type VendorApi struct{}
@@ -15,6 +16,7 @@ type VendorApi struct{}
 var userUrl = ""
 var awardUrl = ""
 var privateKey = "hhhhhhhhhhhhhhhhhh"
+var verifykey ="32zBKHYCjK8ZBWbwCG1HarNZqOBBbKLodsCI1V20"
 
 var walletUrl = ""
 
@@ -33,9 +35,12 @@ func InitUserUrl(remoteUrl, localUrl, key string) {
 
 }
 
-func InitAwardUrl(url, key string) {
+func InitAwardUrl(url, key,verify string) {
 	if key != `` {
 		privateKey = key
+	}
+	if verify!=``{
+		verifykey = verify
 	}
 	awardUrl = url
 }
@@ -165,6 +170,7 @@ func (VendorApi) GetTradeSigntx(uid, tid int, addr, mount string) (string, error
 	if err != nil {
 		return "", err
 	}
+	fmt.Println(walletUrl+"/wallet/signtx?")
 	fmt.Println(string(body))
 	err = json.Unmarshal(body, rsp)
 	if err != nil {
@@ -213,6 +219,8 @@ func (VendorApi) PostOutToken(uid, tid, id int, sign string) error {
 	if err != nil {
 		return err
 	}
+	fmt.Println(walletUrl+"/wallet/sendrawtx?")
+	fmt.Println(string(body))
 	err = json.Unmarshal(body, rsp)
 	if err != nil {
 		return err
@@ -256,11 +264,59 @@ func (VendorApi) PostOutTokenBtc(uid, tid, id int, addr, mount string) error {
 	if err != nil {
 		return err
 	}
+	fmt.Println(walletUrl+"/wallet/biti_btc?")
+	fmt.Println(string(body))
 	err = json.Unmarshal(body, rsp)
 	if err != nil {
 		return err
 	}
 	if rsp.Code != 0 {
+		return errors.New(rsp.Msg)
+	}
+	return nil
+}
+
+//提币审核撤销
+func (VendorApi) RevokeOutToken(uid,tid,num int64)error{
+	params := make(map[string]interface{})
+	params["uid"] = uid
+	params["ukey"] =  fmt.Sprintf("%d_%d", time.Now().UnixNano(),uid)
+	params["key"]=verifykey
+	params["token_id"] =tid
+	params["num"] =num
+	bytesData, err := json.Marshal(params)
+	if err != nil {
+		return err
+	}
+	reader := bytes.NewReader(bytesData)
+	//url :=userHost
+	fmt.Println(userUrl+"/wallet/cancel_fronze")
+	request, err := http.NewRequest("POST", userUrl+"/wallet/cancel_fronze", reader)
+	if err != nil {
+		return err
+	}
+	request.Header.Set("Content-Type", "application/json;charset=UTF-8")
+	client := http.Client{}
+	result, err := client.Do(request)
+	if err != nil {
+		return err
+	}
+	body,err:=ioutil.ReadAll(result.Body)
+	if err!=nil{
+		return err
+	}
+	rsp:=&struct {
+		Code int
+		Msg string
+	}{}
+	fmt.Println(userUrl+"/wallet/cancel_fronze")
+	fmt.Println(string(body))
+	err=json.Unmarshal(body,rsp)
+	if err!=nil{
+		return err
+	}
+	fmt.Println(rsp)
+	if rsp.Code!=0{
 		return errors.New(rsp.Msg)
 	}
 	return nil
