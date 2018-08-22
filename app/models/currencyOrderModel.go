@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 	"time"
+	"admin/utils/convert"
 )
 
 // 订单表
@@ -94,81 +95,152 @@ func (o *OrderGroup) TableName() string {
 
 //查询个人的所有数据货币的交易记录
 func (this *Order) GetOrderListOfUid(page, rows, uid, token_id int) (*ModelList, error) {
-
+	var err error
+	tmplist := new(ModelList)
 	engine := utils.Engine_currency
 	//统计
-	type statistics struct {
-		TokenId      int     `json:"token_id"`
-		TokenName    string  `json:"token_name"`
-		BuyTotal     float64 `json:"buy_toal"`          //累计买入
-		BuyTotalCny  float64 `json:"buy_toal_cny"`      //累计买入折合
-		SellTotal    float64 `json:"sell_total"`        //累计卖出
-		SellTotalCny float64 `json:"sell_total_cny"`    //累计卖出折合
-		Transfer     float64 `json:"transfer" xorm:"-"` //累计划转
+	type Statistics struct {
+		TokenId      int       `json:"token_id"`
+		TokenName    string    `json:"token_name"`
+		BuyTotal     string   `json:"buy_toal"` //累计买入
+		BuyTotalCny  string   `json:"buy_toal_cny"` //累计买入折合
+		SellTotal    string   `json:"sell_total"` //累计卖出
+		SellTotalCny string   `json:"sell_total_cny"`//累计卖出折合
+		Transfer     string   `json:"transfer"`  //累计划转
 	}
-	sql := fmt.Sprintf("SELECT o.token_id,SUM( IF( o.sell_id=%d, o.num_total_price, 0)) DIV 100000000 AS sell_total_cny , SUM( IF( o.sell_id=%d, o.num, 0)) DIV 100000000 AS sell_total, SUM( IF( o.sell_id=%d, o.num_total_price, 0))DIV 100000000 AS buy_total_cny, SUM( IF( o.sell_id=%d, o.num, 0))DIV 100000000 AS buy_total FROM `order` o  ", uid, uid, uid, uid)
-	condition := ""
-	if token_id != 0 {
-		condition = fmt.Sprintf("WHERE o.token_id=%d ", token_id)
-	} else {
-		condition = fmt.Sprintf(" GROUP BY o.token_id ")
-	}
-	countSql := fmt.Sprintf("select count(t.token_id) num from(%s) t", sql+condition)
-	count := &struct {
-		Num int
-	}{}
-	_, err := engine.SQL(countSql).Get(count)
-	if err != nil {
-		return nil, err
-	}
-	offset, mList := this.Paging(page, rows, count.Num)
-	limitStr := fmt.Sprintf("LIMIT %d, %d; ", offset, mList.PageSize)
-	list := make([]statistics, 0)
-	err = engine.SQL(sql + condition + limitStr).Find(&list)
-	if err != nil {
-		return nil, err
-	}
+
 	//查询所有币种名称及Id
-	reslt, err := new(CommonTokens).GetTokenList()
-	if err != nil {
-		return nil, err
+	if page <= 1 {
+		page = 1
 	}
-	tidList := make([]int, 0)
-	for index, tokenid := range list {
-		//根据token_id 查找货币名称
-		for _, value := range reslt {
-			if value.Id == uint32(tokenid.TokenId) {
-				list[index].TokenName = value.Mark
-				tidList = append(tidList, tokenid.TokenId)
-				break
+	if rows <= 0 {
+		rows = 10
+	}
+
+	type TokenIdStruct struct {
+		TokenId   int32  `json:"token_id"`
+	}
+	gettokenIdSql := "SELECT token_id FROM  g_currency.`user_currency_history` WHERE `uid`=?  GROUP BY token_id  LIMIT ? OFFSET ?"
+	var tokenList  []TokenIdStruct
+	err = engine.SQL(gettokenIdSql, uid, rows, (page - 1)* rows ).Find(&tokenList)
+	if err != nil {
+		fmt.Println(err)
+		return tmplist,err
+	}
+
+	var totalList []TokenIdStruct
+	getTotalSql := "SELECT token_id FROM  g_currency.`user_currency_history` WHERE `uid`=? GROUP BY token_id"
+	err = engine.SQL(getTotalSql, uid).Find(&totalList)
+	total := len(totalList)
+
+	var tokenIdList []int32
+	for _, tk := range tokenList {
+		tokenIdList = append(tokenIdList, tk.TokenId)
+	}
+
+	result, err  := new(CommonTokens).GetTokenByTokenIds(tokenIdList)
+	if err != nil {
+		fmt.Println(err)
+		return tmplist, err
+	}
+	tokenNameMap :=  make(map[int32]string, 0)
+	for _, token := range result {
+		tokenNameMap[int32(token.Id)] = token.Mark
+	}
+
+
+	fmt.Println("tokenList:", tokenList)
+
+	type AllToken struct {
+		Num            int64   `json:"num"`
+		NumTotalPrice  int64   `json:"num_total_price"`
+		TokenId        int64   `json:"token_id"`
+	}
+
+	type AllTransfer struct {
+		Num   	int64   `json:"num"`
+		TokenId int64   `json:"token_id"`
+	}
+
+	// 查买入统计
+	var alltokenBuy []AllToken
+	buySql :="select num, num_total_price, token_id from `order` where `buy_id`=? and states = 3"
+	err = engine.SQL(buySql, uid).In("token_id", tokenList).Find(&alltokenBuy)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+
+	// 卖出统计
+	var alltokenSell []AllToken
+	sellSql := "select num, num_total_price, token_id from `order` where `sell_id`=? and states = 3 "
+	err = engine.SQL(sellSql, uid).In("token_id", tokenList).Find(&alltokenSell)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	// 划转统计
+	var alltransfers []AllTransfer
+	transSql := "select num, token_id from `user_currency_history` where `uid`=? and operator=4"
+	err = engine.SQL(transSql, uid).In("token_id", tokenList).Find(&alltransfers)
+	if err != nil {
+		fmt.Println(err)
+	}
+	//fmt.Println(alltransfers)
+	var statics []Statistics
+	for _, tk := range tokenList {
+		var totalBuyNum int64
+		var totalBuyNumCny int64
+		for _, tkBuy := range alltokenBuy {
+			if tkBuy.TokenId == int64(tk.TokenId) {
+				totalBuyNum += tkBuy.Num
+				totalBuyNumCny += tkBuy.NumTotalPrice
 			}
 		}
+		var totalSellNum int64
+		var totalSellNumCny int64
+		for _, tkSell := range alltokenSell {
+			if tkSell.TokenId == int64(tk.TokenId) {
+				totalSellNum += tkSell.Num
+				totalSellNumCny += tkSell.NumTotalPrice
+			}
+		}
+		var totalTransNum int64
+		for _, tkTrans := range alltransfers {
+			if tkTrans.TokenId == int64(tk.TokenId){
+				totalTransNum += tkTrans.Num
+			}
+		}
+		tmp := Statistics{}
+		tmp.TokenId   = int(tk.TokenId)
+		tmp.TokenName = tokenNameMap[tk.TokenId]
+		tmp.BuyTotal    = convert.Int64ToStringBy8Bit(totalBuyNum)
+		tmp.BuyTotalCny = fmt.Sprintf("%.2f", convert.Int64ToFloat64By8Bit(totalBuyNumCny))
+		tmp.SellTotal   = convert.Int64ToStringBy8Bit(totalSellNum)
+		tmp.SellTotalCny = fmt.Sprintf("%.2f", convert.Int64ToFloat64By8Bit(totalSellNumCny))
+		tmp.Transfer     = convert.Int64ToStringBy8Bit(totalTransNum)
+		//if totalTransNum <= 0 && totalSellNum <= 0 && totalBuyNum <= 0 && totalSellNumCny <= 0 && totalBuyNumCny <= 0 {
+		//	continue
+		//}else{
+		statics       = append(statics, tmp)
+		//}
 	}
 
-	type transfer struct {
-		TokenId int64
-		Num     int64
+	var pagecount int
+	if (int(total) % rows) == 0{
+		pagecount = int(total) / rows
+	} else {
+		pagecount = (int(total) / rows) + 1
 	}
-	transferList := make([]transfer, 0)
-	//查询划转的数量
-	query := engine.Table("user_currency_history").Select("SUM(num)DIV 10000000 AS SUM ,token_id").In("token_id", transferList).GroupBy("token_id")
-	queryCount := *query
-	ct, err := queryCount.Count(&UserCurrencyHistory{})
-	if err != nil {
-		return nil, err
-	}
-	if ct == 0 {
-		//根据用户uid 获取该用户的所有划转数量
-		engine.Select("SUM(num)DIV 10000000 AS SUM ,token_id").Where("uid=?", uid)
-	}
-	toffset, tList := this.Paging(page, rows, int(ct))
-	err = query.Limit(toffset, tList.PageSize).Find(&transferList)
-	if err != nil {
-		return nil, err
-	}
+	tmplist.IsPage = true
+	tmplist.Total  = int(total)
+	tmplist.PageCount = pagecount
+	tmplist.PageSize  = rows
+	tmplist.PageIndex = page
+	tmplist.Items = statics
 
-	mList.Items = list
-	return mList, nil
+	return tmplist, nil
+
 }
 
 //

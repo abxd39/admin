@@ -2,6 +2,7 @@ package models
 
 import (
 	"admin/utils"
+	"fmt"
 )
 
 // 货币类型表
@@ -25,4 +26,32 @@ func (t *CommonTokens) GetTokenList() ([]CommonTokens, error) {
 		return nil, err
 	}
 	return list, nil
+}
+
+
+
+func (t *CommonTokens) GetTokenPage(page, rows int, tokenid int32) (ctoks []CommonTokens,total int64,err error) {
+	engine := utils.Engine_common
+	query := engine.Asc("id")
+	ctk := new(CommonTokens)
+	if tokenid != 0{
+		query = query.Where("id=?", tokenid)
+	}
+	tmpQuery := *query
+	countQuery := &tmpQuery
+	err = query.Limit(int(rows), (int(page)-1)*int(rows)).Find(&ctoks)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	total, _ = countQuery.Count(ctk)
+	return
+}
+
+
+func (t *CommonTokens) GetTokenByTokenIds(tokenList []int32)(ctoks []CommonTokens, err error) {
+	engine := utils.Engine_common
+	err = engine.In("id", tokenList).Find(&ctoks)
+	return
 }
