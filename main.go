@@ -1,18 +1,16 @@
 package main
 
 import (
-	"fmt"
 	"os"
-
+	"github.com/gin-gonic/gin"
+	"github.com/gin-contrib/sessions"
+	"fmt"
+	"admin/session"
+	"admin/cron"
 	"admin/app/models"
 	"admin/middleware"
-	"admin/session"
-	"admin/utils"
-	"admin/cron"
-	"github.com/gin-contrib/sessions"
-	"github.com/gin-gonic/gin"
-
 	"admin/app"
+	"admin/utils"
 )
 
 func main() {
@@ -40,6 +38,13 @@ func main() {
 	app.Router(r)
 
 	r.Run(fmt.Sprintf(":%d", utils.Cfg.MustInt("http", "port")))
+
+
 }
 
 
+//func main() {
+//
+//	models.DailyStart()
+//
+//}

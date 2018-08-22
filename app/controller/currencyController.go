@@ -9,7 +9,7 @@ import (
 
 	"admin/apis"
 	"github.com/gin-gonic/gin"
-	"strconv"
+	"admin/utils/convert"
 )
 
 type CurrencyController struct {
@@ -202,14 +202,16 @@ func(cu*CurrencyController)total(c*gin.Context){
 		cu.RespErr(c, err)
 		return
 	}
-
+	var totalCurrencyInt int64
+	var totalTokenInt int64
 	fmt.Println(currencyList)
 	for i, v := range value {
 		for _, vt := range tokenList {
 			if vt.Uid == uint64(v.Uid) {
 				value[i].LockTokenCNY = vt.FrozenCny
 				value[i].TotalTokenCNY = vt.BalanceCny
-				value[i].TotalCNY, _ = strconv.ParseFloat(vt.TotalCny, 64)
+				//totalInt =vt.TotalCny
+				totalTokenInt = vt.FrozenCnyInt+ vt.BalanceCnyInt
 				break
 			}
 		}
@@ -217,11 +219,12 @@ func(cu*CurrencyController)total(c*gin.Context){
 			if vc.Uid == uint64(v.Uid) {
 				value[i].LockCurrentCNY = vc.FrozenCny
 				value[i].TotalCurrentCNY = vc.BalanceCny
-				temp, _ := strconv.ParseFloat(vc.TotalCny, 64)
-				value[i].TotalCNY += temp
+				//temp, _ := strconv.ParseFloat(vc.TotalCny, 64)
+				totalCurrencyInt = vc.BalanceCnyInt +vc.FrozenCnyInt
 				break
 			}
 		}
+		value[i].TotalCNY=convert.Int64ToStringBy8Bit(totalTokenInt+totalCurrencyInt)
 	}
 	result.Items = value
 	cu.Put(c, "list", result)

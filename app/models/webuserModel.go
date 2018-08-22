@@ -58,7 +58,7 @@ type Total struct {
 	Email            string	 `json:"email"`
 	NickName          string `json:"nick_name"`
 	Status           int `json:"status"`
-	TotalCNY           float64 `json:"total_cny"` // 账户的折合总资产
+	TotalCNY           string `json:"total_cny"` // 账户的折合总资产
 	TotalCurrentCNY    string `json:"total_current_cny"` //法币账户折合
 	LockCurrentCNY     string  `json:"lock_current_cny"`// 法币折合冻结CNY
 	TotalTokenCNY      string  `json:"total_token_cny"`//币币账户折合

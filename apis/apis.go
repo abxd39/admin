@@ -381,6 +381,8 @@ type Cny struct {
 	BalanceCny string `json:"balance_cny"`
 	FrozenCny  string `json:"frozen_cny"`
 	TotalCny   string `json:"total_cny"`
+	BalanceCnyInt int64 `json:"balance_cny_int"`
+	FrozenCnyInt int64 `json:"frozen_cny_int"`
 }
 
 type listCny struct {
