@@ -364,7 +364,7 @@ func (cu *CurrencyController) totalCurrencyBalance(c *gin.Context) {
 	cu.Put(c, "list", result)
 
 	// 返回
-	cu.RespOK(c, "成功")
+	cu.RespOK(c)
 	return
 }
 

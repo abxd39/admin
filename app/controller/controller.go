@@ -40,7 +40,7 @@ func (c *Controller) Put(ctx *gin.Context, key string, value interface{}) {
 }
 
 // 正确的响应
-func (c *Controller) RespOK(ctx *gin.Context, msg ...string) { // todo 去掉msg参数
+func (c *Controller) RespOK(ctx *gin.Context) {
 	resp := &Response{
 		Code: constant.RESPONSE_CODE_OK,
 		Msg:  "成功",
