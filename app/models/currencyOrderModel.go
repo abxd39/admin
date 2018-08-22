@@ -199,7 +199,11 @@ func (this *Order) GetOrderListOfUid(page, rows, uid, token_id int) (*ModelList,
 		tmp.SellTotal   = convert.Int64ToStringBy8Bit(totalSellNum)
 		tmp.SellTotalCny = fmt.Sprintf("%.2f", convert.Int64ToFloat64By8Bit(totalSellNumCny))
 		tmp.Transfer     = convert.Int64ToStringBy8Bit(totalTransNum)
-		statics       = append(statics, tmp)
+		if totalTransNum <= 0 && totalSellNum <= 0 && totalBuyNum <= 0 && totalSellNumCny <= 0 && totalBuyNumCny <= 0 {
+			continue
+		}else{
+			statics       = append(statics, tmp)
+		}
 	}
 
 	var pagecount int
