@@ -4,6 +4,7 @@ import (
 	"admin/utils"
 	"fmt"
 	"strconv"
+	"admin/utils/convert"
 )
 
 // 用户虚拟货币资产表
@@ -17,21 +18,19 @@ type UserCurrency struct {
 	Balance    int64  `xorm:"not null default 0 comment('余额') BIGINT"   json:"balance"`        // 余额
 	Address    string `xorm:"not null default '' comment('充值地址') VARCHAR(255)" json:"address"` // 充值地址
 	Version    int64  `xorm:"version"`
-	BalanceCny int64  `xorm:"default 0 comment('折合的余额人民币') BIGINT(20)"`
-	FreezeCny  int64  `xorm:"default 0 comment('冻结折合人民币') BIGINT(20)"`
+	BalanceCny int64  `xorm:"default 0 comment('折合的余额人民币') BIGINT(20)" json:"balance_cny"`
+	FreezeCny  int64  `xorm:"default 0 comment('冻结折合人民币') BIGINT(20)" json:"freeze_cny"`
 }
 
 //折合 rmb
 type AmountToCny struct {
 	UserCurrency `xorm:"extends"`
-	AmountTo   float64 `xorm:"-"json:"amount_to"` //折合人民币
+	AmountTo   string `xorm:"-"json:"amount_to"` //折合人民币
 	Email      string  `json:"email"`
 	Phone      string  `json:"phone"`
 	Status     int     `json:"status"`
 	NickName   string  `json:"nick_name"`
 	Account    string  `json:"account"`
-	BalanceCny float64 `xorm:"-" json:"balance_cny"`
-	FreezeCny  float64 `xorm:"-" json:"freeze_cny"`
 }
 
 func (this *AmountToCny) TableName() string {
@@ -75,6 +74,8 @@ func (this *UserCurrency) GetCurrencyList(page, rows, uid, tokenId int) (*ModelL
 		list[i].BalanceTrue = this.Int64ToFloat64By8Bit(v.Balance)
 		list[i].FreezeTrue = this.Int64ToFloat64By8Bit(v.Freeze)
 		list[i].AmountTo = this.Int64ToFloat64By8Bit(v.BalanceCny) + this.Int64ToFloat64By8Bit(v.FreezeCny)
+		fmt.Println(v.BalanceCny)
+		fmt.Println(v.FreezeCny)
 	}
 	mList.Items = list
 	return mList, nil
@@ -127,13 +128,15 @@ func (this *UserCurrency) CurrencyBalance(page, rows, status int, search string)
 	}
 	offset, mList := this.Paging(page, rows, int(count))
 	list := make([]AmountToCny, 0)
-	err = query.Select("sum(uc.freeze_cny) freeze_cny ,sum(uc.balance_cny) balance_cny,uc.uid ,uc.token_id,uc.freeze, u.phone,u.email,u.status,u.account").GroupBy("uc.uid").Limit(mList.PageSize, offset).Find(&list)
+	err = query.Select("sum(uc.freeze_cny) AS freeze_cny ,sum(uc.balance_cny) balance_cny,uc.uid ,uc.token_id,uc.freeze, u.phone,u.email,u.status,u.account").GroupBy("uc.uid").Limit(mList.PageSize, offset).Find(&list)
 	if err != nil {
 		return nil, err
 	}
 
 	for i, v := range list {
-		list[i].AmountTo = v.BalanceCny + v.FreezeCny
+		fmt.Println(v.BalanceCny)
+		fmt.Println(v.FreezeCny)
+		list[i].AmountTo = fmt.Sprintf("%.2f", convert.Int64ToFloat64By8Bit(v.BalanceCny +v.FreezeCny))
 	}
 	mList.Items = list
 

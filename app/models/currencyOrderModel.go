@@ -120,12 +120,17 @@ func (this *Order) GetOrderListOfUid(page, rows, uid, token_id int) (*ModelList,
 	type TokenIdStruct struct {
 		TokenId   int32  `json:"token_id"`
 	}
-	gettokenIdSql := "SELECT token_id FROM  g_currency.`user_currency_history` WHERE `uid`=?  GROUP BY token_id  LIMIT ? OFFSET ?"
+	var gettokenIdSql string
 	var tokenList  []TokenIdStruct
-	err = engine.SQL(gettokenIdSql, uid, rows, (page - 1)* rows ).Find(&tokenList)
-	if err != nil {
-		fmt.Println(err)
-		return tmplist,err
+	if token_id != 0 {
+		tokenList = append(tokenList, TokenIdStruct{TokenId: int32(token_id)})
+	}else{
+		gettokenIdSql = "SELECT token_id FROM  g_currency.`user_currency_history` WHERE `uid`=?  GROUP BY token_id  LIMIT ? OFFSET ?"
+		err = engine.SQL(gettokenIdSql, uid, rows, (page - 1)* rows ).Find(&tokenList)
+		if err != nil {
+			fmt.Println(err)
+			return tmplist,err
+		}
 	}
 
 	var totalList []TokenIdStruct
@@ -181,7 +186,7 @@ func (this *Order) GetOrderListOfUid(page, rows, uid, token_id int) (*ModelList,
 
 	// 划转统计
 	var alltransfers []AllTransfer
-	transSql := "select num, token_id from `user_currency_history` where `uid`=? and operator=4"
+	transSql := "select num, token_id from `user_currency_history` where `uid`=? and (operator=4 or operator=3)"
 	err = engine.SQL(transSql, uid).In("token_id", tokenList).Find(&alltransfers)
 	if err != nil {
 		fmt.Println(err)
@@ -219,11 +224,11 @@ func (this *Order) GetOrderListOfUid(page, rows, uid, token_id int) (*ModelList,
 		tmp.SellTotal   = convert.Int64ToStringBy8Bit(totalSellNum)
 		tmp.SellTotalCny = fmt.Sprintf("%.2f", convert.Int64ToFloat64By8Bit(totalSellNumCny))
 		tmp.Transfer     = convert.Int64ToStringBy8Bit(totalTransNum)
-		//if totalTransNum <= 0 && totalSellNum <= 0 && totalBuyNum <= 0 && totalSellNumCny <= 0 && totalBuyNumCny <= 0 {
-		//	continue
-		//}else{
-		statics       = append(statics, tmp)
-		//}
+		if totalTransNum <= 0 && totalSellNum <= 0 && totalBuyNum <= 0 && totalSellNumCny <= 0 && totalBuyNumCny <= 0 {
+			continue
+		}else{
+			statics       = append(statics, tmp)
+		}
 	}
 
 	var pagecount int
