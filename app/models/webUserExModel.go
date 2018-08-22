@@ -1,9 +1,10 @@
 package models
 
 import (
+	"admin/errors"
 	"admin/utils"
-	"errors"
 	"fmt"
+	"time"
 )
 
 type UserEx struct {
@@ -29,10 +30,6 @@ type FirstDetail struct {
 	VerifyMark   int    //一级实名认证状态
 }
 
-func (f *FirstDetail) TableName() string {
-	return "user_ex"
-}
-
 type InviteGroup struct {
 	UserEx      `xorm:"extends"`
 	Account     string `xorm:"comment('账号') unique VARCHAR(64)"`
@@ -42,7 +39,13 @@ type InviteGroup struct {
 	InviteCount int
 }
 
-func (w *InviteGroup) TableName() string {
+// 注册走势
+type RegisterTrend struct {
+	RegisterDate string `xorm:"register_date"`
+	RegisterNum  int    `xorm:"register_num"`
+}
+
+func (w *UserEx) TableName() string {
 	return "user_ex"
 }
 
@@ -142,4 +145,68 @@ func (w *UserEx) GetFirstDetail(uid int) (*FirstDetail, error) {
 		u.VerifyMark = 1
 	}
 	return u, nil
+}
+
+// 注册量走势图
+func (w *UserEx) RegisterTrendList(filter map[string]interface{}) ([]*RegisterTrend, error) {
+	// 时间区间，默认最近一周
+	today := time.Now().Format(utils.LAYOUT_DATE)
+	todayTime, _ := time.Parse(utils.LAYOUT_DATE, today)
+
+	dateBegin := todayTime.AddDate(0, 0, -6).Format(utils.LAYOUT_DATE)
+	dateEnd := today
+
+	// 筛选
+	if v, ok := filter["date_begin"]; ok {
+		dateBegin, _ = v.(string)
+	}
+	if v, ok := filter["date_end"]; ok {
+		dateEnd, _ = v.(string)
+	}
+
+	// 开始查询
+	session := utils.Engine_common.Where("1=1")
+
+	var list []*RegisterTrend
+	err := session.SQL(fmt.Sprintf("SELECT ue.register_date,COUNT(ue.uid) register_num FROM"+
+		" (SELECT uid,FROM_UNIXTIME(register_time, '%%Y-%%m-%%d') AS register_date FROM user_ex) ue"+
+		" WHERE ue.register_date>='%s' AND ue.register_date<='%s' GROUP BY ue.register_date ORDER BY ue.register_date ASC", dateBegin, dateEnd)).Find(&list)
+	if err != nil {
+		return nil, errors.NewSys(err)
+	}
+
+	// 上面的list会缺少注册人数为0的日期
+	// 需要进一步处理
+	// 1. 列出该区间内的所有日期
+	dateBeginTime, _ := time.Parse(utils.LAYOUT_DATE, dateBegin)
+	dateEndTime, _ := time.Parse(utils.LAYOUT_DATE, dateEnd)
+
+	var i int
+	var periodDateList []string
+	for {
+		now := dateBeginTime.AddDate(0, 0, i)
+		if now.Unix() > dateEndTime.Unix() { // 跳出
+			break
+		}
+		periodDateList = append(periodDateList, now.Format(utils.LAYOUT_DATE))
+		i++
+	}
+
+	// 2. 重组返回数据
+	newList := make([]*RegisterTrend, 0)
+	for _, date := range periodDateList {
+		var registerNum int
+		for _, v := range list {
+			if v.RegisterDate == date {
+				registerNum = v.RegisterNum
+			}
+		}
+
+		newList = append(newList, &RegisterTrend{
+			RegisterDate: date,
+			RegisterNum:  registerNum,
+		})
+	}
+
+	return newList, nil
 }

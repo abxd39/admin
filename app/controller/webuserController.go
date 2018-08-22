@@ -1,9 +1,13 @@
 package controller
 
 import (
-	"admin/app/models"
-	"admin/utils"
 	"fmt"
+	"regexp"
+	"time"
+
+	"admin/app/models"
+	"admin/constant"
+	"admin/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -51,7 +55,7 @@ func (w *WebUserManageController) Router(r *gin.Engine) {
 		g.GET("/get_system_list", w.GetSystemList)
 		g.GET("/export_system_list", w.ExportSystemList)
 
-		g.GET("/register_trend_map", w.RegisterTrendMap)
+		g.GET("/register_trend", w.RegisterTrend)
 	}
 }
 
@@ -692,7 +696,57 @@ func (w *WebUserManageController) VerifyOperator(list []models.UserGroup) []mode
 	return nil
 }
 
-// 注册量走势图
-func (w *WebUserManageController) RegisterTrendMap(ctx *gin.Context) {
+// 注册量走势
+func (w *WebUserManageController) RegisterTrend(ctx *gin.Context) {
+	// 筛选
+	filter := make(map[string]interface{})
+	if v := w.GetString(ctx, "token_id"); v != "" {
+		filter["token_id"] = v
+	}
+	if v := w.GetString(ctx, "date_begin"); v != "" {
+		if matched, err := regexp.Match(constant.REGE_PATTERN_DATE, []byte(v)); err != nil || !matched {
+			w.RespErr(ctx, "参数date_begin格式错误")
+			return
+		}
 
+		filter["date_begin"] = v
+	}
+	if v := w.GetString(ctx, "date_end"); v != "" {
+		if matched, err := regexp.Match(constant.REGE_PATTERN_DATE, []byte(v)); err != nil || !matched {
+			w.RespErr(ctx, "参数date_end格式错误")
+			return
+		}
+
+		filter["date_end"] = v
+	}
+
+	// 调用model
+	list, err := new(models.UserEx).RegisterTrendList(filter)
+	if err != nil {
+		w.RespErr(ctx, err)
+		return
+	}
+
+	// 组装数据
+	listLen := len(list)
+	x := make([]string, listLen)
+	y := make([]int, listLen)
+
+	var totalRegisterNum int
+	for k, v := range list {
+		totalRegisterNum += v.RegisterNum
+
+		datetime, _ := time.Parse(utils.LAYOUT_DATE, v.RegisterDate)
+		x[k] = datetime.Format("0102")
+		y[k] = v.RegisterNum
+	}
+
+	// 设置返回数据
+	w.Put(ctx, "x", x)
+	w.Put(ctx, "y", y)
+	w.Put(ctx, "total_register_num", totalRegisterNum)
+
+	// 返回
+	w.RespOK(ctx)
+	return
 }
