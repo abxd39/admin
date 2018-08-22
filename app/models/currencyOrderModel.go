@@ -186,7 +186,7 @@ func (this *Order) GetOrderListOfUid(page, rows, uid, token_id int) (*ModelList,
 
 	// 划转统计
 	var alltransfers []AllTransfer
-	transSql := "select num, token_id from `user_currency_history` where `uid`=? and operator=4"
+	transSql := "select num, token_id from `user_currency_history` where `uid`=? and (operator=4 or operator=3)"
 	err = engine.SQL(transSql, uid).In("token_id", tokenList).Find(&alltransfers)
 	if err != nil {
 		fmt.Println(err)
