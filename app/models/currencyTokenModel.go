@@ -48,3 +48,10 @@ func (t *CommonTokens) GetTokenPage(page, rows int, tokenid int32) (ctoks []Comm
 	total, _ = countQuery.Count(ctk)
 	return
 }
+
+
+func (t *CommonTokens) GetTokenByTokenIds(tokenList []int32)(ctoks []CommonTokens, err error) {
+	engine := utils.Engine_common
+	err = engine.In("id", tokenList).Find(&ctoks)
+	return
+}

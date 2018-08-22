@@ -116,19 +116,39 @@ func (this *Order) GetOrderListOfUid(page, rows, uid, token_id int) (*ModelList,
 	if rows <= 0 {
 		rows = 10
 	}
-	result ,total,  err := new(CommonTokens).GetTokenPage(page, rows, int32(token_id))
-	fmt.Println("total ...", total)
+
+	type TokenIdStruct struct {
+		TokenId   int32  `json:"token_id"`
+	}
+	gettokenIdSql := "SELECT token_id FROM  g_currency.`user_currency_history` WHERE `uid`=?  GROUP BY token_id  LIMIT ? OFFSET ?"
+	var tokenList  []TokenIdStruct
+	err = engine.SQL(gettokenIdSql, uid, rows, (page - 1)* rows ).Find(&tokenList)
 	if err != nil {
 		fmt.Println(err)
 		return tmplist,err
 	}
 
-	var tokenList  []int32
+	var totalList []TokenIdStruct
+	getTotalSql := "SELECT token_id FROM  g_currency.`user_currency_history` WHERE `uid`=? GROUP BY token_id"
+	err = engine.SQL(getTotalSql, uid).Find(&totalList)
+	total := len(totalList)
+
+	var tokenIdList []int32
+	for _, tk := range tokenList {
+		tokenIdList = append(tokenIdList, tk.TokenId)
+	}
+
+	result, err  := new(CommonTokens).GetTokenByTokenIds(tokenIdList)
+	if err != nil {
+		fmt.Println(err)
+		return tmplist, err
+	}
 	tokenNameMap :=  make(map[int32]string, 0)
 	for _, token := range result {
-		tokenList = append(tokenList, int32(token.Id))
 		tokenNameMap[int32(token.Id)] = token.Mark
 	}
+
+
 	fmt.Println("tokenList:", tokenList)
 
 	type AllToken struct {
@@ -168,11 +188,11 @@ func (this *Order) GetOrderListOfUid(page, rows, uid, token_id int) (*ModelList,
 	}
 	//fmt.Println(alltransfers)
 	var statics []Statistics
-	for _, token_id := range tokenList {
+	for _, tk := range tokenList {
 		var totalBuyNum int64
 		var totalBuyNumCny int64
 		for _, tkBuy := range alltokenBuy {
-			if tkBuy.TokenId == int64(token_id) {
+			if tkBuy.TokenId == int64(tk.TokenId) {
 				totalBuyNum += tkBuy.Num
 				totalBuyNumCny += tkBuy.NumTotalPrice
 			}
@@ -180,30 +200,30 @@ func (this *Order) GetOrderListOfUid(page, rows, uid, token_id int) (*ModelList,
 		var totalSellNum int64
 		var totalSellNumCny int64
 		for _, tkSell := range alltokenSell {
-			if tkSell.TokenId == int64(token_id) {
+			if tkSell.TokenId == int64(tk.TokenId) {
 				totalSellNum += tkSell.Num
 				totalSellNumCny += tkSell.NumTotalPrice
 			}
 		}
 		var totalTransNum int64
 		for _, tkTrans := range alltransfers {
-			if tkTrans.TokenId == int64(token_id){
+			if tkTrans.TokenId == int64(tk.TokenId){
 				totalTransNum += tkTrans.Num
 			}
 		}
 		tmp := Statistics{}
-		tmp.TokenId   = int(token_id)
-		tmp.TokenName = tokenNameMap[token_id]
+		tmp.TokenId   = int(tk.TokenId)
+		tmp.TokenName = tokenNameMap[tk.TokenId]
 		tmp.BuyTotal    = convert.Int64ToStringBy8Bit(totalBuyNum)
 		tmp.BuyTotalCny = fmt.Sprintf("%.2f", convert.Int64ToFloat64By8Bit(totalBuyNumCny))
 		tmp.SellTotal   = convert.Int64ToStringBy8Bit(totalSellNum)
 		tmp.SellTotalCny = fmt.Sprintf("%.2f", convert.Int64ToFloat64By8Bit(totalSellNumCny))
 		tmp.Transfer     = convert.Int64ToStringBy8Bit(totalTransNum)
-		if totalTransNum <= 0 && totalSellNum <= 0 && totalBuyNum <= 0 && totalSellNumCny <= 0 && totalBuyNumCny <= 0 {
-			continue
-		}else{
-			statics       = append(statics, tmp)
-		}
+		//if totalTransNum <= 0 && totalSellNum <= 0 && totalBuyNum <= 0 && totalSellNumCny <= 0 && totalBuyNumCny <= 0 {
+		//	continue
+		//}else{
+		statics       = append(statics, tmp)
+		//}
 	}
 
 	var pagecount int
@@ -218,7 +238,7 @@ func (this *Order) GetOrderListOfUid(page, rows, uid, token_id int) (*ModelList,
 	tmplist.PageSize  = rows
 	tmplist.PageIndex = page
 	tmplist.Items = statics
-	//fmt.Println("mlist:", tmplist)
+
 	return tmplist, nil
 
 }
