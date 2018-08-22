@@ -120,12 +120,17 @@ func (this *Order) GetOrderListOfUid(page, rows, uid, token_id int) (*ModelList,
 	type TokenIdStruct struct {
 		TokenId   int32  `json:"token_id"`
 	}
-	gettokenIdSql := "SELECT token_id FROM  g_currency.`user_currency_history` WHERE `uid`=?  GROUP BY token_id  LIMIT ? OFFSET ?"
+	var gettokenIdSql string
 	var tokenList  []TokenIdStruct
-	err = engine.SQL(gettokenIdSql, uid, rows, (page - 1)* rows ).Find(&tokenList)
-	if err != nil {
-		fmt.Println(err)
-		return tmplist,err
+	if token_id != 0 {
+		tokenList = append(tokenList, TokenIdStruct{TokenId: int32(token_id)})
+	}else{
+		gettokenIdSql = "SELECT token_id FROM  g_currency.`user_currency_history` WHERE `uid`=?  GROUP BY token_id  LIMIT ? OFFSET ?"
+		err = engine.SQL(gettokenIdSql, uid, rows, (page - 1)* rows ).Find(&tokenList)
+		if err != nil {
+			fmt.Println(err)
+			return tmplist,err
+		}
 	}
 
 	var totalList []TokenIdStruct
