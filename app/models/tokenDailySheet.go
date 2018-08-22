@@ -1,13 +1,12 @@
 package models
 
 import (
-
-	"fmt"
-	"log"
-	"time"
 	"admin/errors"
 	"admin/utils"
 	"admin/utils/convert"
+	"fmt"
+	"log"
+	"time"
 
 	"github.com/robfig/cron"
 )
@@ -82,6 +81,7 @@ func (this *TokenDailySheet) TradeTrendList(filter map[string]interface{}) ([]*T
 		And("date>=?", dateBegin).
 		And("date<=?", dateEnd).
 		GroupBy("date").
+		OrderBy("date ASC").
 		Find(&list)
 	if err != nil {
 		return nil, errors.NewSys(err)

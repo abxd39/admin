@@ -153,6 +153,7 @@ func (this *CurrencyDailySheet) TradeTrendList(filter map[string]interface{}) ([
 		And("date>=?", dateBegin+" 00:00:00").
 		And("date<=?", dateEnd+" 00:00:00").
 		GroupBy("date").
+		OrderBy("date ASC	").
 		Find(&list)
 	if err != nil {
 		return nil, errors.NewSys(err)
