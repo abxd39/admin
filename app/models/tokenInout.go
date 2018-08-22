@@ -6,6 +6,7 @@ import (
 	"admin/utils"
 	"fmt"
 	"time"
+	"admin/utils/convert"
 )
 
 //冲 提 币明细流水表
@@ -68,7 +69,7 @@ func (t *TokenInout) GetOutTokenFee() (float64, error) {
 func (t *TokenInout) GetTotalInfoList(page, rows, tid, opt int, search string) (*ModelList, error) {
 	enginge := utils.Engine_wallet
 	//SELECT t.time,t.token_name,t.total,t.uid
-	sql1 := " FROM (SELECT DATE_FORMAT(created_time,'%Y%m%d') DAY,created_time time ,opt,SUM(amount) total ,tokenid,token_name name,uid FROM token_inout "
+	sql1 := " FROM (SELECT DATE_FORMAT(created_time,'%Y%m%d') DAY,created_time time ,opt,SUM(amount) amount ,tokenid,token_name name,uid FROM token_inout "
 	sql := fmt.Sprintf("WHERE opt=%d", opt)
 	if tid != 0 {
 		tmp := fmt.Sprintf(" AND tokenid=%d", tid)
@@ -101,16 +102,20 @@ func (t *TokenInout) GetTotalInfoList(page, rows, tid, opt int, search string) (
 	type Return struct {
 		Day   int
 		Uid   int
-		Total uint64 //提币总数
+		Amount int64
+		Total string `xorm:"-"` //提币总数
 		Name  string //货币名称
 	}
 	limitSql := fmt.Sprintf(" limit %d offset %d ", mList.PageSize, offset)
 	list := make([]Return, 0)
-	contentSql := "SELECT t.time,t.name,t.total,t.uid ,t.day" + sql + limitSql
+	contentSql := "SELECT t.time,t.name,t.amount,t.uid ,t.day" + sql + limitSql
 	fmt.Println(contentSql)
 	err = enginge.SQL(contentSql).Find(&list)
 	if err != nil {
 		return nil, err
+	}
+	for i,v:=range list{
+		list[i].Total = convert.Int64ToStringBy8Bit(v.Amount)
 	}
 	mList.Items = list
 	return mList, nil
