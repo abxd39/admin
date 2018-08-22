@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"admin/app"
 	"admin/app/models"
 	"admin/middleware"
 	"admin/session"
@@ -13,6 +12,7 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 
+	"admin/app"
 )
 
 func main() {
