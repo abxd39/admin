@@ -50,6 +50,8 @@ func (w *WebUserManageController) Router(r *gin.Engine) {
 		g.GET("/get_system", w.GetSystem)
 		g.GET("/get_system_list", w.GetSystemList)
 		g.GET("/export_system_list", w.ExportSystemList)
+
+		g.GET("/register_trend_map", w.RegisterTrendMap)
 	}
 }
 
@@ -603,7 +605,7 @@ func (w *WebUserManageController) totalProperty(c *gin.Context) {
 	}
 
 	w.Put(c, "list", list)
-	w.RespOK(c, "成功")
+	w.RespOK(c)
 	return
 }
 
@@ -688,4 +690,9 @@ func (w *WebUserManageController) VerifyOperator(list []models.UserGroup) []mode
 
 	}
 	return nil
+}
+
+// 注册量走势图
+func (w *WebUserManageController) RegisterTrendMap(ctx *gin.Context) {
+
 }

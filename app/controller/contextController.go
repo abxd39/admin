@@ -29,10 +29,10 @@ func (this *ContextController) Router(r *gin.Engine) {
 		g.POST("/add_article", this.AddArticle)                  // 添加文章
 		g.GET("/article_type", this.GetArticleType)              //获取文章类型
 		//g.POST("/local_filetoali", this.LocalFileToAliCloud)     //上传图片到 oss
-		g.POST("/delete_article", this.DeleteArticle)            //删除文章
-		g.GET("/get_article", this.GetArticle)                   //获取文章
-		g.POST("/upordown_article", this.UpArticle)              //上下架文章
-		g.POST("/upload_picture",this.UploadOss)//上传图片到oss
+		g.POST("/delete_article", this.DeleteArticle) //删除文章
+		g.GET("/get_article", this.GetArticle)        //获取文章
+		g.POST("/upordown_article", this.UpArticle)   //上下架文章
+		g.POST("/upload_picture", this.UploadOss)     //上传图片到oss
 	}
 }
 
@@ -168,7 +168,7 @@ func (this *ContextController) DeleteBanner(c *gin.Context) {
 		this.RespErr(c, err)
 		return
 	}
-	this.RespOK(c, "成功")
+	this.RespOK(c)
 	return
 }
 
@@ -188,7 +188,7 @@ func (this *ContextController) GetBanner(c *gin.Context) {
 		return
 	}
 	this.Put(c, "data", result)
-	this.RespOK(c, "成功")
+	this.RespOK(c)
 	return
 }
 
@@ -210,10 +210,9 @@ func (this *ContextController) UpBanner(c *gin.Context) {
 		this.RespErr(c, err)
 		return
 	}
-	this.RespOK(c, "成功")
+	this.RespOK(c)
 	return
 }
-
 
 func (this *ContextController) UploadOss(c *gin.Context) {
 	req := struct {
@@ -235,7 +234,7 @@ func (this *ContextController) UploadOss(c *gin.Context) {
 	// c.Request.Header.Set("Access-Control-Allow-Origin", "*")
 	//io.WriteString(c, response)
 	this.Put(c, "path", path)
-	this.RespOK(c, "成功")
+	this.RespOK(c)
 	return
 }
 
@@ -247,7 +246,7 @@ func (this *ContextController) GetArticleType(c *gin.Context) {
 		return
 	}
 	this.Put(c, "list", result)
-	this.RespOK(c, "成功")
+	this.RespOK(c)
 	return
 }
 func (this *ContextController) AddFriendlyLink(c *gin.Context) {
@@ -275,7 +274,7 @@ func (this *ContextController) AddFriendlyLink(c *gin.Context) {
 	//response := new(models.PolicyToken).Get_policy_token()
 	// c.Request.Header.Set("Access-Control-Allow-Methods", "POST")
 	// c.Request.Header.Set("Access-Control-Allow-Origin", "*")
-	this.RespOK(c, "成功")
+	this.RespOK(c)
 	return
 }
 
@@ -304,7 +303,7 @@ func (this *ContextController) GetFriendlyLinkList(c *gin.Context) {
 	this.Put(c, "list", list)
 
 	// 返回
-	this.RespOK(c, "成功")
+	this.RespOK(c)
 	return
 }
 
@@ -334,7 +333,7 @@ func (this *ContextController) AddBanner(c *gin.Context) {
 		this.RespErr(c, err)
 		return
 	}
-	this.RespOK(c, "成功")
+	this.RespOK(c)
 	return
 }
 
@@ -363,7 +362,7 @@ func (this *ContextController) GetBannerList(c *gin.Context) {
 	this.Put(c, "list", list)
 
 	// 返回
-	this.RespOK(c, "成功")
+	this.RespOK(c)
 	return
 }
 
@@ -393,7 +392,7 @@ func (this *ContextController) GetArticleList(c *gin.Context) {
 	this.Put(c, "list", list)
 
 	// 返回
-	this.RespOK(c, "成功")
+	this.RespOK(c)
 	return
 }
 
@@ -452,6 +451,6 @@ func (this *ContextController) AddArticle(c *gin.Context) {
 		this.RespErr(c, err)
 		return
 	}
-	this.RespOK(c, "成功")
+	this.RespOK(c)
 	return
 }

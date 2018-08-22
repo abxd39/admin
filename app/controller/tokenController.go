@@ -560,7 +560,7 @@ func (this *TokenController) GetTokenCashList(c *gin.Context) {
 	}
 	fmt.Println("121212")
 	this.Put(c, "list", list)
-	this.RespOK(c, "成功")
+	this.RespOK(c)
 	return
 }
 
@@ -610,7 +610,7 @@ func (this *TokenController) GetTokenBalance(c *gin.Context) {
 	}
 
 	this.Put(c, "list", list)
-	this.RespOK(c, "成功")
+	this.RespOK(c)
 	return
 }
 
