@@ -141,6 +141,7 @@ func (this *TokenController) test1(c *gin.Context) {
 	//new(models.CurencyFeeDailySheet).BoottimeTimingSettlement()
 	//new(models.WalletInoutDailySheet).BoottimeTimingSettlement()
 	//new(models.TokenFeeDailySheet).BoottimeTimingSettlement()
+	//new(apis.VendorApi).Test()
 	this.RespOK(c)
 	return
 }

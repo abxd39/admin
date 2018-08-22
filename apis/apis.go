@@ -200,34 +200,35 @@ func (VendorApi) PostOutToken(uid, tid, id int, sign string) error {
 		return err
 	}
 	reader := bytes.NewReader(bytesData)
-	//url :=userHost
-	request, err := http.NewRequest("POST", walletUrl+"/wallet/sendrawtx?", reader)
+	//url :=userHost                                           wallet/sendrawtx
+	request, err := http.NewRequest("POST", walletUrl+"/wallet/sendrawtx", reader)
 	if err != nil {
 		return err
 	}
 	request.Header.Set("Content-Type", "application/json;charset=UTF-8")
 	client := http.Client{}
-	result, err := client.Do(request)
-	if err != nil {
-		return err
-	}
-	rsp := &struct {
-		Code int    `json:"code"`
-		Msg  string `json:"msg"`
-	}{}
-	body, err := ioutil.ReadAll(result.Body)
-	if err != nil {
-		return err
-	}
-	fmt.Println(walletUrl+"/wallet/sendrawtx?")
-	fmt.Println(string(body))
-	err = json.Unmarshal(body, rsp)
-	if err != nil {
-		return err
-	}
-	if rsp.Code != 0 {
-		return errors.New(rsp.Msg)
-	}
+	client.Do(request)
+
+	//if err != nil {
+	//	fmt.Println(err)
+	//}
+	//rsp := &struct {
+	//	Code int    `json:"code"`
+	//	Msg  string `json:"msg"`
+	//}{}
+	//body, err := ioutil.ReadAll(resp.Body)
+	//if err != nil {
+	//	return err
+	//}
+	//fmt.Println(walletUrl+"/wallet/sendrawtx")
+	//fmt.Println("返回值----->",string(body))
+	//err = json.Unmarshal(body, rsp)
+	//if err != nil {
+	//	return err
+	//}
+	//if rsp.Code != 0 {
+	//	return errors.New(rsp.Msg)
+	//}
 	return nil
 }
 
@@ -543,3 +544,52 @@ func (VendorApi)CurrencyRevoke(id int64)error{
 	}
 	return nil
 }
+
+
+//func (v VendorApi)Test() {
+//	signtx := v.httpPost2()
+//	result := v.httpPost(signtx)
+//	fmt.Println(result)
+//}
+
+
+//func (VendorApi)httpPost(signtx string) string {
+//	resp, err := http.Post("http://47.106.136.96:8069/wallet/sendrawtx",
+//		"application/x-www-form-urlencoded",
+//		strings.NewReader("uid=1&token_id=4&apply_id=7&signtx="+signtx))
+//	if err != nil {
+//		fmt.Println(err)
+//	}
+//
+//	defer resp.Body.Close()
+//	body, err := ioutil.ReadAll(resp.Body)
+//	if err != nil {
+//		// handle error
+//	}
+//	fmt.Println(string(body))
+//
+//	return gjson.Get(string(body),"data.result").String()
+//}
+//
+//
+//
+//func (VendorApi)httpPost2() string {
+//	resp, err := http.Post("http://47.106.136.96:8069/wallet/signtx",
+//		"application/x-www-form-urlencoded",
+//		strings.NewReader("to=0x870F49783e9d8c9707a72B252a0e56d3b7628F31&gasprice=1&amount=0.0013&uid=10057&token_id=4"))
+//	if err != nil {
+//		fmt.Println(err)
+//	}
+//
+//	defer resp.Body.Close()
+//	body, err := ioutil.ReadAll(resp.Body)
+//	if err != nil {
+//		// handle error
+//	}
+//
+//	return gjson.Get(string(body),"data.signtx").String()
+//}
+
+
+
+
