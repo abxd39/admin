@@ -41,3 +41,5 @@ func main() {
 
 	r.Run(fmt.Sprintf(":%d", utils.Cfg.MustInt("http", "port")))
 }
+
+
