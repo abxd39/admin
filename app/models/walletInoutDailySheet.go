@@ -1,8 +1,11 @@
 package models
 
 import (
-	"admin/utils"
 	"fmt"
+	"time"
+
+	"admin/errors"
+	"admin/utils"
 )
 
 //数据库 g_wallet 日提币汇总表
@@ -32,7 +35,7 @@ type TokenInoutDailySheet struct {
 	TotalPut       int64  `xorm:"not null comment('充币累计总额') BIGINT(20)" json:"total_put"`
 	TotalDayPut    int64  `xorm:"not null comment('日充币总额') BIGINT(20)" json:"total_day_put"`
 	TotalDayPutCny int64  `xorm:"not null default 0 comment('日充币折合') BIGINT(20)" json:"total_day_put_cny"`
-	Date           string  `xorm:"not null comment('时间戳') datetime" json:"date"`
+	Date           string `xorm:"not null comment('时间戳') datetime" json:"date"`
 }
 
 type FeeTotalSheet struct {
@@ -41,6 +44,12 @@ type FeeTotalSheet struct {
 	TotalTrue            float64 `xorm:"-" json:"total_true"`
 	TotalFeeTrue         float64 `xorm:"-" json:"total_fee_true"`
 	TotalDayNumFeeTrue   float64 `xorm:"-" json:"total_day_num_fee_true"`
+}
+
+type InOutTrend struct {
+	InTotal  int64  `xorm:"in_total"`
+	OutTotal int64  `xorm:"out_total"`
+	Date     string `xorm:"date"`
 }
 
 func (this *FeeTotalSheet) TableName() string {
@@ -120,9 +129,9 @@ func (this *TokenInoutDailySheet) GetInOutDailySheetList(page, rows, tokenId int
 	//substr := st[:11] + "23:59:59"
 	if bt != `` {
 		if et != `` {
-			query = query.Where("date between ? and ?", bt, et[:11]+ "23:59:59")
+			query = query.Where("date between ? and ?", bt, et[:11]+"23:59:59")
 		} else {
-			query = query.Where("date between ? and ?", bt, bt[:11]+ "23:59:59")
+			query = query.Where("date between ? and ?", bt, bt[:11]+"23:59:59")
 		}
 	}
 	//query = query.Where("id>?", 0)
@@ -159,9 +168,9 @@ func (t *TokenInoutDailySheet) DayPutDailySheet(page, rows, tid int, bt, et stri
 
 	if bt != `` {
 		if et != `` {
-			query = query.Where("date between ? and ?", bt, et[:11]+ "23:59:59")
+			query = query.Where("date between ? and ?", bt, et[:11]+"23:59:59")
 		} else {
-			query = query.Where("date between ? and ?", bt, bt[:11]+ "23:59:59")
+			query = query.Where("date between ? and ?", bt, bt[:11]+"23:59:59")
 		}
 	}
 
@@ -179,7 +188,7 @@ func (t *TokenInoutDailySheet) DayPutDailySheet(page, rows, tid int, bt, et stri
 		TokenId         int     `json:"token_id"`
 		TotalPutTrue    float64 `xorm:"-" json:"total_true"`
 		TotalDayPutTrue float64 `xorm:"-" json:"total_day_true"`
-		Date            string   ` json:"date"`
+		Date            string  ` json:"date"`
 	}
 	list := make([]temp, 0)
 
@@ -205,9 +214,9 @@ func (t *TokenInoutDailySheet) DayOutDailySheet(page, rows, tid int, bt, et stri
 
 	if bt != `` {
 		if et != `` {
-			query = query.Where("date between ? and ?", bt, et[:11]+ "23:59:59")
+			query = query.Where("date between ? and ?", bt, et[:11]+"23:59:59")
 		} else {
-			query = query.Where("date between ? and ?", bt, bt[:11]+ "23:59:59")
+			query = query.Where("date between ? and ?", bt, bt[:11]+"23:59:59")
 		}
 	}
 
@@ -225,7 +234,7 @@ func (t *TokenInoutDailySheet) DayOutDailySheet(page, rows, tid int, bt, et stri
 		TokenId      int     `json:"token_id"`
 		TotalTrue    float64 `xorm:"-" json:"total_true"`
 		TotalNumTrue float64 `xorm:"-" json:"total_day_true"`
-		Date         string   ` json:"date"`
+		Date         string  ` json:"date"`
 	}
 	list := make([]temp, 0)
 	err = query.Table("token_inout_daily_sheet").Limit(mList.PageSize, offset).Find(&list)
@@ -238,4 +247,42 @@ func (t *TokenInoutDailySheet) DayOutDailySheet(page, rows, tid int, bt, et stri
 	}
 	mList.Items = list
 	return mList, nil
+}
+
+// 充币提币走势
+func (this *TokenInoutDailySheet) InOutTrendList(filter map[string]interface{}) ([]*InOutTrend, error) {
+	// 时间区间，默认最近一周
+	today := time.Now().Format(utils.LAYOUT_DATE)
+	todayTime, _ := time.Parse(utils.LAYOUT_DATE, today)
+
+	dateBegin := todayTime.AddDate(0, 0, -6).Format(utils.LAYOUT_DATE)
+	dateEnd := today
+
+	// 开始查询
+	session := utils.Engine_wallet.Where("1=1")
+
+	// 筛选
+	if v, ok := filter["date_begin"]; ok {
+		dateBegin, _ = v.(string)
+	}
+	if v, ok := filter["date_end"]; ok {
+		dateEnd, _ = v.(string)
+	}
+	if v, ok := filter["token_id"]; ok {
+		session.And("token_id=?", v)
+	}
+
+	var list []*InOutTrend
+	err := session.Table(this).
+		Select("date, sum(total_day_num) as in_total, sum(total_day_put) as out_total").
+		And("date>=?", dateBegin+" 00:00:00").
+		And("date<=?", dateEnd+" 00:00:00").
+		GroupBy("date").
+		OrderBy("date ASC	").
+		Find(&list)
+	if err != nil {
+		return nil, errors.NewSys(err)
+	}
+
+	return list, nil
 }
