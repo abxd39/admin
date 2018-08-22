@@ -36,8 +36,10 @@ func (this *TokenController) Router(r *gin.Engine) {
 		g.GET("/add_take_list", this.GetAddTakeList)        //p5-1-1-1提币手续费明细
 		g.GET("/total_trade", this.GetTradeTotalList)       //p5-1-0币币交易手续费汇总
 		//提币 充币管理
-		g.GET("/io_token_list", this.GetTokenInList) //
-		g.POST("/opt_token", this.OptTakeToken)      //
+		g.GET("/in_token_list", this.GetTokenInList) //充币
+		g.GET("/out_token_list", this.GetTokenOutList) //提币
+		g.POST("/opt_token_pass", this.OptTakeTokenPass)      // 审核通过
+		g.POST("/opt_token_failed", this.OptTakeTokenFailed)      // 审核撤销
 		//日提币充币汇总
 		g.GET("/total_token_list", this.GetTotalTokenList) //
 		g.GET("/total_token_info_list", this.GetTotalTokenInfoList)
@@ -70,7 +72,7 @@ func (this *TokenController) PlatformDay(c *gin.Context) {
 	req := struct {
 		Page int    `form:"page" json:"page" binding:"required"`
 		Rows int    `form:"rows" json:"rows" `
-		Date uint64 `form:"date" json:"date" binding:"required"`
+		Date uint64 `form:"date" json:"date" binding:"required" `
 		Tid  int    `form:"tid" json:"tid" binding:"required"`
 		Uid  int    `form:"uid" json:"uid"`
 	}{}
@@ -292,6 +294,15 @@ func (this *TokenController) GetTotalTokenInfoList(c *gin.Context) {
 
 //充提币管理列表
 func (this *TokenController) GetTokenInList(c *gin.Context) {
+	this.getTokenList(c)
+	return
+}
+func (this *TokenController) GetTokenOutList(c *gin.Context) {
+	this.getTokenList(c)
+	return
+}
+
+func (this * TokenController) getTokenList(c*gin.Context){
 	req := struct {
 		Page    int    `form:"page" json:"page" binding:"required"`
 		Rows    int    `form:"rows" json:"rows" `
@@ -320,7 +331,16 @@ func (this *TokenController) GetTokenInList(c *gin.Context) {
 }
 
 // 提币审核
-func (this *TokenController) OptTakeToken(c *gin.Context) {
+func (this *TokenController) OptTakeTokenPass(c *gin.Context) {
+	this.optTakeToken(c)
+	return
+}
+func (this *TokenController) OptTakeTokenFailed(c *gin.Context) {
+	this.optTakeToken(c)
+	return
+}
+
+func (this* TokenController) optTakeToken(c*gin.Context){
 	req := struct {
 		Id     int `form:"id" json:"id" binding:"required"`
 		Status int `form:"status" json:"status" binding:"required"`

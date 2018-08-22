@@ -196,7 +196,7 @@ func (s *MoneyRecord) List(pageIndex, pageSize int, filter map[string]interface{
 //拉去平台内充值的所有记录 平台当天的单个币的充币数量
 func (m *MoneyRecord) GetPlatformAll(page, rows int, tid, bt, et uint64) (*ModelList, error) {
 	engine := utils.Engine_token
-	sql := "SELECT FROM_UNIXTIME(created_time,'%Y%m%d') day,created_time `time` ,TYPE,SUM(num) total ,token_id tid,uid FROM g_token.money_record "
+	sql := "SELECT FROM_UNIXTIME(created_time,'%Y%m%d') day,created_time `time` ,TYPE,SUM(num) total ,token_id tid,uid FROM g_token.money_record WHERE TYPE=14 "
 	var condition string
 	if bt != 0 {
 		if et != 0 {
@@ -252,9 +252,10 @@ func (m *MoneyRecord) GetPlatformAll(page, rows int, tid, bt, et uint64) (*Model
 //平台内充值明细
 func (m *MoneyRecord) GetPlatForTokenOfDay(page, rows, uid, tid int, date uint64) (*ModelList, error) {
 	engine := utils.Engine_token
-	sql := "SELECT  FROM_UNIXTIME(created_time,'%Y%m%d %I:%i:%s') DAY, SUM(num) total ,uid,comment FROM g_token.money_record  "
+	sql := "SELECT created_time day, SUM(num) total ,uid,comment FROM g_token.money_record  "
 
 	var condition string
+	//condition = fmt.Sprintf("WHERE TYPE=14 AND token_id=%d AND created_time  BETWEEN %d AND %d ", tid, date, date+86400)
 	condition = fmt.Sprintf("WHERE TYPE=14 AND token_id=%d AND created_time  BETWEEN %d AND %d ", tid, date, date+86400)
 
 	if uid != 0 {
