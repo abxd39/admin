@@ -1,13 +1,13 @@
 package models
 
 import (
-	"admin/utils"
-	"digicon/common/convert"
 	"fmt"
-	"time"
-	//"github.com/robfig/cron"
-	"digicon/common/convert"
 	"log"
+	"time"
+
+	"admin/errors"
+	"admin/utils"
+	"admin/utils/convert"
 
 	"github.com/robfig/cron"
 )
@@ -47,6 +47,47 @@ type TokenFeeDailySheetGroup struct {
 type total struct {
 	TokenDailySheet `xorm:"extends"`
 	Total           float64 `xorm:"-" json:"total" `
+}
+
+// 交易趋势
+func (this *TokenDailySheet) TradeTrendList(filter map[string]interface{}) ([]*TokenDailySheet, error) {
+	// 时间区间，默认最近一周
+	today, err := time.Parse(utils.LAYOUT_DATE_TIME, fmt.Sprintf("%s 00:00:00", time.Now().Format(utils.LAYOUT_DATE)))
+	if err != nil {
+		return nil, errors.NewSys(err)
+	}
+	todayTime := today.Unix()
+
+	dateBegin := todayTime - 6*24*60*60
+	dateEnd := todayTime
+
+	// 开始查询
+	session := utils.Engine_token.Where("1=1")
+
+	// 筛选
+	if v, ok := filter["date_begin"]; ok {
+		dateBegin, _ = v.(int64)
+	}
+	if v, ok := filter["date_end"]; ok {
+		dateEnd, _ = v.(int64)
+	}
+	if v, ok := filter["token_id"]; ok {
+		session.And("token_id=?", v)
+	}
+
+	var list []*TokenDailySheet
+	err = session.
+		Select("date, sum(buy_total) as buy_total, sum(buy_total_cny) as buy_total_cny, "+
+			"sum(sell_total) as sell_total, sum(sell_total_cny) as sell_total_cny").
+		And("date>=?", dateBegin).
+		And("date<=?", dateEnd).
+		GroupBy("date").
+		Find(&list)
+	if err != nil {
+		return nil, errors.NewSys(err)
+	}
+
+	return list, nil
 }
 
 //获取历史交易记录

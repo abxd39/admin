@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
-	"strconv"
 	"time"
 
 	"admin/apis"
@@ -15,10 +14,6 @@ import (
 	"admin/utils/convert"
 
 	"github.com/gin-gonic/gin"
-<<<<<<< HEAD
-	"admin/utils/convert"
-=======
->>>>>>> 3829a34c4695b63cb3c2ddad539237a3594344f4
 )
 
 type CurrencyController struct {
@@ -223,7 +218,7 @@ func (cu *CurrencyController) total(c *gin.Context) {
 				value[i].LockTokenCNY = vt.FrozenCny
 				value[i].TotalTokenCNY = vt.BalanceCny
 				//totalInt =vt.TotalCny
-				totalTokenInt = vt.FrozenCnyInt+ vt.BalanceCnyInt
+				totalTokenInt = vt.FrozenCnyInt + vt.BalanceCnyInt
 				break
 			}
 		}
@@ -232,11 +227,11 @@ func (cu *CurrencyController) total(c *gin.Context) {
 				value[i].LockCurrentCNY = vc.FrozenCny
 				value[i].TotalCurrentCNY = vc.BalanceCny
 				//temp, _ := strconv.ParseFloat(vc.TotalCny, 64)
-				totalCurrencyInt = vc.BalanceCnyInt +vc.FrozenCnyInt
+				totalCurrencyInt = vc.BalanceCnyInt + vc.FrozenCnyInt
 				break
 			}
 		}
-		value[i].TotalCNY=convert.Int64ToStringBy8Bit(totalTokenInt+totalCurrencyInt)
+		value[i].TotalCNY = convert.Int64ToStringBy8Bit(totalTokenInt + totalCurrencyInt)
 	}
 	result.Items = value
 	cu.Put(c, "list", result)
