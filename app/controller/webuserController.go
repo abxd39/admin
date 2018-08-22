@@ -17,20 +17,20 @@ func (w *WebUserManageController) Router(r *gin.Engine) {
 	{
 		g.GET("/list", w.GetWebUserList)                              //用户管理
 		g.GET("/export_list", w.ExportWebUserList)                    //用户管理导出
-
 		g.GET("/total_user", w.GetTotalUser)                          //获取用户平台注册用户总数
 		g.GET("/total_property", w.GetTotalProperty)                  //总资产统计列表
 		g.GET("/export_total_property", w.ExportTotalProperty)         //总资产统计列表 导出
-
 		g.GET("/login_log", w.GetLoginList)                           //用户登录日志
 		g.GET("/export_login_log", w.ExportLoginList)                           //用户登录日志 导出
-		g.GET("/seconde_certification", w.GetSecondCertificationList) //获取二级认证列表
-		g.GET("/export_seconde_certification", w.ExportSecondCertificationList) //获取二级认证列表
+		g.GET("/second_certification", w.GetSecondCertificationList) //获取二级认证列表
+		g.GET("/export_second_certification", w.ExportSecondCertificationList) //获取二级认证列表
 		g.POST("/modeify_user_status", w.ModifyUserStatus)            //修改用户状态
-		g.POST("/addwhite_list", w.AddWhiteList)                      //增加删除白名单
+		g.POST("/add_white_list", w.AddWhiteList)                      //增加白名单
+		g.POST("/delete_white_list", w.DeleteWhiteList)                      //删除白名单
 		g.GET("/user_whitelist", w.WhiteUserList)                     //白名单用户列表
 		g.GET("/export_user_whitelist", w.ExportWhiteUserList)          //白名单用户列表
 		g.GET("/terminal_list", w.GetTerminalTypeList)                //登录终端类型
+		g.GET("/export_terminal_list", w.ExportTerminalTypeList)                //登录终端类型
 		g.GET("/get_second_detail", w.GetSecondDetail)                //二级实名详情
 		g.GET("/get_first_datail", w.GetFirstDetail)                  //一级实名认证详情
 		g.GET("/get_first_list", w.GetFirstList)                      //p2-4一级实名认证列表
@@ -88,6 +88,7 @@ func (w *WebUserManageController) GetSystem(c *gin.Context) {
 		w.RespErr(c, err)
 		return
 	}
+	fmt.Println("2",result)
 	w.Put(c, "data", result)
 	w.RespOK(c)
 }
@@ -405,6 +406,17 @@ func (w *WebUserManageController) GetSecondDetail(c *gin.Context) {
 }
 
 func (w *WebUserManageController) GetTerminalTypeList(c *gin.Context) {
+	w.terminalTypeList(c)
+	return
+}
+
+func (w *WebUserManageController) ExportTerminalTypeList(c *gin.Context) {
+	w.terminalTypeList(c)
+	return
+}
+
+
+func (w*WebUserManageController)terminalTypeList(c*gin.Context)  {
 	list, err := new(models.UserLoginTerminalType).GetTerminalTypeList()
 	if err != nil {
 		w.RespErr(c, err)
@@ -450,6 +462,14 @@ func (w*WebUserManageController)whiteList(c*gin.Context){
 }
 
 func (w *WebUserManageController) AddWhiteList(c *gin.Context) {
+	w.operatorWhiteList(c)
+	return
+}
+func (w *WebUserManageController) DeleteWhiteList(c *gin.Context) {
+	w.operatorWhiteList(c)
+	return
+}
+func (w*WebUserManageController)operatorWhiteList(c*gin.Context){
 	req := struct {
 		Uid     int `form:"uid" json:"uid" binding:"required"`
 		WStatus int `form:"wstatus" json:"wstatus" binding:"required"` //黑白名单状态

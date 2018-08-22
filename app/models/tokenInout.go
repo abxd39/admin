@@ -259,11 +259,13 @@ func (t *TokenInout) OptTakeToken(id, status int) error {
 		strMount := fmt.Sprintf("%.10f", mount)
 		if token.Signature =="eip155" || token.Signature=="eip" {//ERC20
 			fmt.Sprintf(strMount)
+			fmt.Println("获取签名")
 			sign, err := new(apis.VendorApi).GetTradeSigntx(t.Uid, t.Tokenid, t.To, strMount)
 			if err != nil {
 				sess.Rollback()
 				return err
 			}
+			fmt.Println("发送提币申请")
 			err=new(apis.VendorApi).PostOutToken(t.Uid,t.Tokenid,t.Id,sign)
 			if err!=nil{
 				sess.Rollback()
@@ -271,6 +273,7 @@ func (t *TokenInout) OptTakeToken(id, status int) error {
 			}
 		}
 		if token.Signature == "btc" {//btc
+			fmt.Println("btc 提币申请")
 			err =new(apis.VendorApi).PostOutTokenBtc(t.Uid,t.Tokenid,t.Id,t.To,strMount)
 			if err!=nil{
 				sess.Rollback()

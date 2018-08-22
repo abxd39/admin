@@ -105,14 +105,14 @@ func (this *Order) GetOrderListOfUid(page, rows, uid, token_id int) (*ModelList,
 		BuyTotalCny float64 `json:"buy_toal_cny"` //累计买入折合
 		SellTotal float64 `json:"sell_total"` //累计卖出
 		SellTotalCny float64 `json:"sell_total_cny"`//累计卖出折合
-		Transfer       float64 `json:"transfer"`  //累计划转
+		Transfer       float64 `json:"transfer" xorm:"-"`  //累计划转
 	}
-	sql:="SELECT o.token_id,SUM( IF( o.`ad_type` =1, o.num_total_price, 0)) DIV 100000000 AS sell_total_cny , SUM( IF( o.`ad_type` =1, o.num, 0)) DIV 100000000 AS sell_total, SUM( IF( o.`ad_type` =2, o.num_total_price, 0))DIV 100000000 AS buy_total_cny, SUM( IF( o.`ad_type` =2, o.num, 0))DIV 100000000 AS buy_total, SUM( IF( h.operator = 4, h.num, 0))DIV 100000000 AS transfer FROM `order` o LEFT JOIN user_currency_history h ON h.`token_id` = o.`token_id` "
+	sql:=fmt.Sprintf("SELECT o.token_id,SUM( IF( o.sell_id=%d, o.num_total_price, 0)) DIV 100000000 AS sell_total_cny , SUM( IF( o.sell_id=%d, o.num, 0)) DIV 100000000 AS sell_total, SUM( IF( o.sell_id=%d, o.num_total_price, 0))DIV 100000000 AS buy_total_cny, SUM( IF( o.sell_id=%d, o.num, 0))DIV 100000000 AS buy_total FROM `order` o  ",uid,uid,uid,uid)
 	condition:=""
 	if token_id!=0{
-		condition=fmt.Sprintf("WHERE o.`states`=3 AND uid=%d and o.token_id=%d GROUP BY o.token_id ",uid,token_id)
+		condition=fmt.Sprintf("WHERE o.token_id=%d ",token_id)
 	}else {
-		condition = fmt.Sprintf("WHERE o.`states`=3 AND uid=%d GROUP BY o.token_id ",uid)
+		condition = fmt.Sprintf(" GROUP BY o.token_id ")
 	}
 	countSql:=fmt.Sprintf("select count(t.token_id) num from(%s) t",sql+condition)
 	count:=&struct {
@@ -134,18 +134,40 @@ func (this *Order) GetOrderListOfUid(page, rows, uid, token_id int) (*ModelList,
 	if err != nil {
 		return nil, err
 	}
+	tidList:=make([]int,0)
 	for index, tokenid := range list {
 		//根据token_id 查找货币名称
 		for _, value := range reslt {
 			if value.Id == uint32(tokenid.TokenId) {
 				list[index].TokenName = value.Mark
+				tidList =append(tidList,tokenid.TokenId)
 				break
 			}
 		}
 	}
-	//计算所有token_id 相同的 数量和单价
 
-	fmt.Println("list=", len(list))
+	type transfer struct {
+		TokenId int64
+		Num int64
+	}
+	transferList:=make([]transfer,0)
+	//查询划转的数量
+	query:=engine.Table("user_currency_history").Select("SUM(num)DIV 10000000 AS SUM ,token_id").In("token_id",transferList).GroupBy("token_id")
+	queryCount:=*query
+	ct,err:=queryCount.Count(&UserCurrencyHistory{})
+	if err!=nil{
+		return nil,err
+	}
+	if ct==0{
+		//根据用户uid 获取该用户的所有划转数量
+		engine.Select("SUM(num)DIV 10000000 AS SUM ,token_id").Where("uid=?",uid)
+	}
+	toffset,tList:=this.Paging(page,rows,int(ct))
+	err=query.Limit(toffset,tList.PageSize).Find(&transferList)
+	if err!=nil{
+		return nil,err
+	}
+
 	mList.Items = list
 	return mList, nil
 }
