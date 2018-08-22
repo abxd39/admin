@@ -1,14 +1,18 @@
 package controller
 
 import (
-	"admin/app/models"
-	"admin/utils"
 	"errors"
 	"fmt"
 	"net/http"
+	"regexp"
+	"strconv"
+	"time"
 
 	"admin/apis"
-	"strconv"
+	"admin/app/models"
+	"admin/constant"
+	"admin/utils"
+	"admin/utils/convert"
 
 	"github.com/gin-gonic/gin"
 )
@@ -33,14 +37,17 @@ func (this *CurrencyController) Router(r *gin.Engine) {
 		//划转到币币账户货币数量日统计
 		g.GET("/layoff_list", this.GetLayOffList)
 		//法币成交管理 放行 取消
-		g.GET("/revoke_currency",this.SetRevokeCurrency)//撤单
-		g.GET("/verify_pass_currency",this.SetCurrencyToPass)//审核通过
+		g.GET("/revoke_currency", this.SetRevokeCurrency)      //撤单
+		g.GET("/verify_pass_currency", this.SetCurrencyToPass) //审核通过
+
+		g.GET("/trade_trend", this.TradeTrend)
 	}
 }
+
 //撤单
 func (cu *CurrencyController) SetRevokeCurrency(c *gin.Context) {
 	req := struct {
-		Id   int64    `form:"id" json:"id" binding:"required"`
+		Id int64 `form:"id" json:"id" binding:"required"`
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
@@ -48,9 +55,9 @@ func (cu *CurrencyController) SetRevokeCurrency(c *gin.Context) {
 		cu.RespErr(c, err)
 		return
 	}
-	err=new(apis.VendorApi).CurrencyRevoke(req.Id)
-	if err!=nil{
-		cu.RespErr(c,err)
+	err = new(apis.VendorApi).CurrencyRevoke(req.Id)
+	if err != nil {
+		cu.RespErr(c, err)
 		return
 	}
 	cu.RespOK(c)
@@ -59,7 +66,7 @@ func (cu *CurrencyController) SetRevokeCurrency(c *gin.Context) {
 
 func (cu *CurrencyController) SetCurrencyToPass(c *gin.Context) {
 	req := struct {
-		Id   int64    `form:"id" json:"id" binding:"required"`
+		Id int64 `form:"id" json:"id" binding:"required"`
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
@@ -67,9 +74,9 @@ func (cu *CurrencyController) SetCurrencyToPass(c *gin.Context) {
 		cu.RespErr(c, err)
 		return
 	}
-	err=new(apis.VendorApi).CurrencyVerityPass(req.Id)
-	if err!=nil{
-		cu.RespErr(c,err)
+	err = new(apis.VendorApi).CurrencyVerityPass(req.Id)
+	if err != nil {
+		cu.RespErr(c, err)
 		return
 	}
 	cu.RespOK(c)
@@ -156,7 +163,7 @@ func (cu *CurrencyController) Total(c *gin.Context) {
 	for _, value := range value {
 		uidList = append(uidList, uint64(value.Uid))
 	}
-	fmt.Println("uid",uidList)
+	fmt.Println("uid", uidList)
 
 	//总资产折合
 	//币币账户折合
@@ -367,5 +374,65 @@ func (cu *CurrencyController) GetOderList(c *gin.Context) {
 	}
 	cu.Put(c, "list", list)
 	cu.RespOK(c)
+	return
+}
+
+// 法币交易走势
+func (t *CurrencyController) TradeTrend(ctx *gin.Context) {
+	// 筛选
+	filter := make(map[string]interface{})
+	if v := t.GetString(ctx, "token_id"); v != "" {
+		filter["token_id"] = v
+	}
+	if v := t.GetString(ctx, "date_begin"); v != "" {
+		if matched, err := regexp.Match(constant.REGE_PATTERN_DATE, []byte(v)); err != nil || !matched {
+			t.RespErr(ctx, "参数date_begin格式错误")
+			return
+		}
+
+		filter["date_begin"] = v
+	}
+	if v := t.GetString(ctx, "date_end"); v != "" {
+		if matched, err := regexp.Match(constant.REGE_PATTERN_DATE, []byte(v)); err != nil || !matched {
+			t.RespErr(ctx, "参数date_end格式错误")
+			return
+		}
+
+		filter["date_end"] = v
+	}
+
+	// 调用model
+	list, err := new(models.CurrencyDailySheet).TradeTrendList(filter)
+	if err != nil {
+		t.RespErr(ctx, err)
+		return
+	}
+
+	// 组装数据
+	listLen := len(list)
+	x := make([]string, listLen)
+	yBuy := make([]string, listLen)
+	ySell := make([]string, listLen)
+
+	var allBuyTotal, allSellTotal int64
+	for k, v := range list {
+		datetime, _ := time.Parse(utils.LAYOUT_DATE_TIME, v.Date)
+		x[k] = datetime.Format("0102")
+		yBuy[k] = convert.Int64ToStringBy8Bit(v.BuyTotal)
+		ySell[k] = convert.Int64ToStringBy8Bit(v.SellTotal)
+
+		allBuyTotal += v.BuyTotal
+		allSellTotal += v.SellTotal
+	}
+
+	// 设置返回数据
+	t.Put(ctx, "x", x)
+	t.Put(ctx, "y_buy", yBuy)
+	t.Put(ctx, "y_sell", ySell)
+	t.Put(ctx, "all_buy_total", convert.Int64ToStringBy8Bit(allBuyTotal))
+	t.Put(ctx, "all_sell_total", convert.Int64ToStringBy8Bit(allSellTotal))
+
+	// 返回
+	t.RespOK(ctx)
 	return
 }

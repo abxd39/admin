@@ -1,16 +1,15 @@
 package controller
 
 import (
-	"admin/app/models"
-	"admin/utils"
 	"errors"
 	"fmt"
-
+	"regexp"
 	"time"
 
+	"admin/app/models"
 	"admin/constant"
-	"digicon/common/convert"
-	"regexp"
+	"admin/utils"
+	"admin/utils/convert"
 
 	"github.com/gin-gonic/gin"
 )
@@ -22,20 +21,20 @@ type TokenController struct {
 func (this *TokenController) Router(r *gin.Engine) {
 	g := r.Group("/token")
 	{
-		g.GET("/list", this.GetTokenOderList)            //bibi p4-1-0 币币委托管理 挂单信息
-		g.POST("/evacuate_order", this.EvacuateOder)     // p4-1-0 币币委托管理 挂单信息 撤单
-		g.GET("/record_list", this.GetRecordList)        //bibi p4-1-1 成交记录
-		g.GET("/export_record_list", this.ExportRecordList)        //bibi p4-1-1 成交记录 导出
-		g.GET("/total_balance", this.GetTokenBalance)    //bibi p2-3-2币币账户统计列表
-		g.GET("/user_token_detail", this.GetTokenDetail) //p2-3-2-1查看币币账户资产
-		g.GET("/token_cash_list", this.GetTokenCashList) //p4-1-2币兑管理
-		g.POST("/delete_cash", this.DeleteCash)          //删除币兑
-		g.GET("/modify_cash", this.ModifyCash)           //修改币兑
-		g.POST("/add_cash", this.AddCash)                //添加币兑
-		g.GET("/change_detail", this.ChangeDetail)       //p2-3-4币币账户变更详情
-		g.GET("/fee_list", this.GetFeeInfoList)          //p5-1-0-1币币交易手续费明细
-		g.GET("/add_take_list", this.GetAddTakeList)     //p5-1-1-1提币手续费明细
-		g.GET("/total_trade", this.GetTradeTotalList)    //p5-1-0币币交易手续费汇总
+		g.GET("/list", this.GetTokenOderList)               //bibi p4-1-0 币币委托管理 挂单信息
+		g.POST("/evacuate_order", this.EvacuateOder)        // p4-1-0 币币委托管理 挂单信息 撤单
+		g.GET("/record_list", this.GetRecordList)           //bibi p4-1-1 成交记录
+		g.GET("/export_record_list", this.ExportRecordList) //bibi p4-1-1 成交记录 导出
+		g.GET("/total_balance", this.GetTokenBalance)       //bibi p2-3-2币币账户统计列表
+		g.GET("/user_token_detail", this.GetTokenDetail)    //p2-3-2-1查看币币账户资产
+		g.GET("/token_cash_list", this.GetTokenCashList)    //p4-1-2币兑管理
+		g.POST("/delete_cash", this.DeleteCash)             //删除币兑
+		g.GET("/modify_cash", this.ModifyCash)              //修改币兑
+		g.POST("/add_cash", this.AddCash)                   //添加币兑
+		g.GET("/change_detail", this.ChangeDetail)          //p2-3-4币币账户变更详情
+		g.GET("/fee_list", this.GetFeeInfoList)             //p5-1-0-1币币交易手续费明细
+		g.GET("/add_take_list", this.GetAddTakeList)        //p5-1-1-1提币手续费明细
+		g.GET("/total_trade", this.GetTradeTotalList)       //p5-1-0币币交易手续费汇总
 		//提币 充币管理
 		g.GET("/io_token_list", this.GetTokenInList) //
 		g.POST("/opt_token", this.OptTakeToken)      //
@@ -61,6 +60,9 @@ func (this *TokenController) Router(r *gin.Engine) {
 		g.GET("/platform_all", this.PlatformAllSheet)
 		//每天平台内充币详细信息
 		g.GET("/platform_day", this.PlatformDay)
+
+		//币币交易走势
+		g.GET("/trade_trend", this.TradeTrend)
 	}
 }
 
@@ -620,7 +622,7 @@ func (this *TokenController) GetRecordList(c *gin.Context) {
 func (this *TokenController) ExportRecordList(c *gin.Context) {
 	this.getRecordList(c)
 }
-func (this*TokenController)getRecordList (c *gin.Context){
+func (this *TokenController) getRecordList(c *gin.Context) {
 	req := struct {
 		Page     int    `form:"page" json:"page" binding:"required"`
 		Page_num int    `form:"rows" json:"rows" `
@@ -811,6 +813,67 @@ func (t *TokenController) ListTransfer(ctx *gin.Context) {
 
 	// 设置返回数据
 	t.Put(ctx, "list", modelList)
+
+	// 返回
+	t.RespOK(ctx)
+	return
+}
+
+// 币币交易走势
+func (t *TokenController) TradeTrend(ctx *gin.Context) {
+	// 筛选
+	filter := make(map[string]interface{})
+	if v := t.GetString(ctx, "token_id"); v != "" {
+		filter["token_id"] = v
+	}
+	if v := t.GetString(ctx, "date_begin"); v != "" {
+		if matched, err := regexp.Match(constant.REGE_PATTERN_DATE, []byte(v)); err != nil || !matched {
+			t.RespErr(ctx, "参数date_begin格式错误")
+			return
+		}
+		dateTime, _ := time.Parse(utils.LAYOUT_DATE, v)
+
+		filter["date_begin"] = dateTime.Unix()
+	}
+	if v := t.GetString(ctx, "date_end"); v != "" {
+		if matched, err := regexp.Match(constant.REGE_PATTERN_DATE, []byte(v)); err != nil || !matched {
+			t.RespErr(ctx, "参数date_end格式错误")
+			return
+		}
+		dateTime, _ := time.Parse(utils.LAYOUT_DATE, v)
+
+		filter["date_end"] = dateTime.Unix()
+	}
+
+	// 调用model
+	list, err := new(models.TokenDailySheet).TradeTrendList(filter)
+	if err != nil {
+		t.RespErr(ctx, err)
+		return
+	}
+
+	// 组装数据
+	listLen := len(list)
+	x := make([]string, listLen)
+	yBuy := make([]string, listLen)
+	ySell := make([]string, listLen)
+
+	var allBuyTotal, allSellTotal int64
+	for k, v := range list {
+		x[k] = time.Unix(v.Date, 0).Format("0102")
+		yBuy[k] = convert.Int64ToStringBy8Bit(v.BuyTotal)
+		ySell[k] = convert.Int64ToStringBy8Bit(v.SellTotal)
+
+		allBuyTotal += v.BuyTotal
+		allSellTotal += v.SellTotal
+	}
+
+	// 设置返回数据
+	t.Put(ctx, "x", x)
+	t.Put(ctx, "y_buy", yBuy)
+	t.Put(ctx, "y_sell", ySell)
+	t.Put(ctx, "all_buy_total", convert.Int64ToStringBy8Bit(allBuyTotal))
+	t.Put(ctx, "all_sell_total", convert.Int64ToStringBy8Bit(allSellTotal))
 
 	// 返回
 	t.RespOK(ctx)

@@ -1,9 +1,8 @@
 package models
 
 import (
+	"admin/errors"
 	"admin/utils"
-	"fmt"
-	"strconv"
 	"time"
 )
 
@@ -17,29 +16,28 @@ import (
 //}
 
 type CurrencyDailySheet struct {
-	BaseModel  `xorm:"-"`
-	Id              int   `xorm:"not null pk autoincr comment('自增id') TINYINT(4)"`
-	TokenId         int   `xorm:"not null comment('币种ID') INT(11)"`
-	SellTotal       int64 `xorm:"not null default 0 comment('法币卖出总数') BIGINT(20)"`
-	SellCny         int64 `xorm:"not null comment('法币卖出总额折合cny') BIGINT(20)"`
-	BuyTotal        int64 `xorm:"not null default 0 comment('法币买入总数') BIGINT(20)"`
-	BuyCny          int64 `xorm:"not null default 0 comment('法币买入总额折合cny') BIGINT(20)"`
-	FeeSellTotal    int64 `xorm:"not null default 0 comment('法币卖出手续费总数') BIGINT(20)"`
-	FeeSellCny      int64 `xorm:"not null comment('法币卖出手续费折合cny') BIGINT(20)"`
-	FeeBuyTotal     int64 `xorm:"not null default 0 comment('法币买入手续费总数') BIGINT(20)"`
-	FeeBuyCny       int64 `xorm:"not null default 0 comment('法币买入手续费折合cny') BIGINT(20)"`
-	BuyTotalAll     int64 `xorm:"not null comment('累计买入总额') BIGINT(20)"`
-	BuyTotalAllCny  int64 `xorm:"not null comment('累计买入总额折合cny') BIGINT(20)"`
-	SellTotalAll    int64 `xorm:"not null comment('累计卖出总额') BIGINT(20)"`
-	SellTotalAllCny int64 `xorm:"not null comment('累计卖出总额折合') BIGINT(20)"`
-	Total           int64 `xorm:"not null comment('总数') BIGINT(20)"`
-	TotalCny        int64 `xorm:"not null comment('总数折合') BIGINT(20)"`
-	Date            int64 `xorm:"not null comment('时间戳，精确到天') BIGINT(10)"`
+	BaseModel       `xorm:"-"`
+	Id              int    `xorm:"not null pk autoincr comment('自增id') TINYINT(4)"`
+	TokenId         int    `xorm:"not null comment('币种ID') INT(11)"`
+	SellTotal       int64  `xorm:"not null default 0 comment('法币卖出总数') BIGINT(20)"`
+	SellCny         int64  `xorm:"not null comment('法币卖出总额折合cny') BIGINT(20)"`
+	BuyTotal        int64  `xorm:"not null default 0 comment('法币买入总数') BIGINT(20)"`
+	BuyCny          int64  `xorm:"not null default 0 comment('法币买入总额折合cny') BIGINT(20)"`
+	FeeSellTotal    int64  `xorm:"not null default 0 comment('法币卖出手续费总数') BIGINT(20)"`
+	FeeSellCny      int64  `xorm:"not null comment('法币卖出手续费折合cny') BIGINT(20)"`
+	FeeBuyTotal     int64  `xorm:"not null default 0 comment('法币买入手续费总数') BIGINT(20)"`
+	FeeBuyCny       int64  `xorm:"not null default 0 comment('法币买入手续费折合cny') BIGINT(20)"`
+	BuyTotalAll     int64  `xorm:"not null comment('累计买入总额') BIGINT(20)"`
+	BuyTotalAllCny  int64  `xorm:"not null comment('累计买入总额折合cny') BIGINT(20)"`
+	SellTotalAll    int64  `xorm:"not null comment('累计卖出总额') BIGINT(20)"`
+	SellTotalAllCny int64  `xorm:"not null comment('累计卖出总额折合') BIGINT(20)"`
+	Total           int64  `xorm:"not null comment('总数') BIGINT(20)"`
+	TotalCny        int64  `xorm:"not null comment('总数折合') BIGINT(20)"`
+	Date            string `xorm:"not null comment('时间戳，精确到天') BIGINT(10)"`
 }
 
-
 //定时结算bibi 日交易报表表数据
-func (this *CurrencyDailySheet) BootTimeTimingSettlement() {
+/*func (this *CurrencyDailySheet) BootTimeTimingSettlement() {
 
 	for {
 		now := time.Now()
@@ -123,4 +121,42 @@ func (this *CurrencyDailySheet) BootTimeTimingSettlement() {
 		fmt.Println("CurencyFeeDailySheet--->successfule")
 
 	}
+}*/
+
+// 交易趋势
+func (this *CurrencyDailySheet) TradeTrendList(filter map[string]interface{}) ([]*CurrencyDailySheet, error) {
+	// 时间区间，默认最近一周
+	today := time.Now().Format(utils.LAYOUT_DATE)
+	todayTime, _ := time.Parse(utils.LAYOUT_DATE, today)
+
+	dateBegin := todayTime.AddDate(0, 0, -6).Format(utils.LAYOUT_DATE)
+	dateEnd := today
+
+	// 开始查询
+	session := utils.Engine_currency.Where("1=1")
+
+	// 筛选
+	if v, ok := filter["date_begin"]; ok {
+		dateBegin, _ = v.(string)
+	}
+	if v, ok := filter["date_end"]; ok {
+		dateEnd, _ = v.(string)
+	}
+	if v, ok := filter["token_id"]; ok {
+		session.And("token_id=?", v)
+	}
+
+	var list []*CurrencyDailySheet
+	err := session.
+		Select("date, sum(buy_total) as buy_total, sum(buy_cny) as buy_cny, "+
+			"sum(sell_total) as sell_total, sum(sell_cny) as sell_cny").
+		And("date>=?", dateBegin+" 00:00:00").
+		And("date<=?", dateEnd+" 00:00:00").
+		GroupBy("date").
+		Find(&list)
+	if err != nil {
+		return nil, errors.NewSys(err)
+	}
+
+	return list, nil
 }
