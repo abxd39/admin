@@ -1,21 +1,15 @@
 package models
 
 import (
-	"admin/errors"
 	"admin/utils"
 	"digicon/common/convert"
 	"fmt"
-<<<<<<< HEAD
 	"time"
 	//"github.com/robfig/cron"
 	"digicon/common/convert"
 	"log"
+
 	"github.com/robfig/cron"
-=======
-	"github.com/robfig/cron"
-	"log"
-	"time"
->>>>>>> 3829a34c4695b63cb3c2ddad539237a3594344f4
 )
 
 //type TokenFeeDailySheet struct {
@@ -53,50 +47,6 @@ type TokenFeeDailySheetGroup struct {
 type total struct {
 	TokenDailySheet `xorm:"extends"`
 	Total           float64 `xorm:"-" json:"total" `
-<<<<<<< HEAD
-=======
-}
-
-// 交易趋势
-func (this *TokenDailySheet) TradeTrendList(filter map[string]interface{}) ([]*TokenDailySheet, error) {
-	// 时间区间，默认最近一周
-	today, err := time.Parse(utils.LAYOUT_DATE_TIME, fmt.Sprintf("%s 00:00:00", time.Now().Format(utils.LAYOUT_DATE)))
-	if err != nil {
-		return nil, errors.NewSys(err)
-	}
-	todayTime := today.Unix()
-
-	dateBegin := todayTime - 6*24*60*60
-	dateEnd := todayTime
-
-	// 开始查询
-	session := utils.Engine_token.Where("1=1")
-
-	// 筛选
-	if v, ok := filter["date_begin"]; ok {
-		dateBegin, _ = v.(int64)
-	}
-	if v, ok := filter["date_end"]; ok {
-		dateEnd, _ = v.(int64)
-	}
-	if v, ok := filter["token_id"]; ok {
-		session.And("token_id=?", v)
-	}
-
-	var list []*TokenDailySheet
-	err = session.
-		Select("date, sum(buy_total) as buy_total, sum(buy_total_cny) as buy_total_cny, "+
-			"sum(sell_total) as sell_total, sum(sell_total_cny) as sell_total_cny").
-		And("date>=?", dateBegin).
-		And("date<=?", dateEnd).
-		GroupBy("date").
-		Find(&list)
-	if err != nil {
-		return nil, errors.NewSys(err)
-	}
-
-	return list, nil
->>>>>>> 3829a34c4695b63cb3c2ddad539237a3594344f4
 }
 
 //获取历史交易记录
@@ -150,45 +100,11 @@ func (tk *TokenDailySheet) TimingFunc(begin, end int64) {
 
 	l := make(map[int]*TokenDailySheet)
 
-<<<<<<< HEAD
 	for _, v := range r {
 		h := &TokenDailySheet{}
 		t, ok := v["token_admission_id"]
 		if !ok {
 			utils.AdminLog.Errorln("ok u")
-=======
-	if len(r) > 0 {
-		for _, v := range r {
-			h := &TokenDailySheet{}
-			t, ok := v["token_admission_id"]
-			if !ok {
-				log.Fatal("ok u")
-			}
-
-			a, ok := v["a"]
-			if !ok {
-				log.Fatal("ok a")
-			}
-			b, ok := v["b"]
-			if !ok {
-				log.Fatal("ok b")
-			}
-			c, ok := v["c"]
-			if !ok {
-				log.Fatal("ok c")
-			}
-			d, ok := v["d"]
-			if !ok {
-				log.Fatal("ok d")
-			}
-
-			h.TokenId = tk.BytesToIntAscii(t)
-			h.BuyTotal = tk.BytesToInt64Ascii(a)
-			h.FeeBuyTotal = tk.BytesToInt64Ascii(b)
-			h.FeeBuyCny = tk.BytesToInt64Ascii(c)
-			h.BuyTotalCny = tk.BytesToInt64Ascii(d)
-			l[h.TokenId] = h
->>>>>>> 3829a34c4695b63cb3c2ddad539237a3594344f4
 		}
 
 		a, ok := v["a"]
@@ -208,7 +124,6 @@ func (tk *TokenDailySheet) TimingFunc(begin, end int64) {
 			utils.AdminLog.Errorln("ok d")
 		}
 
-<<<<<<< HEAD
 		h.TokenId = tk.BytesToIntAscii(t)
 		h.BuyTotal = tk.BytesToInt64Ascii(a)
 		h.FeeBuyTotal = tk.BytesToInt64Ascii(b)
@@ -218,16 +133,12 @@ func (tk *TokenDailySheet) TimingFunc(begin, end int64) {
 	}
 
 	sql = fmt.Sprintf("select token_id, sum(num) as a,sum(fee) as b ,sum(fee_cny) as c ,sum(total_cny) as d,token_admission_id  from trade where deal_time>=%d and deal_time<%d  and opt=2 group by token_admission_id", begin, end)
-=======
-	sql = fmt.Sprintf("select sum(num) as a,sum(fee) as b ,sum(fee_cny) as c ,sum(total_cny) as d,token_admission_id  from trade where deal_time>=%d and deal_time<%d  and opt=2 group by token_admission_id", begin, end)
->>>>>>> 3829a34c4695b63cb3c2ddad539237a3594344f4
 	r, err = engine.Query(sql)
 	if err != nil {
 		utils.AdminLog.Errorln(err.Error())
 		return
 	}
 
-<<<<<<< HEAD
 	for _, v := range r {
 		h := &TokenDailySheet{}
 		t, _ := v["token_admission_id"]
@@ -250,32 +161,6 @@ func (tk *TokenDailySheet) TimingFunc(begin, end int64) {
 			m.FeeSellTotal = convert.BytesToInt64Ascii(b)
 			m.FeeSellCny = convert.BytesToInt64Ascii(c)
 			m.SellTotalCny = convert.BytesToInt64Ascii(d)
-=======
-	if len(r) > 0 {
-		for _, v := range r {
-			h := &TokenDailySheet{}
-			t, _ := v["token_admission_id"]
-			a, _ := v["a"]
-			b, _ := v["b"]
-			c, _ := v["c"]
-			d, _ := v["d"]
-
-			t_ := convert.BytesToIntAscii(t)
-			m, ok := l[t_]
-			if !ok {
-				h.TokenId = convert.BytesToIntAscii(t)
-				h.SellTotal = convert.BytesToInt64Ascii(a)
-				h.FeeSellTotal = convert.BytesToInt64Ascii(b)
-				h.FeeSellCny = convert.BytesToInt64Ascii(c)
-				h.SellTotalCny = convert.BytesToInt64Ascii(d)
-				l[h.TokenId] = h
-			} else {
-				m.SellTotal = convert.BytesToInt64Ascii(a)
-				m.FeeSellTotal = convert.BytesToInt64Ascii(b)
-				m.FeeSellCny = convert.BytesToInt64Ascii(c)
-				m.SellTotalCny = convert.BytesToInt64Ascii(d)
-			}
->>>>>>> 3829a34c4695b63cb3c2ddad539237a3594344f4
 		}
 		h.Date = end
 	}
@@ -325,14 +210,9 @@ func (t *TokenDailySheet) Run() {
 	loc, _ := time.LoadLocation("Local")
 	theTime, _ := time.ParseInLocation(timeLayout, toBeCharge, loc)
 	unix := theTime.Unix()
-<<<<<<< HEAD
 	fmt.Println("当前时间戳", unix)
 	t.TimingFunc(unix-86400, unix)
 	//t.TimingFunc(1532448000, 1534867200)
-=======
-
-	t.TimingFunc(unix-86400, unix)
->>>>>>> 3829a34c4695b63cb3c2ddad539237a3594344f4
 }
 
 //启动
