@@ -1,17 +1,10 @@
 package models
 
 import (
-<<<<<<< HEAD
-	"admin/utils"
+
 	"fmt"
-	"time"
-	"digicon/common/convert"
-=======
-	"fmt"
->>>>>>> c8e5043e386311099560f8c6717ed21510d2a8ed
 	"log"
 	"time"
-
 	"admin/errors"
 	"admin/utils"
 	"admin/utils/convert"
