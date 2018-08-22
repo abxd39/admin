@@ -24,7 +24,7 @@ import (
 //}
 
 type Tokens struct {
-	BaseModel `xorm:"-"`
+	BaseModel            `xorm:"-"`
 	Id                   int     `xorm:"not null pk autoincr INT(11)"`
 	Name                 string  `xorm:"default '' comment('货币名称') VARCHAR(64)" json:"name"`
 	Detail               string  `xorm:"default '' comment('详情地址') VARCHAR(255)" json:"detail"`
@@ -46,7 +46,6 @@ type Tokens struct {
 	InRemarks            string  `xorm:"not null comment('充币备注') VARCHAR(255)" json:"in_remarks"`
 	OutRemarks           string  `xorm:"not null comment('提币备注') VARCHAR(255)" json:"out_remarks"`
 }
-
 
 type TokensGroup struct {
 	Tokens   `xorm:"extends"`
@@ -141,7 +140,7 @@ func (t *Tokens) GetSystem(id int) (*TokensGroup, error) {
 	}
 	tg.InLeast = t.Int64ToFloat64By8Bit(tg.InTokenLeastBalance)
 	tg.OutLeast = t.Int64ToFloat64By8Bit(tg.OutTokenLeastBalance)
-	fmt.Println("1",tg)
+	fmt.Println("1", tg)
 	return tg, nil
 }
 

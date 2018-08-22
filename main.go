@@ -6,13 +6,12 @@ import (
 
 	"admin/app"
 	"admin/app/models"
+	"admin/cron"
 	"admin/middleware"
 	"admin/session"
 	"admin/utils"
-	"admin/cron"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-
 )
 
 func main() {
@@ -41,5 +40,3 @@ func main() {
 
 	r.Run(fmt.Sprintf(":%d", utils.Cfg.MustInt("http", "port")))
 }
-
-

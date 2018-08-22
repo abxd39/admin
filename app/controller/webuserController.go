@@ -15,34 +15,34 @@ type WebUserManageController struct {
 func (w *WebUserManageController) Router(r *gin.Engine) {
 	g := r.Group("/webuser")
 	{
-		g.GET("/list", w.GetWebUserList)                              //用户管理
-		g.GET("/export_list", w.ExportWebUserList)                    //用户管理导出
-		g.GET("/total_user", w.GetTotalUser)                          //获取用户平台注册用户总数
-		g.GET("/total_property", w.GetTotalProperty)                  //总资产统计列表
-		g.GET("/export_total_property", w.ExportTotalProperty)         //总资产统计列表 导出
-		g.GET("/login_log", w.GetLoginList)                           //用户登录日志
-		g.GET("/export_login_log", w.ExportLoginList)                           //用户登录日志 导出
-		g.GET("/second_certification", w.GetSecondCertificationList) //获取二级认证列表
+		g.GET("/list", w.GetWebUserList)                                       //用户管理
+		g.GET("/export_list", w.ExportWebUserList)                             //用户管理导出
+		g.GET("/total_user", w.GetTotalUser)                                   //获取用户平台注册用户总数
+		g.GET("/total_property", w.GetTotalProperty)                           //总资产统计列表
+		g.GET("/export_total_property", w.ExportTotalProperty)                 //总资产统计列表 导出
+		g.GET("/login_log", w.GetLoginList)                                    //用户登录日志
+		g.GET("/export_login_log", w.ExportLoginList)                          //用户登录日志 导出
+		g.GET("/second_certification", w.GetSecondCertificationList)           //获取二级认证列表
 		g.GET("/export_second_certification", w.ExportSecondCertificationList) //获取二级认证列表
-		g.POST("/modeify_user_status", w.ModifyUserStatus)            //修改用户状态
-		g.POST("/add_white_list", w.AddWhiteList)                      //增加白名单
-		g.POST("/delete_white_list", w.DeleteWhiteList)                      //删除白名单
-		g.GET("/user_whitelist", w.WhiteUserList)                     //白名单用户列表
-		g.GET("/export_user_whitelist", w.ExportWhiteUserList)          //白名单用户列表
-		g.GET("/terminal_list", w.GetTerminalTypeList)                //登录终端类型
-		g.GET("/export_terminal_list", w.ExportTerminalTypeList)                //登录终端类型
-		g.GET("/get_second_detail", w.GetSecondDetail)                //二级实名详情
-		g.GET("/get_first_datail", w.GetFirstDetail)                  //一级实名认证详情
-		g.GET("/get_first_list", w.GetFirstList)                      //p2-4一级实名认证列表
-		g.GET("/export_first_list", w.ExportFirstList)                      //p2-4一级实名认证列表
-		g.POST("/first_affirm", w.FirstAffirm)                        //审核用户实名认证
-		g.POST("/second_affirm", w.SecondAffirm)                      //审核二级实名认证
-		g.POST("/trade_rule", w.SetTradeRule)                         //设置交易规则
-		g.GET("/get_trade_rule", w.GetTradeRule)                      //获取交易规则
-		g.GET("/get_invite_list", w.GetInviteList)                    //获取 p2-5好友邀列表 被邀请人列表 邀请人—账号：18888888888
-		g.GET("/export_invite_list", w.ExportInviteList)                    //获取 p2-5好友邀列表 被邀请人列表 邀请人—账号：18888888888 导出
-		g.GET("/get_invite_info", w.GetInviteInfoList)                //p2-5-1邀请人统计列表
-		g.GET("/export_invite_info", w.ExportInviteInfoList)                //p2-5-1邀请人统计列表
+		g.POST("/modeify_user_status", w.ModifyUserStatus)                     //修改用户状态
+		g.POST("/add_white_list", w.AddWhiteList)                              //增加白名单
+		g.POST("/delete_white_list", w.DeleteWhiteList)                        //删除白名单
+		g.GET("/user_whitelist", w.WhiteUserList)                              //白名单用户列表
+		g.GET("/export_user_whitelist", w.ExportWhiteUserList)                 //白名单用户列表
+		g.GET("/terminal_list", w.GetTerminalTypeList)                         //登录终端类型
+		g.GET("/export_terminal_list", w.ExportTerminalTypeList)               //登录终端类型
+		g.GET("/get_second_detail", w.GetSecondDetail)                         //二级实名详情
+		g.GET("/get_first_datail", w.GetFirstDetail)                           //一级实名认证详情
+		g.GET("/get_first_list", w.GetFirstList)                               //p2-4一级实名认证列表
+		g.GET("/export_first_list", w.ExportFirstList)                         //p2-4一级实名认证列表
+		g.POST("/first_affirm", w.FirstAffirm)                                 //审核用户实名认证
+		g.POST("/second_affirm", w.SecondAffirm)                               //审核二级实名认证
+		g.POST("/trade_rule", w.SetTradeRule)                                  //设置交易规则
+		g.GET("/get_trade_rule", w.GetTradeRule)                               //获取交易规则
+		g.GET("/get_invite_list", w.GetInviteList)                             //获取 p2-5好友邀列表 被邀请人列表 邀请人—账号：18888888888
+		g.GET("/export_invite_list", w.ExportInviteList)                       //获取 p2-5好友邀列表 被邀请人列表 邀请人—账号：18888888888 导出
+		g.GET("/get_invite_info", w.GetInviteInfoList)                         //p2-5-1邀请人统计列表
+		g.GET("/export_invite_info", w.ExportInviteInfoList)                   //p2-5-1邀请人统计列表
 
 		//用户系统设置
 		g.POST("/token_system_add", w.TokenSystemAdd)
@@ -88,7 +88,7 @@ func (w *WebUserManageController) GetSystem(c *gin.Context) {
 		w.RespErr(c, err)
 		return
 	}
-	fmt.Println("2",result)
+	fmt.Println("2", result)
 	w.Put(c, "data", result)
 	w.RespOK(c)
 }
@@ -104,8 +104,7 @@ func (w *WebUserManageController) ExportSystemList(c *gin.Context) {
 	return
 }
 
-
-func(w*WebUserManageController)systemList(c*gin.Context){
+func (w *WebUserManageController) systemList(c *gin.Context) {
 	req := struct {
 		Page   int    `form:"page" json:"page" binding:"required"`
 		Rows   int    `form:"rows" json:"rows" `
@@ -186,7 +185,7 @@ func (w *WebUserManageController) ExportInviteInfoList(c *gin.Context) {
 	w.inviteInfoList(c)
 	return
 }
-func (w*WebUserManageController)inviteInfoList(c*gin.Context){
+func (w *WebUserManageController) inviteInfoList(c *gin.Context) {
 	req := struct {
 		Uid     int    `form:"uid" json:"uid" binding:"required"`
 		Page    int    `form:"page" json:"page" binding:"required"`
@@ -221,7 +220,7 @@ func (w *WebUserManageController) ExportInviteList(c *gin.Context) {
 	return
 }
 
-func (w*WebUserManageController) inviteList(c*gin.Context){
+func (w *WebUserManageController) inviteList(c *gin.Context) {
 	req := struct {
 		Page   int    `form:"page" json:"page" binding:"required"`
 		Rows   int    `form:"rows" json:"rows" `
@@ -338,8 +337,7 @@ func (w *WebUserManageController) ExportFirstList(c *gin.Context) {
 	return
 }
 
-
-func (w*WebUserManageController)firstList (c*gin.Context){
+func (w *WebUserManageController) firstList(c *gin.Context) {
 	req := struct {
 		Page    int    `form:"page" json:"page" binding:"required"`
 		Rows    int    `form:"rows" json:"rows" `
@@ -415,8 +413,7 @@ func (w *WebUserManageController) ExportTerminalTypeList(c *gin.Context) {
 	return
 }
 
-
-func (w*WebUserManageController)terminalTypeList(c*gin.Context)  {
+func (w *WebUserManageController) terminalTypeList(c *gin.Context) {
 	list, err := new(models.UserLoginTerminalType).GetTerminalTypeList()
 	if err != nil {
 		w.RespErr(c, err)
@@ -436,7 +433,7 @@ func (w *WebUserManageController) ExportWhiteUserList(c *gin.Context) {
 	return
 }
 
-func (w*WebUserManageController)whiteList(c*gin.Context){
+func (w *WebUserManageController) whiteList(c *gin.Context) {
 
 	req := struct {
 		Page   int    `form:"page" json:"page" binding:"required"`
@@ -469,7 +466,7 @@ func (w *WebUserManageController) DeleteWhiteList(c *gin.Context) {
 	w.operatorWhiteList(c)
 	return
 }
-func (w*WebUserManageController)operatorWhiteList(c*gin.Context){
+func (w *WebUserManageController) operatorWhiteList(c *gin.Context) {
 	req := struct {
 		Uid     int `form:"uid" json:"uid" binding:"required"`
 		WStatus int `form:"wstatus" json:"wstatus" binding:"required"` //黑白名单状态
@@ -517,7 +514,7 @@ func (w *WebUserManageController) ExportSecondCertificationList(c *gin.Context) 
 	w.certificationList(c)
 	return
 }
-func (w*WebUserManageController)certificationList(c*gin.Context)  {
+func (w *WebUserManageController) certificationList(c *gin.Context) {
 	req := struct {
 		Page         int    `form:"page" json:"page" binding:"required"`
 		Rows         int    `form:"rows" json:"rows" `
@@ -551,7 +548,7 @@ func (w *WebUserManageController) ExportLoginList(c *gin.Context) {
 	w.loginList(c)
 	return
 }
-func (w*WebUserManageController) loginList(c*gin.Context)  {
+func (w *WebUserManageController) loginList(c *gin.Context) {
 	req := struct {
 		Page         int    `form:"page" json:"page" binding:"required"`
 		Rows         int    `form:"rows" json:"rows" `
@@ -583,7 +580,7 @@ func (w *WebUserManageController) GetTotalProperty(c *gin.Context) {
 func (w *WebUserManageController) ExportTotalProperty(c *gin.Context) {
 	w.totalProperty(c)
 }
-func (w*WebUserManageController) totalProperty(c*gin.Context){
+func (w *WebUserManageController) totalProperty(c *gin.Context) {
 	req := struct {
 		Page   int    `form:"page" json:"page" binding:"required"`
 		Rows   int    `form:"rows" json:"rows" `
@@ -633,7 +630,7 @@ func (w *WebUserManageController) ExportWebUserList(c *gin.Context) {
 	return
 }
 
-func (w*WebUserManageController) userList(c*gin.Context){
+func (w *WebUserManageController) userList(c *gin.Context) {
 	req := struct {
 		Page   int    `form:"page" json:"page" binding:"required"`
 		Rows   int    `form:"rows" json:"rows" `
