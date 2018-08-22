@@ -1,15 +1,24 @@
 package controller
 
 import (
-	"admin/app/models"
-	"admin/utils"
 	"errors"
 	"fmt"
 	"net/http"
+	"regexp"
+	"strconv"
+	"time"
 
 	"admin/apis"
-	"github.com/gin-gonic/gin"
+	"admin/app/models"
+	"admin/constant"
+	"admin/utils"
 	"admin/utils/convert"
+
+	"github.com/gin-gonic/gin"
+<<<<<<< HEAD
+	"admin/utils/convert"
+=======
+>>>>>>> 3829a34c4695b63cb3c2ddad539237a3594344f4
 )
 
 type CurrencyController struct {
@@ -19,35 +28,38 @@ type CurrencyController struct {
 func (this *CurrencyController) Router(r *gin.Engine) {
 	g := r.Group("/currency")
 	{
-		g.GET("/list", this.GetTradeList)                        //p4-2-0法币挂单管理
+		g.GET("/list", this.GetTradeList)                                  //p4-2-0法币挂单管理
 		g.GET("/export_list", this.ExportTradeList)                        //p4-2-0法币挂单管理
-		g.POST("/down_trade_order", this.DownTradeAds)           //p4-2-0法币挂单管理 下架交易单
-		g.GET("/tokens", this.GetTokensList)                     //获取 所有数据货币的名称及货币Id
-		g.GET("/order_list", this.GetOderList)                   //p4-2-1法币成交管理
+		g.POST("/down_trade_order", this.DownTradeAds)                     //p4-2-0法币挂单管理 下架交易单
+		g.GET("/tokens", this.GetTokensList)                               //获取 所有数据货币的名称及货币Id
+		g.GET("/order_list", this.GetOderList)                             //p4-2-1法币成交管理
 		g.GET("/export_order_list", this.ExportOderList)                   //p4-2-1法币成交管理
-		g.GET("/total_balance", this.GetTotalCurrencyBalance)    //p2-3-1法币账户统计列表
+		g.GET("/total_balance", this.GetTotalCurrencyBalance)              //p2-3-1法币账户统计列表
 		g.GET("/export_total_balance", this.ExportTotalCurrencyBalance)    //p2-3-1法币账户统计列表
-		g.GET("/user_detail", this.GetUserDetailList)            //p2-3-1-2法币账户资产展示
+		g.GET("/user_detail", this.GetUserDetailList)                      //p2-3-1-2法币账户资产展示
 		g.GET("/export_user_detail", this.ExportUserDetailList)            //p2-3-1-2法币账户资产展示
-		g.GET("/user_buysell", this.GetBuySellList)              //p2-3-1-1查看统计买入_卖出_划转
+		g.GET("/user_buysell", this.GetBuySellList)                        //p2-3-1-1查看统计买入_卖出_划转
 		g.GET("/export_user_buysell", this.ExportBuySellList)              //p2-3-1-1查看统计买入_卖出_划转
-		g.GET("/total", this.Total)                              //p2-3-0总财产列表
-		g.GET("/export_total", this.ExportTotal)                              //p2-3-0总财产列表
-		g.GET("/currency_change", this.GetCurrencyChangeHistory) //p2-3-3法币账户变更详情
+		g.GET("/total", this.Total)                                        //p2-3-0总财产列表
+		g.GET("/export_total", this.ExportTotal)                           //p2-3-0总财产列表
+		g.GET("/currency_change", this.GetCurrencyChangeHistory)           //p2-3-3法币账户变更详情
 		g.GET("/export_currency_change", this.ExportCurrencyChangeHistory) //p2-3-3法币账户变更详情
 		//g.GET("/")                                               //p2-3-0-0币数统计列表
 		//划转到币币账户货币数量日统计 注释接口没有实现
 		g.GET("/layoff_list", this.GetLayOffList)
 		g.GET("/export_layoff_list", this.GetLayOffList)
 		//法币成交管理 放行 取消
-		g.GET("/revoke_currency",this.SetRevokeCurrency)//撤单
-		g.GET("/verify_pass_currency",this.SetCurrencyToPass)//审核通过
+		g.GET("/revoke_currency", this.SetRevokeCurrency)      //撤单
+		g.GET("/verify_pass_currency", this.SetCurrencyToPass) //审核通过
+
+		g.GET("/trade_trend", this.TradeTrend)
 	}
 }
+
 //撤单
 func (cu *CurrencyController) SetRevokeCurrency(c *gin.Context) {
 	req := struct {
-		Id   int64    `form:"id" json:"id" binding:"required"`
+		Id int64 `form:"id" json:"id" binding:"required"`
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
@@ -55,9 +67,9 @@ func (cu *CurrencyController) SetRevokeCurrency(c *gin.Context) {
 		cu.RespErr(c, err)
 		return
 	}
-	err=new(apis.VendorApi).CurrencyRevoke(req.Id)
-	if err!=nil{
-		cu.RespErr(c,err)
+	err = new(apis.VendorApi).CurrencyRevoke(req.Id)
+	if err != nil {
+		cu.RespErr(c, err)
 		return
 	}
 	cu.RespOK(c)
@@ -66,7 +78,7 @@ func (cu *CurrencyController) SetRevokeCurrency(c *gin.Context) {
 
 func (cu *CurrencyController) SetCurrencyToPass(c *gin.Context) {
 	req := struct {
-		Id   int64    `form:"id" json:"id" binding:"required"`
+		Id int64 `form:"id" json:"id" binding:"required"`
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
@@ -74,10 +86,10 @@ func (cu *CurrencyController) SetCurrencyToPass(c *gin.Context) {
 		cu.RespErr(c, err)
 		return
 	}
-	err=new(apis.VendorApi).CurrencyVerityPass(req.Id)
-	if err!=nil{
+	err = new(apis.VendorApi).CurrencyVerityPass(req.Id)
+	if err != nil {
 		utils.AdminLog.Errorf(err.Error())
-		cu.RespErr(c,err)
+		cu.RespErr(c, err)
 		return
 	}
 	cu.RespOK(c)
@@ -98,7 +110,7 @@ func (cu *CurrencyController) ExportCurrencyChangeHistory(c *gin.Context) {
 	return
 }
 
-func (cu*CurrencyController)currencyChangeHistory(c*gin.Context){
+func (cu *CurrencyController) currencyChangeHistory(c *gin.Context) {
 	req := struct {
 		Page   int    `form:"page" json:"page" binding:"required"`
 		Rows   int    `form:"rows" json:"rows" `
@@ -155,7 +167,7 @@ func (cu *CurrencyController) ExportTotal(c *gin.Context) {
 	return
 }
 
-func(cu*CurrencyController)total(c*gin.Context){
+func (cu *CurrencyController) total(c *gin.Context) {
 	req := struct {
 		Page   int    `form:"page" json:"page" binding:"required"`
 		Rows   int    `form:"rows" json:"rows" `
@@ -183,7 +195,7 @@ func(cu*CurrencyController)total(c*gin.Context){
 	for _, value := range value {
 		uidList = append(uidList, uint64(value.Uid))
 	}
-	fmt.Println("uid",uidList)
+	fmt.Println("uid", uidList)
 
 	//总资产折合
 	//币币账户折合
@@ -262,7 +274,7 @@ func (cu *CurrencyController) ExportBuySellList(c *gin.Context) {
 	return
 }
 
-func (cu*CurrencyController)buySellList(c*gin.Context){
+func (cu *CurrencyController) buySellList(c *gin.Context) {
 	req := struct {
 		Uid     int `form:"uid" json:"uid" binding:"required"`
 		Page    int `form:"page" json:"page" binding:"required"`
@@ -298,7 +310,7 @@ func (cu *CurrencyController) ExportUserDetailList(c *gin.Context) {
 	cu.userDetailList(c)
 	return
 }
-func (cu*CurrencyController)userDetailList(c*gin.Context){
+func (cu *CurrencyController) userDetailList(c *gin.Context) {
 	req := struct {
 		Uid     int `form:"uid" json:"uid" binding:"required"`
 		Page    int `form:"page" json:"page" binding:"required"`
@@ -333,7 +345,7 @@ func (cu *CurrencyController) ExportTotalCurrencyBalance(c *gin.Context) {
 	return
 }
 
-func (cu*CurrencyController)totalCurrencyBalance(c*gin.Context){
+func (cu *CurrencyController) totalCurrencyBalance(c *gin.Context) {
 	req := struct {
 		Page     int    `form:"page" json:"page" binding:"required"`
 		Page_num int    `form:"rows" json:"rows" `
@@ -373,7 +385,7 @@ func (cu *CurrencyController) ExportTradeList(c *gin.Context) {
 
 }
 
-func (cu*CurrencyController)tradeList(c*gin.Context){
+func (cu *CurrencyController) tradeList(c *gin.Context) {
 	req := struct {
 		Page    int    `form:"page" json:"page" binding:"required"`
 		PageNum int    `form:"rows" json:"rows" `
@@ -420,7 +432,7 @@ func (cu *CurrencyController) ExportOderList(c *gin.Context) {
 	return
 }
 
-func (cu*CurrencyController)oderList(c*gin.Context)  {
+func (cu *CurrencyController) oderList(c *gin.Context) {
 	//参数一大堆
 	req := struct {
 		Page int `form:"page" json:"page" binding:"required"`
@@ -444,5 +456,65 @@ func (cu*CurrencyController)oderList(c*gin.Context)  {
 	}
 	cu.Put(c, "list", list)
 	cu.RespOK(c)
+	return
+}
+
+// 法币交易走势
+func (t *CurrencyController) TradeTrend(ctx *gin.Context) {
+	// 筛选
+	filter := make(map[string]interface{})
+	if v := t.GetString(ctx, "token_id"); v != "" {
+		filter["token_id"] = v
+	}
+	if v := t.GetString(ctx, "date_begin"); v != "" {
+		if matched, err := regexp.Match(constant.REGE_PATTERN_DATE, []byte(v)); err != nil || !matched {
+			t.RespErr(ctx, "参数date_begin格式错误")
+			return
+		}
+
+		filter["date_begin"] = v
+	}
+	if v := t.GetString(ctx, "date_end"); v != "" {
+		if matched, err := regexp.Match(constant.REGE_PATTERN_DATE, []byte(v)); err != nil || !matched {
+			t.RespErr(ctx, "参数date_end格式错误")
+			return
+		}
+
+		filter["date_end"] = v
+	}
+
+	// 调用model
+	list, err := new(models.CurrencyDailySheet).TradeTrendList(filter)
+	if err != nil {
+		t.RespErr(ctx, err)
+		return
+	}
+
+	// 组装数据
+	listLen := len(list)
+	x := make([]string, listLen)
+	yBuy := make([]string, listLen)
+	ySell := make([]string, listLen)
+
+	var allBuyTotal, allSellTotal int64
+	for k, v := range list {
+		datetime, _ := time.Parse(utils.LAYOUT_DATE_TIME, v.Date)
+		x[k] = datetime.Format("0102")
+		yBuy[k] = convert.Int64ToStringBy8Bit(v.BuyTotal)
+		ySell[k] = convert.Int64ToStringBy8Bit(v.SellTotal)
+
+		allBuyTotal += v.BuyTotal
+		allSellTotal += v.SellTotal
+	}
+
+	// 设置返回数据
+	t.Put(ctx, "x", x)
+	t.Put(ctx, "y_buy", yBuy)
+	t.Put(ctx, "y_sell", ySell)
+	t.Put(ctx, "all_buy_total", convert.Int64ToStringBy8Bit(allBuyTotal))
+	t.Put(ctx, "all_sell_total", convert.Int64ToStringBy8Bit(allSellTotal))
+
+	// 返回
+	t.RespOK(ctx)
 	return
 }

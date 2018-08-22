@@ -1,10 +1,10 @@
 package convert
 
 import (
-	"github.com/shopspring/decimal"
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"github.com/shopspring/decimal"
 	//"math/big"
 )
 
@@ -26,7 +26,7 @@ func Int64ToInt64By8Bit(b int64) int64 {
 
 	a := decimal.New(b, 0)
 	r := a.Mul(decimal.New(100000000, 0))
-	return  r.IntPart()
+	return r.IntPart()
 }
 
 func Int64ToFloat64By8Bit(b int64) (x float64) {
@@ -129,13 +129,11 @@ func Int64DivInt64StringPercent(a int64, b int64) string {
 	return s
 }
 
-
 //两数相加保持3位
 func Int64AddInt64Float64Percent(a int64, b int64) string {
 	dd := decimal.New(a, 0)
 	dp := decimal.New(b, 0)
 	d := decimal.New(100000000, 0)
-
 
 	t := dd.Add(dp).Div(d)
 	k, _ := t.Float64()
@@ -143,4 +141,3 @@ func Int64AddInt64Float64Percent(a int64, b int64) string {
 
 	return s
 }
-

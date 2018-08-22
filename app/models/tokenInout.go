@@ -41,7 +41,7 @@ type TokenInoutGroup struct {
 	Status     int     `json:"status"`
 	AmountTrue float64 `xorm:"-" json:"amount_ture"`
 	FeeTrue    float64 `xorm:"-" json:"fee_true"`
-	OutCount    float64 `xorm:"-" json:"out_count"`//提币数量
+	OutCount   float64 `xorm:"-" json:"out_count"` //提币数量
 }
 
 func (t *TokenInoutGroup) TableName() string {
@@ -224,18 +224,18 @@ func (t *TokenInout) OptTakeToken(id, status int) error {
 		return err
 	}
 	if !has {
-		strErr:=fmt.Sprintf("订单不存在!!! id=%d",id)
+		strErr := fmt.Sprintf("订单不存在!!! id=%d", id)
 		return errors.New(strErr)
 	}
-	engineToken:=utils.Engine_common
-	token:=new(Tokens)
-	has,err=engineToken.Table("tokens").Where("id=?",t.Tokenid).Get(token)
-	if err!=nil{
+	engineToken := utils.Engine_common
+	token := new(Tokens)
+	has, err = engineToken.Table("tokens").Where("id=?", t.Tokenid).Get(token)
+	if err != nil {
 		fmt.Println(err.Error())
 		return err
 	}
-	if !has{
-		strErr:=fmt.Sprintf("数字货币不存在!!!token_id=%d",t.Tokenid)
+	if !has {
+		strErr := fmt.Sprintf("数字货币不存在!!!token_id=%d", t.Tokenid)
 		return errors.New(strErr)
 	}
 	sess := engine.NewSession()
@@ -257,7 +257,7 @@ func (t *TokenInout) OptTakeToken(id, status int) error {
 		mount := t.Int64ToFloat64By8Bit(t.Amount)
 		////fmt.Println("num=",)
 		strMount := fmt.Sprintf("%.10f", mount)
-		if token.Signature =="eip155" || token.Signature=="eip" {//ERC20
+		if token.Signature == "eip155" || token.Signature == "eip" { //ERC20
 			fmt.Sprintf(strMount)
 			fmt.Println("获取签名")
 			sign, err := new(apis.VendorApi).GetTradeSigntx(t.Uid, t.Tokenid, t.To, strMount)
@@ -266,28 +266,27 @@ func (t *TokenInout) OptTakeToken(id, status int) error {
 				return err
 			}
 			fmt.Println("发送提币申请")
-			err=new(apis.VendorApi).PostOutToken(t.Uid,t.Tokenid,t.Id,sign)
-			if err!=nil{
+			err = new(apis.VendorApi).PostOutToken(t.Uid, t.Tokenid, t.Id, sign)
+			if err != nil {
 				sess.Rollback()
 				return err
 			}
 		}
-		if token.Signature == "btc" {//btc
+		if token.Signature == "btc" { //btc
 			fmt.Println("btc 提币申请")
-			err =new(apis.VendorApi).PostOutTokenBtc(t.Uid,t.Tokenid,t.Id,t.To,strMount)
-			if err!=nil{
+			err = new(apis.VendorApi).PostOutTokenBtc(t.Uid, t.Tokenid, t.Id, t.To, strMount)
+			if err != nil {
 				sess.Rollback()
 				return err
 			}
 		}
-
 
 	}
 	//审核撤销
-	if status == utils.VERIFY_REVOKE_TOKEN_MARK{
+	if status == utils.VERIFY_REVOKE_TOKEN_MARK {
 		//需要王炳雨提供接口
-		err:=new(apis.VendorApi).RevokeOutToken(int64(t.Uid),int64(t.Tokenid),t.Amount+t.Fee)
-		if err!=nil{
+		err := new(apis.VendorApi).RevokeOutToken(int64(t.Uid), int64(t.Tokenid), t.Amount+t.Fee)
+		if err != nil {
 			sess.Rollback()
 			utils.AdminLog.Error(err.Error())
 			return err

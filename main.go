@@ -1,16 +1,17 @@
 package main
 
 import (
-	"os"
-	"github.com/gin-gonic/gin"
-	"github.com/gin-contrib/sessions"
-	"fmt"
-	"admin/session"
-	"admin/cron"
-	"admin/app/models"
-	"admin/middleware"
 	"admin/app"
+	"admin/app/models"
+	"admin/cron"
+	"admin/middleware"
+	"admin/session"
 	"admin/utils"
+	"fmt"
+	"os"
+
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
@@ -39,9 +40,7 @@ func main() {
 
 	r.Run(fmt.Sprintf(":%d", utils.Cfg.MustInt("http", "port")))
 
-
 }
-
 
 //func main() {
 //

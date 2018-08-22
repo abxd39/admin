@@ -16,7 +16,7 @@ type VendorApi struct{}
 var userUrl = ""
 var awardUrl = ""
 var privateKey = "hhhhhhhhhhhhhhhhhh"
-var verifykey ="32zBKHYCjK8ZBWbwCG1HarNZqOBBbKLodsCI1V20"
+var verifykey = "32zBKHYCjK8ZBWbwCG1HarNZqOBBbKLodsCI1V20"
 
 var walletUrl = ""
 
@@ -35,11 +35,11 @@ func InitUserUrl(remoteUrl, localUrl, key string) {
 
 }
 
-func InitAwardUrl(url, key,verify string) {
+func InitAwardUrl(url, key, verify string) {
 	if key != `` {
 		privateKey = key
 	}
-	if verify!=``{
+	if verify != `` {
 		verifykey = verify
 	}
 	awardUrl = url
@@ -57,7 +57,7 @@ func (VendorApi) Reflash(uid int) error {
 	}
 	reader := bytes.NewReader(bytesData)
 	//url :=userHost
-	fmt.Println(userUrl+"/admin/refresh?")
+	fmt.Println(userUrl + "/admin/refresh?")
 	request, err := http.NewRequest("POST", userUrl+"/admin/refresh?", reader)
 	if err != nil {
 		return err
@@ -68,20 +68,20 @@ func (VendorApi) Reflash(uid int) error {
 	if err != nil {
 		return err
 	}
-	body,err:=ioutil.ReadAll(result.Body)
-	if err!=nil{
+	body, err := ioutil.ReadAll(result.Body)
+	if err != nil {
 		return err
 	}
-	rsp:=&struct {
+	rsp := &struct {
 		Code int
-		Msg string
+		Msg  string
 	}{}
-	err=json.Unmarshal(body,rsp)
-	if err!=nil{
+	err = json.Unmarshal(body, rsp)
+	if err != nil {
 		return err
 	}
 	fmt.Println(rsp)
-	if rsp.Code!=0{
+	if rsp.Code != 0 {
 		return errors.New(rsp.Msg)
 	}
 	return nil
@@ -170,7 +170,7 @@ func (VendorApi) GetTradeSigntx(uid, tid int, addr, mount string) (string, error
 	if err != nil {
 		return "", err
 	}
-	fmt.Println(walletUrl+"/wallet/signtx?")
+	fmt.Println(walletUrl + "/wallet/signtx?")
 	fmt.Println(string(body))
 	err = json.Unmarshal(body, rsp)
 	if err != nil {
@@ -265,7 +265,7 @@ func (VendorApi) PostOutTokenBtc(uid, tid, id int, addr, mount string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(walletUrl+"/wallet/biti_btc?")
+	fmt.Println(walletUrl + "/wallet/biti_btc?")
 	fmt.Println(string(body))
 	err = json.Unmarshal(body, rsp)
 	if err != nil {
@@ -278,20 +278,20 @@ func (VendorApi) PostOutTokenBtc(uid, tid, id int, addr, mount string) error {
 }
 
 //提币审核撤销
-func (VendorApi) RevokeOutToken(uid,tid,num int64)error{
+func (VendorApi) RevokeOutToken(uid, tid, num int64) error {
 	params := make(map[string]interface{})
 	params["uid"] = uid
-	params["ukey"] =  fmt.Sprintf("%d_%d", time.Now().UnixNano(),uid)
-	params["key"]=verifykey
-	params["token_id"] =tid
-	params["num"] =num
+	params["ukey"] = fmt.Sprintf("%d_%d", time.Now().UnixNano(), uid)
+	params["key"] = verifykey
+	params["token_id"] = tid
+	params["num"] = num
 	bytesData, err := json.Marshal(params)
 	if err != nil {
 		return err
 	}
 	reader := bytes.NewReader(bytesData)
 	//url :=userHost
-	fmt.Println(userUrl+"/wallet/cancel_fronze")
+	fmt.Println(userUrl + "/wallet/cancel_fronze")
 	request, err := http.NewRequest("POST", userUrl+"/wallet/cancel_fronze", reader)
 	if err != nil {
 		return err
@@ -302,22 +302,22 @@ func (VendorApi) RevokeOutToken(uid,tid,num int64)error{
 	if err != nil {
 		return err
 	}
-	body,err:=ioutil.ReadAll(result.Body)
-	if err!=nil{
+	body, err := ioutil.ReadAll(result.Body)
+	if err != nil {
 		return err
 	}
-	rsp:=&struct {
+	rsp := &struct {
 		Code int
-		Msg string
+		Msg  string
 	}{}
-	fmt.Println(userUrl+"/wallet/cancel_fronze")
+	fmt.Println(userUrl + "/wallet/cancel_fronze")
 	fmt.Println(string(body))
-	err=json.Unmarshal(body,rsp)
-	if err!=nil{
+	err = json.Unmarshal(body, rsp)
+	if err != nil {
 		return err
 	}
 	fmt.Println(rsp)
-	if rsp.Code!=0{
+	if rsp.Code != 0 {
 		return errors.New(rsp.Msg)
 	}
 	return nil
@@ -330,8 +330,8 @@ type Price struct {
 	CnyPrice    string `json:"cny_price"`
 	UsdPrice    string `json:"usd_price"`
 	TokenId     int    `json:"token_id"`
-	CnyPriceInt int64    `json:"cny_price_int"`
-	UsdPriceInt int64	`json:"usd_price_int"`
+	CnyPriceInt int64  `json:"cny_price_int"`
+	UsdPriceInt int64  `json:"usd_price_int"`
 }
 type temp struct {
 	List []Price `json:"list"`
@@ -344,7 +344,7 @@ func (VendorApi) GetTokenCnyPriceList(tid []int) ([]Price, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(userUrl+"/market/cny_prices?")
+	fmt.Println(userUrl + "/market/cny_prices?")
 	reader := bytes.NewReader(bytesData)
 	request, err := http.NewRequest("POST", userUrl+"/market/cny_prices?", reader)
 	if err != nil {
@@ -455,10 +455,9 @@ func (VendorApi) GetCny(uid []uint64, mark int) ([]Cny, error) {
 	return result.Data.List, nil
 }
 
-
 //法币后台审核
 //admin/currency_order_confirm
-func (VendorApi)CurrencyVerityPass(id int64)error{
+func (VendorApi) CurrencyVerityPass(id int64) error {
 	params := make(map[string]interface{})
 	params["id"] = id
 	params["key"] = privateKey
@@ -469,7 +468,7 @@ func (VendorApi)CurrencyVerityPass(id int64)error{
 	}
 	reader := bytes.NewReader(bytesData)
 	//url :=userHost
-	fmt.Println(userUrl+"/admin/currency_order_confirm")
+	fmt.Println(userUrl + "/admin/currency_order_confirm")
 	request, err := http.NewRequest("POST", userUrl+"/admin/currency_order_confirm", reader)
 	if err != nil {
 		return err
@@ -481,30 +480,29 @@ func (VendorApi)CurrencyVerityPass(id int64)error{
 		return err
 	}
 
-	body,err:=ioutil.ReadAll(result.Body)
-	if err!=nil{
+	body, err := ioutil.ReadAll(result.Body)
+	if err != nil {
 		return err
 	}
-	rsp:=&struct {
+	rsp := &struct {
 		Code int
-		Msg string
+		Msg  string
 	}{}
 	fmt.Println(string(body))
-	err=json.Unmarshal(body,rsp)
-	if err!=nil{
+	err = json.Unmarshal(body, rsp)
+	if err != nil {
 		return err
 	}
 	fmt.Println(rsp)
-	if rsp.Code!=0{
+	if rsp.Code != 0 {
 		return errors.New(rsp.Msg)
 	}
 	return nil
 }
 
-
 //法币后台审核撤销
 //admin/currency_order_cancel
-func (VendorApi)CurrencyRevoke(id int64)error{
+func (VendorApi) CurrencyRevoke(id int64) error {
 	params := make(map[string]interface{})
 	params["id"] = id
 	params["key"] = privateKey
@@ -515,7 +513,7 @@ func (VendorApi)CurrencyRevoke(id int64)error{
 	}
 	reader := bytes.NewReader(bytesData)
 	//url :=userHost
-	fmt.Println(userUrl+"/admin/currency_order_cancel")
+	fmt.Println(userUrl + "/admin/currency_order_cancel")
 	request, err := http.NewRequest("POST", userUrl+"/admin/currency_order_cancel", reader)
 	if err != nil {
 		return err
@@ -527,33 +525,31 @@ func (VendorApi)CurrencyRevoke(id int64)error{
 		return err
 	}
 
-	body,err:=ioutil.ReadAll(result.Body)
-	if err!=nil{
+	body, err := ioutil.ReadAll(result.Body)
+	if err != nil {
 		return err
 	}
-	rsp:=&struct {
+	rsp := &struct {
 		Code int
-		Msg string
+		Msg  string
 	}{}
-	fmt.Println( string(body))
-	err=json.Unmarshal(body,rsp)
-	if err!=nil{
+	fmt.Println(string(body))
+	err = json.Unmarshal(body, rsp)
+	if err != nil {
 		return err
 	}
 	fmt.Println(rsp)
-	if rsp.Code!=0{
+	if rsp.Code != 0 {
 		return errors.New(rsp.Msg)
 	}
 	return nil
 }
-
 
 //func (v VendorApi)Test() {
 //	signtx := v.httpPost2()
 //	result := v.httpPost(signtx)
 //	fmt.Println(result)
 //}
-
 
 //func (VendorApi)httpPost(signtx string) string {
 //	resp, err := http.Post("http://47.106.136.96:8069/wallet/sendrawtx",
@@ -591,7 +587,3 @@ func (VendorApi)CurrencyRevoke(id int64)error{
 //
 //	return gjson.Get(string(body),"data.signtx").String()
 //}
-
-
-
-
