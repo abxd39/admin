@@ -174,11 +174,10 @@ type TotalTokenCoinUser struct {
 }
 func (this *UserToken) GetAllTokenCoin(tokenIdList []int32) (allbalanceList []TotalTokenCoin, allCoinUsers []TotalTokenCoinUser , err error) {
 	sql := "SELECT SUM(balance) AS total_balance, SUM(frozen) AS total_frozen, token_id, token_name FROM  g_token.`user_token` GROUP BY token_id"
-	//sql := "SELECT uid, balance, frozen FROM g_token.`user_token` WHERE token_id IN (1,2,3,4,5,6) AND (balance > 0 OR frozen > 0 ) GROUP BY uid"
 	engine := utils.Engine_token
 	err = engine.In("token_id", tokenIdList).SQL(sql).Find(&allbalanceList)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("token balance sum err:", err)
 	}
 	usersSql := "SELECT count(uid) as total_user, token_id  FROM g_token.`user_token` WHERE (balance > 0 OR frozen > 0 ) GROUP BY token_id"
 	err = engine.In("token_id", tokenIdList).SQL(usersSql).Find(&allCoinUsers)

@@ -330,6 +330,8 @@ func (cu *CurrencyController)totalCoin(c *gin.Context) {
 				totalnum += currencyBalance.TotalFreeze
 			}
 		}
+		fmt.Println("totalnum:", totalnum, convert.Int64ToStringBy8Bit(totalnum))
+		
 		tmp.TotalNum = convert.Int64ToStringBy8Bit(totalnum)
 		for _, tkUser := range tokenUserCoin {
 			if tkUser.TokenId == int32(tk.Id){
@@ -345,7 +347,8 @@ func (cu *CurrencyController)totalCoin(c *gin.Context) {
 		if totaluser <= 0 {
 			tmp.AverageNum = "0"
 		}else{
-			tmp.AverageNum = convert.Int64ToStringBy8Bit(totalnum / totaluser)
+			tempInt:=convert.Int64DivInt64By8Bit(totalnum ,convert.Int64ToInt64By8Bit(totaluser))
+			tmp.AverageNum = convert.Int64ToStringBy8Bit(tempInt)
 		}
 		totalcoinList = append(totalcoinList, tmp )
 	}

@@ -218,11 +218,12 @@ type TotalCurrencyCoinUser struct {
 }
 
 func (this *UserCurrency) GetAllCurrencyCoin(tokenIdList []int32) (allBalanceList []TotalCurrencyCoin, allCoinUsers []TotalCurrencyCoinUser ,err error){
+
 	sql := "SELECT SUM(balance) as total_balance, SUM(freeze) as total_freeze, token_id, token_name FROM g_currency.`user_currency` GROUP BY token_id"
 	engine := utils.Engine_currency
 	err = engine.In("token_id", tokenIdList).SQL(sql).Find(&allBalanceList)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("currency sum err:", err)
 	}
 	usersSql := "SELECT count(uid) as total_user, token_id  FROM g_currency.`user_currency`  WHERE (balance > 0 OR freeze > 0 ) GROUP BY token_id"
 	err = engine.In("token_id", tokenIdList).SQL(usersSql).Find(&allCoinUsers)

@@ -114,7 +114,7 @@ func (this *TokenDailySheet) GetDailySheetList(page, rows int, date uint64) (*Mo
 		list[i].Total = this.Int64ToFloat64By8Bit(v.BuyTotalCny + v.SellTotalCny)
 	}
 	mList.Items = list
-	result, err := engine.SumsInt(this, "buy_total", "sell_total")
+	result, err := engine.SumsInt(this, "buy_total_cny", "sell_total_cny")
 	if err != nil {
 		return nil, nil, err
 	}
