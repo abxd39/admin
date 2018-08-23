@@ -41,11 +41,12 @@ func Int64ToStringBy8Bit(b int64) string {
 	r := a.Div(decimal.New(100000000, 0))
 	return r.String()
 }
+
 //int 加八个零
-func Int64ToStringAdd8Bit(b int64)string{
-	str:=decimal.New(b,0)
-	str1:=decimal.New(100000000,0)
-	b1:=str.Mul(str1)
+func Int64ToStringAdd8Bit(b int64) string {
+	str := decimal.New(b, 0)
+	str1 := decimal.New(100000000, 0)
+	b1 := str.Mul(str1)
 	return b1.String()
 }
 
@@ -58,31 +59,46 @@ func StringAddString(a, b string) (string, error) {
 	strb, err := decimal.NewFromString(b)
 	if err != nil {
 		return "", err
-	}else{
-		return stra.Add(strb).String(), err
+	}
+	return stra.Add(strb).String(), nil
+}
+
+func StringAddStrings(a string, bs ...string) (string, error) {
+	stra, err := decimal.NewFromString(a)
+	if err != nil {
+		return "", err
 	}
 
+	for _, b := range bs {
+		strb, err := decimal.NewFromString(b)
+		if err != nil {
+			return "", err
+		}
+
+		stra = stra.Add(strb)
+	}
+
+	return stra.String(), nil
 }
 
 //大数string 相除
-func StringDivString(a, b string)( string, error) {
+func StringDivString(a, b string) (string, error) {
 	astr, err := decimal.NewFromString(a)
 	if err != nil {
 		return "", nil
 	}
 	bstr, err := decimal.NewFromString(b)
 	if err != nil {
-		return "",nil
+		return "", nil
 	}
 	result := astr.Div(bstr)
 
 	return result.Round(8).String(), nil
 }
 
-
 //string 去掉8个零
-func StringTo8Bit(a string)(string, error) {
-	s , err := decimal.NewFromString(a)
+func StringTo8Bit(a string) (string, error) {
+	s, err := decimal.NewFromString(a)
 	if err != nil {
 		return "", err
 	}
@@ -90,8 +106,6 @@ func StringTo8Bit(a string)(string, error) {
 	n := s.Div(d)
 	return n.String(), nil
 }
-
-
 
 //0.00001001
 func StringToInt64By8Bit(s string) (int64, error) {
@@ -139,7 +153,7 @@ func Int64MulInt64By8BitString(a int64, b int64) string {
 	return r.String()
 }
 
-func Int64MulInt64By8BitFloat(a ,b int64) float64{
+func Int64MulInt64By8BitFloat(a, b int64) float64 {
 	dd := decimal.New(a, 0)
 	dp := decimal.New(b, 0)
 	m := dd.Mul(dp)
@@ -147,8 +161,8 @@ func Int64MulInt64By8BitFloat(a ,b int64) float64{
 	n := m.Div(d)
 
 	r := n.Div(decimal.New(100000000, 0))
-	v,_:=r.Float64()
-	return  v
+	v, _ := r.Float64()
+	return v
 }
 
 func Int64MulFloat64(a int64, b float64) int64 {

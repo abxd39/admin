@@ -20,8 +20,17 @@ func (*TokensDailySheet) TableName() string {
 	return "g_common.tokens_daily_sheet"
 }
 
+// 走势返回string，内容是int64
+// 如果用int64，数据太大时xorm sum会溢出报错
+type TokensNumTrend struct {
+	TokenTotal    string `xorm:"token_total"`
+	CurrencyTotal string `xorm:"currency_total"`
+	Total         string `xorm:"total"`
+	Date          string `xorm:"date"`
+}
+
 //币种数量走势
-func (t *TokensDailySheet) NumTrend(filter map[string]interface{}) ([]*TokensDailySheet, error) {
+func (t *TokensDailySheet) NumTrend(filter map[string]interface{}) ([]*TokensNumTrend, error) {
 	// 时间区间，默认最近一周
 	today := time.Now().Format(utils.LAYOUT_DATE)
 	todayTime, _ := time.Parse(utils.LAYOUT_DATE, today)
@@ -43,8 +52,9 @@ func (t *TokensDailySheet) NumTrend(filter map[string]interface{}) ([]*TokensDai
 		session.And("token_id=?", v)
 	}
 
-	var list []*TokensDailySheet
+	var list []*TokensNumTrend
 	err := session.
+		Table(t).
 		Select("date, sum(token_total) as token_total, sum(currency_total) as currency_total, sum(total) as total").
 		And("date>=?", dateBegin).
 		And("date<=?", dateEnd).

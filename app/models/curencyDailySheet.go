@@ -123,8 +123,22 @@ type CurrencyDailySheet struct {
 	}
 }*/
 
+// 走势返回string，内容是int64
+// 如果用int64，数据太大时xorm sum会溢出报错
+type CurrencyTradeTrend struct {
+	BuyTotal     string `xorm:"buy_total"`
+	BuyCny       string `xorm:"buy_cny"`
+	SellTotal    string `xorm:"sell_total"`
+	SellCny      string `xorm:"sell_cny"`
+	FeeBuyTotal  string `xorm:"fee_buy_total"`
+	FeeBuyCny    string `xorm:"fee_buy_cny"`
+	FeeSellTotal string `xorm:"fee_sell_total"`
+	FeeSellCny   string `xorm:"fee_sell_cny"`
+	Date         string `xorm:"date"`
+}
+
 // 交易趋势
-func (this *CurrencyDailySheet) TradeTrendList(filter map[string]interface{}) ([]*CurrencyDailySheet, error) {
+func (this *CurrencyDailySheet) TradeTrendList(filter map[string]interface{}) ([]*CurrencyTradeTrend, error) {
 	// 时间区间，默认最近一周
 	today := time.Now().Format(utils.LAYOUT_DATE)
 	todayTime, _ := time.Parse(utils.LAYOUT_DATE, today)
@@ -146,8 +160,9 @@ func (this *CurrencyDailySheet) TradeTrendList(filter map[string]interface{}) ([
 		session.And("token_id=?", v)
 	}
 
-	var list []*CurrencyDailySheet
+	var list []*CurrencyTradeTrend
 	err := session.
+		Table(this).
 		Select("date, sum(buy_total) as buy_total, sum(buy_cny) as buy_cny"+
 			",sum(sell_total) as sell_total, sum(sell_cny) as sell_cny"+
 			",sum(fee_buy_total) as fee_buy_total, sum(fee_buy_cny) as fee_buy_cny"+
