@@ -41,6 +41,8 @@ func Int64ToStringBy8Bit(b int64) string {
 	return r.String()
 }
 
+
+
 //0.00001001
 func StringToInt64By8Bit(s string) (int64, error) {
 	d, err := decimal.NewFromString(s)
