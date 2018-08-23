@@ -11,8 +11,8 @@ import (
 	"admin/utils"
 	"admin/utils/convert"
 
-	"github.com/gin-gonic/gin"
 	"admin/apis"
+	"github.com/gin-gonic/gin"
 )
 
 type TokenController struct {
@@ -64,6 +64,7 @@ func (this *TokenController) Router(r *gin.Engine) {
 		//仪表盘
 		g.GET("/fee_trend", this.FeeTrend)
 		g.GET("/trade_trend", this.TradeTrend)
+		g.GET("/num_trend", this.NumTrend)
 	}
 }
 
@@ -476,8 +477,8 @@ func (this *TokenController) ChangeDetail(c *gin.Context) {
 		Page   int    `form:"page" json:"page" binding:"required"`
 		Rows   int    `form:"rows" json:"rows" `
 		Tid    int    `form:"tid" json:"tid" binding:"required"`
-		Bt uint64 `form:"bt" json:"bt"`
-		Et uint64 `form:"et" json:"et"`
+		Bt     uint64 `form:"bt" json:"bt"`
+		Et     uint64 `form:"et" json:"et"`
 		Search string `form:"search" json:"search" ` //刷选
 		Type   int    `form:"type" json:"type" `     //交易方向 买 卖 划转
 		Status int    `form:"status" json:"status" ` //用户状态
@@ -499,30 +500,30 @@ func (this *TokenController) ChangeDetail(c *gin.Context) {
 	//type =3 注册奖励
 	//type=4 邀请奖励
 	//因为表不同所以在此分开查询
-	if req.Type==3|| req.Type==4{
+	if req.Type == 3 || req.Type == 4 {
 		fmt.Println("hehe")
-		list,err:=new(models.FrozenHistory).GetFrozenHistory(req.Page,req.Rows,req.Type,req.Tid,req.Status,req.Bt,req.Et,req.Search)
-		if err!=nil{
-			this.RespErr(c,err)
+		list, err := new(models.FrozenHistory).GetFrozenHistory(req.Page, req.Rows, req.Type, req.Tid, req.Status, req.Bt, req.Et, req.Search)
+		if err != nil {
+			this.RespErr(c, err)
 			return
 		}
-		uidList:=make([]int64,0)
-		value,ok:=list.Items.([]models.FrozenHistoryGroup)
-		if !ok{
-			this.RespErr(c,errors.New("assert failed"))
+		uidList := make([]int64, 0)
+		value, ok := list.Items.([]models.FrozenHistoryGroup)
+		if !ok {
+			this.RespErr(c, errors.New("assert failed"))
 			return
 		}
-		for _,v:=range value{
-			uidList = append(uidList,v.Uid)
+		for _, v := range value {
+			uidList = append(uidList, v.Uid)
 		}
-		balanceList,err:=new(models.MoneyRecord).GetMoneyListForUId(uidList)
-		if err!=nil{
-			this.RespErr(c,err)
+		balanceList, err := new(models.MoneyRecord).GetMoneyListForUId(uidList)
+		if err != nil {
+			this.RespErr(c, err)
 			return
 		}
-		for i,v:=range value  {
-			for _,bv:=range balanceList{
-				if int(v.Uid) == bv.Uid{
+		for i, v := range value {
+			for _, bv := range balanceList {
+				if int(v.Uid) == bv.Uid {
 					value[i].NumTrue = convert.Int64ToFloat64By8Bit(v.Num)
 					value[i].SurplusTrue = convert.Int64ToFloat64By8Bit(bv.Balance)
 				}
@@ -540,8 +541,8 @@ func (this *TokenController) ChangeDetail(c *gin.Context) {
 		this.RespOK(c)
 		return
 
-	}else {
-		mlist, err := new(models.MoneyRecord).GetMoneyListForDateOrType(req.Page, req.Rows, req.Type, req.Status, req.Tid,req.Bt,req.Et, req.Search)
+	} else {
+		mlist, err := new(models.MoneyRecord).GetMoneyListForDateOrType(req.Page, req.Rows, req.Type, req.Status, req.Tid, req.Bt, req.Et, req.Search)
 		if err != nil {
 			this.RespErr(c, err)
 			return
@@ -654,7 +655,7 @@ func (this *TokenController) GetTokenBalance(c *gin.Context) {
 		this.RespErr(c, err.Error())
 		return
 	}
-	for i,v :=range value{
+	for i, v := range value {
 		for _, vc := range tokenList {
 			if vc.Uid == uint64(v.Uid) {
 				value[i].AmountTo = vc.TotalCny
@@ -1059,6 +1060,68 @@ func (t *TokenController) TradeTrend(ctx *gin.Context) {
 	t.Put(ctx, "y_sell", ySell)
 	t.Put(ctx, "all_buy_total", convert.Int64ToStringBy8Bit(allBuyTotal))
 	t.Put(ctx, "all_sell_total", convert.Int64ToStringBy8Bit(allSellTotal))
+
+	// 返回
+	t.RespOK(ctx)
+	return
+}
+
+// 币种数量走势
+func (t *TokenController) NumTrend(ctx *gin.Context) {
+	// 筛选
+	filter := make(map[string]interface{})
+
+	tokenId, err := t.GetInt(ctx, "token_id")
+	if err != nil || tokenId < 0 {
+		t.RespErr(ctx, "参数token_id格式错误")
+		return
+	}
+	filter["token_id"] = tokenId
+
+	if v := t.GetString(ctx, "date_begin"); v != "" {
+		if matched, err := regexp.Match(constant.REGE_PATTERN_DATE, []byte(v)); err != nil || !matched {
+			t.RespErr(ctx, "参数date_begin格式错误")
+			return
+		}
+		dateTime, _ := time.Parse(utils.LAYOUT_DATE, v)
+
+		filter["date_begin"] = dateTime.Unix()
+	}
+	if v := t.GetString(ctx, "date_end"); v != "" {
+		if matched, err := regexp.Match(constant.REGE_PATTERN_DATE, []byte(v)); err != nil || !matched {
+			t.RespErr(ctx, "参数date_end格式错误")
+			return
+		}
+		dateTime, _ := time.Parse(utils.LAYOUT_DATE, v)
+
+		filter["date_end"] = dateTime.Unix()
+	}
+
+	// 调用model
+	list, err := new(models.TokensDailySheet).NumTrend(filter)
+	if err != nil {
+		t.RespErr(ctx, err)
+		return
+	}
+
+	// 组装数据
+	listLen := len(list)
+	x := make([]string, listLen)
+	y := make([]string, listLen)
+
+	var allTotal int64
+	for k, v := range list {
+		datetime, _ := time.Parse(utils.LAYOUT_DATE, v.Date)
+		x[k] = datetime.Format("0102")
+		y[k] = convert.Int64ToStringBy8Bit(v.TokenTotal + v.CurrencyTotal)
+
+		allTotal += v.TokenTotal + v.CurrencyTotal
+	}
+
+	// 设置返回数据
+	t.Put(ctx, "x", x)
+	t.Put(ctx, "y", y)
+	t.Put(ctx, "all_total", convert.Int64ToStringBy8Bit(allTotal))
 
 	// 返回
 	t.RespOK(ctx)
