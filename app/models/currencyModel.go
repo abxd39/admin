@@ -44,6 +44,8 @@ type DetailCurrency struct {
 	AmountTo    float64 `xorm:"-"json:"amount_to"` //折合人民币
 }
 
+
+
 func (this *DetailCurrency) TableName() string {
 	return "user_currency"
 }
@@ -134,8 +136,8 @@ func (this *UserCurrency) CurrencyBalance(page, rows, status int, search string)
 	}
 
 	for i, v := range list {
-		fmt.Println(v.BalanceCny)
-		fmt.Println(v.FreezeCny)
+		//fmt.Println(v.BalanceCny)
+		//fmt.Println(v.FreezeCny)
 		list[i].AmountTo = fmt.Sprintf("%.2f", convert.Int64ToFloat64By8Bit(v.BalanceCny +v.FreezeCny))
 	}
 	mList.Items = list
@@ -180,3 +182,35 @@ func (this *UserCurrency) Decimal(value float64) float64 {
 	value, _ = strconv.ParseFloat(fmt.Sprintf("%.2f", value), 64)
 	return value
 }
+
+
+
+/*
+	get total coin
+*/
+type TotalCurrencyCoin struct {
+	TotalBalance       int64  `json:"total_balance"`
+	TotalFreeze        int64  `json:"total_freeze"`
+	TokenId            int32  `json:"token_id"`
+	TokenName          string `json:"token_name"`
+}
+type TotalCurrencyCoinUser struct {
+	TotalUser     int64   `json:"total_user"`
+	TokenId       int32   `json:"token_id"`
+}
+
+func (this *UserCurrency) GetAllCurrencyCoin(tokenIdList []int32) (allBalanceList []TotalCurrencyCoin, allCoinUsers []TotalCurrencyCoinUser ,err error){
+	sql := "SELECT SUM(balance) as total_balance, SUM(freeze) as total_freeze, token_id, token_name FROM g_currency.`user_currency` GROUP BY token_id"
+	engine := utils.Engine_currency
+	err = engine.In("token_id", tokenIdList).SQL(sql).Find(&allBalanceList)
+	if err != nil {
+		fmt.Println(err)
+	}
+	usersSql := "SELECT count(uid) as total_user, token_id  FROM g_currency.`user_currency`  WHERE (balance > 0 OR freeze > 0 ) GROUP BY uid"
+	err = engine.In("token_id", tokenIdList).SQL(usersSql).Find(&allCoinUsers)
+	if err != nil {
+		fmt.Println(err)
+	}
+	return
+}
+

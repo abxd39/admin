@@ -155,3 +155,35 @@ func (t *PersonalProperty) TotalUserBalance(page, rows, status int, search strin
 	mList.Items = list
 	return mList, nil
 }
+
+
+
+
+/*
+	统计平台所有币余额
+*/
+type TotalTokenCoin struct {
+	TotalBalance       int64  `json:"total_balance"`
+	TotalFrozen        int64  `json:"total_frozen"`
+	TokenId            int32  `json:"token_id"`
+	TokenName          string `json:"token_name"`
+}
+type TotalTokenCoinUser struct {
+	TotalUser    int64   `json:"total_user"`
+	TokenId      int32   `json:"token_id"`
+}
+func (this *UserToken) GetAllTokenCoin(tokenIdList []int32) (allbalanceList []TotalTokenCoin, allCoinUsers []TotalTokenCoinUser , err error) {
+	sql := "SELECT SUM(balance) AS total_balance, SUM(frozen) AS total_frozen, token_id, token_name FROM  g_token.`user_token` GROUP BY token_id"
+	//sql := "SELECT uid, balance, frozen FROM g_token.`user_token` WHERE token_id IN (1,2,3,4,5,6) AND (balance > 0 OR frozen > 0 ) GROUP BY uid"
+	engine := utils.Engine_token
+	err = engine.In("token_id", tokenIdList).SQL(sql).Find(&allbalanceList)
+	if err != nil {
+		fmt.Println(err)
+	}
+	usersSql := "SELECT count(uid) as total_user, token_id  FROM g_token.`user_token` WHERE (balance > 0 OR frozen > 0 ) GROUP BY uid"
+	err = engine.In("token_id", tokenIdList).SQL(usersSql).Find(&allCoinUsers)
+	if err != nil {
+		fmt.Println(err)
+	}
+	return
+}
