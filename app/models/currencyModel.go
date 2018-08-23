@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strconv"
 	"admin/utils/convert"
+	"admin/apis"
+	"errors"
 )
 
 // 用户虚拟货币资产表
@@ -39,9 +41,9 @@ func (this *AmountToCny) TableName() string {
 
 type DetailCurrency struct {
 	UserCurrency `xorm:"extends"`
-	BalanceTrue float64 `xorm:"-" json:"balance_true"`
+	BalanceTrue string `xorm:"-" json:"balance_true"`
 	FreezeTrue  float64 `xorm:"-" json:"freeze_true" `
-	AmountTo    float64 `xorm:"-"json:"amount_to"` //折合人民币
+	AmountTo    string `xorm:"-"json:"amount_to"` //折合人民币
 }
 
 
@@ -72,12 +74,28 @@ func (this *UserCurrency) GetCurrencyList(page, rows, uid, tokenId int) (*ModelL
 	if err != nil {
 		return nil, err
 	}
+	tidList:=make([]int,0)
+	for _,v:=range list{
+		tidList = append(tidList,int(v.TokenId))
+	}
+	fmt.Println(tidList)
+	priceList,err:=new(apis.VendorApi).GetTokenCnyPriceList(tidList)
+	if err!=nil{
+		utils.AdminLog.Errorln(err.Error())
+		return nil,errors.New(err.Error())
+	}
 	for i, v := range list {
-		list[i].BalanceTrue = this.Int64ToFloat64By8Bit(v.Balance)
-		list[i].FreezeTrue = this.Int64ToFloat64By8Bit(v.Freeze)
-		list[i].AmountTo = this.Int64ToFloat64By8Bit(v.BalanceCny) + this.Int64ToFloat64By8Bit(v.FreezeCny)
-		fmt.Println(v.BalanceCny)
-		fmt.Println(v.FreezeCny)
+		list[i].BalanceTrue = convert.Int64ToStringBy8Bit(v.Balance)
+		list[i].FreezeTrue = convert.Int64ToFloat64By8Bit(v.Freeze)
+		for _,vp:=range priceList{
+			if vp.TokenId ==int(v.TokenId){
+				list[i].AmountTo = fmt.Sprintf("%.3f",convert.Int64MulInt64By8BitFloat(v.Balance+v.Freeze,vp.CnyPriceInt))
+				fmt.Println("price=",vp.CnyPriceInt,"balance=",v.Balance)
+				fmt.Println("折合",list[i].AmountTo,"token_id=",v.TokenId)
+				break
+			}
+
+		}
 	}
 	mList.Items = list
 	return mList, nil

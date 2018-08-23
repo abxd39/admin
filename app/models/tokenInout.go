@@ -4,9 +4,8 @@ import (
 	"admin/apis"
 	"admin/errors"
 	"admin/utils"
-	"fmt"
-	"time"
 	"admin/utils/convert"
+	"fmt"
 )
 
 //冲 提 币明细流水表
@@ -49,22 +48,6 @@ func (t *TokenInoutGroup) TableName() string {
 	return "token_inout"
 }
 
-//仪表盘 日提币手续费
-func (t *TokenInout) GetOutTokenFee() (float64, error) {
-	engine := utils.Engine_wallet
-	current := time.Now().Format("2006-01-02 15:04:05")
-	sql := fmt.Sprintf("SELECT SUM(t.fee)FROM (SELECT SUBSTRING(done_time,1,10)days,fee_cny fee FROM g_wallet.`token_inout` WHERE states=2)t WHERE t.days='%s'", current[:10])
-	fee := &struct {
-		Fee float64
-	}{}
-	_, err := engine.SQL(sql).Get(fee)
-	if err != nil {
-		utils.AdminLog.Println(err.Error())
-		return 0, err
-	}
-	return fee.Fee, nil
-}
-
 //日提币 每个用户提币信息
 func (t *TokenInout) GetTotalInfoList(page, rows, tid, opt int, search string) (*ModelList, error) {
 	enginge := utils.Engine_wallet
@@ -100,11 +83,11 @@ func (t *TokenInout) GetTotalInfoList(page, rows, tid, opt int, search string) (
 	}
 	offset, mList := t.Paging(page, rows, int(count.Count))
 	type Return struct {
-		Day   int
-		Uid   int
+		Day    int
+		Uid    int
 		Amount int64
-		Total string `xorm:"-"` //提币总数
-		Name  string //货币名称
+		Total  string `xorm:"-"` //提币总数
+		Name   string //货币名称
 	}
 	limitSql := fmt.Sprintf(" limit %d offset %d ", mList.PageSize, offset)
 	list := make([]Return, 0)
@@ -114,7 +97,7 @@ func (t *TokenInout) GetTotalInfoList(page, rows, tid, opt int, search string) (
 	if err != nil {
 		return nil, err
 	}
-	for i,v:=range list{
+	for i, v := range list {
 		list[i].Total = convert.Int64ToStringBy8Bit(v.Amount)
 	}
 	mList.Items = list
