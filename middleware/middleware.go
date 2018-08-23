@@ -86,8 +86,12 @@ func JsCors() gin.HandlerFunc {
 		if os.Getenv("ADMIN_API_ENV") != "prod" {
 			allowOrigins["https://admintest.sdun.io"] = true
 			allowOrigins["http://admintest.sdun.io"] = true
+
 			allowOrigins["http://localhost:8888"] = true
 			allowOrigins["https://localhost:8888"] = true
+
+			allowOrigins["http://localhost:8889"] = true
+			allowOrigins["http://localhost:8889"] = true
 		}
 
 		// 判断范围
