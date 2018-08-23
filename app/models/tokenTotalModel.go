@@ -123,7 +123,7 @@ func (t *PersonalProperty) TotalUserBalance(page, rows, status int, search strin
 	}
 	offset, mList := t.Paging(page, rows, int(count))
 	list := make([]PersonalProperty, 0)
-	err = query.Desc("ut.uid").Select("ut.token_id,ut.uid uid, u.phone phone,u.email email,ex.nick_name nick_name,u.status status,u.account account").GroupBy("ut.uid").Limit(mList.PageSize, offset).Find(&list)
+	err = query.Desc("ut.uid").Select("ut.id,ut.token_id,ut.uid uid, u.phone phone,u.email email,ex.nick_name nick_name,u.status status,u.account account").GroupBy("ut.uid").Limit(mList.PageSize, offset).Find(&list)
 	if err != nil {
 		return nil, err
 	}

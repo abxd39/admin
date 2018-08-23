@@ -108,16 +108,19 @@ func (m *MoneyRecord) GetMoneyList(page, rows int, uid []int64) (*ModelList, err
 	return modelList, nil
 }
 
-func (m *MoneyRecord) GetMoneyListForDateOrType(page, rows, ty, status int, tid int,date uint64, search string) (*ModelList, error) {
+func (m *MoneyRecord) GetMoneyListForDateOrType(page, rows, ty, status int, tid int,bt,et uint64, search string) (*ModelList, error) {
 	engine := utils.Engine_token
 	query := engine.Alias("uch").Desc("u.uid")
 	query = query.Join("LEFT", "g_common.user u ", "u.uid= uch.uid")
 	query = query.Join("LEFT", "g_common.user_ex ex", "uch.uid=ex.uid")
 	subDate := time.Now().Unix()
-	if date!=0{
-		query = query.Where("uch.token_id=?  AND uch.created_time BETWEEN ? AND ? ", tid,date -3600 ,date)
+	if bt!=0{
+		if et!=0{
+			query = query.Where("uch.token_id=?  AND uch.created_time BETWEEN ? AND ? ", tid,bt ,et+86400)
+		}
+		query = query.Where("uch.token_id=?  AND uch.created_time BETWEEN ? AND ? ", tid,bt ,bt+86400)
 	}else{
-		query = query.Where("uch.token_id=?  AND uch.created_time BETWEEN ? AND ? ", tid,subDate-3600,subDate)
+		query = query.Where("uch.token_id=?  AND uch.created_time BETWEEN ? AND ? ", tid,subDate-86400,subDate)
 	}
 
 
@@ -151,6 +154,26 @@ func (m *MoneyRecord) GetMoneyListForDateOrType(page, rows, ty, status int, tid 
 	return modelList, nil
 
 }
+
+
+
+func (m *MoneyRecord) GetMoneyListForUId(uid []int64) ([]MoneyRecord, error) {
+	engine := utils.Engine_token
+	query := engine.Desc("uid")
+	list:=make([]MoneyRecord,0)
+	err:=query.In("uid",uid).Find(&list)
+	if err!=nil{
+		return nil,err
+	}
+	//for i, v := range list {
+	//	list[i].NumTrue = m.Int64ToFloat64By8Bit(v.Num)
+	//	list[i].SurplusTrue = m.Int64ToFloat64By8Bit(v.Balance)
+	//}
+	//modelList.Items = list
+	return list, nil
+
+}
+
 //u优化
 
 

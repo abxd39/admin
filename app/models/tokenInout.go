@@ -257,6 +257,7 @@ func (t *TokenInout) OptTakeToken(id, status int) error {
 		return err
 	}
 	//审核通过
+	fmt.Println("id=",id,"status=",status)
 	if status == utils.VERIFY_OUT_TOKEN_MARK {
 		fmt.Println("审核通过")
 		mount := t.Int64ToFloat64By8Bit(t.Amount)

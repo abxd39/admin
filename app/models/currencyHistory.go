@@ -93,6 +93,11 @@ func (u *UserCurrencyHistory) GetListForUid(page, rows, tid, status, chType int,
 		list[i].NumTrue = u.Int64ToFloat64By8Bit(v.Num)
 		list[i].SurplusTrue = u.Int64ToFloat64By8Bit(v.Surplus)
 	}
+	for i,v:=range list{
+		if v.Operator ==3 || v.Operator ==4{
+			list[i].UpdatedTime = v.CreatedTime
+		}
+	}
 	modelList.Items = list
 	return modelList, nil
 

@@ -169,7 +169,7 @@ func (this *UserCurrency) CurrencyBalanceNew(page, rows, status int, search stri
 	}
 	offset, mList := this.Paging(page, rows, int(count))
 	list := make([]AmountToCny, 0)
-	err = query.Select(" u.uid ,uc.token_id, u.phone,u.email,u.status,u.account").GroupBy("u.uid").Limit(mList.PageSize, offset).Find(&list)
+	err = query.Select(" uc.id,u.uid ,uc.token_id, u.phone,u.email,u.status,u.account").GroupBy("u.uid").Limit(mList.PageSize, offset).Find(&list)
 	if err != nil {
 		return nil, err
 	}

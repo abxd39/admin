@@ -520,7 +520,8 @@ func (this *TokenController) ChangeDetail(c *gin.Context) {
 		Page   int    `form:"page" json:"page" binding:"required"`
 		Rows   int    `form:"rows" json:"rows" `
 		Tid    int    `form:"tid" json:"tid" binding:"required"`
-		Date uint64 `form:"date" json:"date"`
+		Bt uint64 `form:"bt" json:"bt"`
+		Et uint64 `form:"et" json:"et"`
 		Search string `form:"search" json:"search" ` //刷选
 		Type   int    `form:"type" json:"type" `     //交易方向 买 卖 划转
 		Status int    `form:"status" json:"status" ` //用户状态
@@ -538,28 +539,78 @@ func (this *TokenController) ChangeDetail(c *gin.Context) {
 		return
 	}
 	fmt.Println("------------------------>what funck you ", req.Status)
-	mlist, err := new(models.MoneyRecord).GetMoneyListForDateOrType(req.Page, req.Rows, req.Type, req.Status, req.Tid,req.Date, req.Search)
-	if err != nil {
-		this.RespErr(c, err)
+	//这里分开
+	//type =3 注册奖励
+	//type=4 邀请奖励
+	//因为表不同所以在此分开查询
+	if req.Type==3|| req.Type==4{
+		fmt.Println("hehe")
+		list,err:=new(models.FrozenHistory).GetFrozenHistory(req.Page,req.Rows,req.Type,req.Tid,req.Status,req.Bt,req.Et,req.Search)
+		if err!=nil{
+			this.RespErr(c,err)
+			return
+		}
+		uidList:=make([]int64,0)
+		value,ok:=list.Items.([]models.FrozenHistoryGroup)
+		if !ok{
+			this.RespErr(c,errors.New("assert failed"))
+			return
+		}
+		for _,v:=range value{
+			uidList = append(uidList,v.Uid)
+		}
+		balanceList,err:=new(models.MoneyRecord).GetMoneyListForUId(uidList)
+		if err!=nil{
+			this.RespErr(c,err)
+			return
+		}
+		for i,v:=range value  {
+			for _,bv:=range balanceList{
+				if int(v.Uid) == bv.Uid{
+					value[i].NumTrue = convert.Int64ToFloat64By8Bit(v.Num)
+					value[i].SurplusTrue = convert.Int64ToFloat64By8Bit(bv.Balance)
+				}
+			}
+			for _, vt := range tokenlist {
+				if vt.Id == uint32(v.TokenId) {
+					value[i].TokenName = vt.Mark
+					break
+				}
+			}
+
+		}
+		list.Items = value
+		this.Put(c, "list", list)
+		this.RespOK(c)
 		return
-	}
-	list, Ok := mlist.Items.([]models.MoneyRecordGroup)
-	if !Ok {
-		this.RespErr(c, errors.New("assert type UserGroup failed!!"))
-		return
-	}
-	for i, v := range list {
-		for _, vt := range tokenlist {
-			if vt.Id == uint32(v.TokenId) {
-				list[i].TokenName = vt.Mark
-				break
+
+	}else {
+		mlist, err := new(models.MoneyRecord).GetMoneyListForDateOrType(req.Page, req.Rows, req.Type, req.Status, req.Tid,req.Bt,req.Et, req.Search)
+		if err != nil {
+			this.RespErr(c, err)
+			return
+		}
+
+		list, Ok := mlist.Items.([]models.MoneyRecordGroup)
+		if !Ok {
+			this.RespErr(c, errors.New("assert type UserGroup failed!!"))
+			return
+		}
+		for i, v := range list {
+			for _, vt := range tokenlist {
+				if vt.Id == uint32(v.TokenId) {
+					list[i].TokenName = vt.Mark
+					break
+				}
 			}
 		}
+
+		mlist.Items = list
+		this.Put(c, "list", mlist)
+		this.RespOK(c)
+		return
 	}
 
-	mlist.Items = list
-	this.Put(c, "list", mlist)
-	this.RespOK(c)
 	return
 }
 
