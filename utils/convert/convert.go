@@ -42,6 +42,48 @@ func Int64ToStringBy8Bit(b int64) string {
 }
 
 
+////0.00001001
+func StringAddString(a, b string) (string, error) {
+	stra, err := decimal.NewFromString(a)
+	if err != nil {
+		return "", err
+	}
+	strb, err := decimal.NewFromString(b)
+	if err != nil {
+		return "", err
+	}else{
+		return stra.Add(strb).String(), err
+	}
+
+}
+
+
+func StringDivString(a, b string)( string, error) {
+	astr, err := decimal.NewFromString(a)
+	if err != nil {
+		return "", nil
+	}
+	bstr, err := decimal.NewFromString(b)
+	if err != nil {
+		return "",nil
+	}
+	result := astr.Div(bstr)
+	return result.String(), nil
+}
+
+
+
+func StringTo8Bit(a string)(string, error) {
+	s , err := decimal.NewFromString(a)
+	if err != nil {
+		return "", err
+	}
+	d := decimal.New(100000000, 0)
+	n := s.Div(d)
+	return n.String(), nil
+}
+
+
 
 //0.00001001
 func StringToInt64By8Bit(s string) (int64, error) {

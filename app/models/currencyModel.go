@@ -207,8 +207,8 @@ func (this *UserCurrency) Decimal(value float64) float64 {
 	get total coin
 */
 type TotalCurrencyCoin struct {
-	TotalBalance       int64  `json:"total_balance"`
-	TotalFreeze        int64  `json:"total_freeze"`
+	TotalBalance       string  `json:"total_balance"`
+	TotalFreeze        string  `json:"total_freeze"`
 	TokenId            int32  `json:"token_id"`
 	TokenName          string `json:"token_name"`
 }
