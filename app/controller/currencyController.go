@@ -347,7 +347,8 @@ func (cu *CurrencyController)totalCoin(c *gin.Context) {
 		if totaluser <= 0 {
 			tmp.AverageNum = "0"
 		}else{
-			tmp.AverageNum = convert.Int64ToStringBy8Bit(totalnum / totaluser)
+			tempInt:=convert.Int64DivInt64By8Bit(totalnum ,convert.Int64ToInt64By8Bit(totaluser))
+			tmp.AverageNum = convert.Int64ToStringBy8Bit(tempInt)
 		}
 		totalcoinList = append(totalcoinList, tmp )
 	}
