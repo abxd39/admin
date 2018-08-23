@@ -352,7 +352,14 @@ func (cu *CurrencyController)totalCoin(c *gin.Context) {
 	respList.Total = int(total)
 	respList.PageIndex = req.Page
 	respList.PageSize  = req.Rows
-
+	var pagecount int
+	if int(total) % req.Rows == 0 {
+		pagecount = int(total) / req.Rows
+	}else{
+		pagecount = (int(total) / req.Rows) + 1
+	}
+	respList.PageCount = pagecount
+	
 	cu.Put(c, "list", respList)
 	cu.RespOK(c)
 	return
