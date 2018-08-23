@@ -39,6 +39,12 @@ func (this *CurrencyController) Router(r *gin.Engine) {
 		g.GET("/export_total", this.ExportTotal)                           //p2-3-0总财产列表
 		g.GET("/currency_change", this.GetCurrencyChangeHistory)           //p2-3-3法币账户变更详情
 		g.GET("/export_currency_change", this.ExportCurrencyChangeHistory) //p2-3-3法币账户变更详情
+
+		// 统计平台币总数
+		g.GET("/total_coin", this.TotalCoin)
+		g.GET("/export_total_coin", this.ExportTotalCoin)
+
+
 		//g.GET("/")                                               //p2-3-0-0币数统计列表
 		//划转到币币账户货币数量日统计 注释接口没有实现
 		g.GET("/layoff_list", this.GetLayOffList)
@@ -238,6 +244,120 @@ func (cu *CurrencyController) total(c *gin.Context) {
 	cu.RespOK(c)
 	return
 }
+
+
+
+/*
+	total coin
+*/
+func (cu *CurrencyController) TotalCoin(c *gin.Context) {
+	cu.totalCoin(c)
+	return
+}
+
+func (cu *CurrencyController)ExportTotalCoin(c *gin.Context){
+	cu.totalCoin(c)
+	return
+}
+
+
+func (cu *CurrencyController)totalCoin(c *gin.Context) {
+	fmt.Println("total coin ...")
+	req := struct {
+		Page   int     `form:"page"       json:"page" binding:"required"`
+		Rows   int     `form:"rows"       json:"rows" `
+		TokenId int    `form:"token_id"   json:"token_id"`
+	}{}
+	err := c.ShouldBind(&req)
+	if err != nil {
+		utils.AdminLog.Errorf(err.Error())
+		cu.RespErr(c, err)
+		return
+	}
+	var tokenList []models.CommonTokens
+	var total int64
+	if req.Page <= 1 {
+		req.Page = 1
+	}
+	if req.Rows <= 0 {
+		req.Rows = 10
+	}
+	if req.TokenId > 0 {
+		tokenList , total, err = new(models.CommonTokens).GetTokenPage(req.Page, req.Rows, int32(req.TokenId))
+	}else{
+		tokenList , total, err = new(models.CommonTokens).GetTokenPage(req.Page, req.Rows, 0)
+	}
+
+	if err != nil {
+		fmt.Println(err)
+	}
+	var tokenIdList []int32
+	for _, tk := range tokenList{
+		tokenIdList = append(tokenIdList, int32(tk.Id))
+	}
+	
+	type TotalCoin struct {
+		TokenId      int     `json:"token_id"`
+		TokenName    string   `json:"token_name"`
+		TotalUser    int64    `json:"total_user"`
+		TotalNum     string  `json:"total_num"`
+		AverageNum   string  `json:"average_num"`
+	}
+
+	var totalcoinList []TotalCoin
+	tokenBalanceList, tokenUserCoin, err := new(models.UserCurrency).GetAllCurrencyCoin(tokenIdList)
+	currencyBalanceList, currencyUserCoin, err := new(models.UserToken).GetAllTokenCoin(tokenIdList)
+
+	for _, tk := range tokenList {
+		var totalnum   int64
+		var totaluser  int64
+		var tmp TotalCoin
+		tmp.TokenId = int(tk.Id)
+		tmp.TokenName = tk.Mark
+		for _, tokenBalance := range tokenBalanceList{
+			if tokenBalance.TokenId == int32(tk.Id) {
+				totalnum += tokenBalance.TotalBalance
+				totalnum += tokenBalance.TotalFreeze
+			}
+		}
+		for _, currencyBalance := range currencyBalanceList {
+			if currencyBalance.TokenId == int32(tk.Id) {
+				totalnum += currencyBalance.TotalBalance
+				totalnum += currencyBalance.TotalFrozen
+			}
+		}
+		tmp.TotalNum = convert.Int64ToStringBy8Bit(totalnum)
+
+		for _, tkUser := range tokenUserCoin {
+			if tkUser.TokenId == int32(tk.Id){
+				totaluser += tkUser.TotalUser
+			}
+		}
+		for _, cuUser := range currencyUserCoin {
+			if cuUser.TokenId == int32(tk.Id) {
+				totaluser += cuUser.TotalUser
+			}
+		}
+		tmp.TotalUser = totaluser
+		if totaluser <= 0 {
+			tmp.AverageNum = "0"
+		}else{
+			tmp.AverageNum = convert.Int64ToStringBy8Bit(totalnum / totaluser)
+		}
+		totalcoinList = append(totalcoinList, tmp )
+	}
+	respList := new(models.ModelList)
+	respList.IsPage = true
+	respList.Items = totalcoinList
+	respList.Total = int(total)
+	respList.PageIndex = req.Page
+	respList.PageSize  = req.Rows
+
+	cu.Put(c, "list", respList)
+	cu.RespOK(c)
+	return
+}
+
 
 func (cu *CurrencyController) DownTradeAds(c *gin.Context) {
 	req := struct {
@@ -513,3 +633,4 @@ func (t *CurrencyController) TradeTrend(ctx *gin.Context) {
 	t.RespOK(ctx)
 	return
 }
+

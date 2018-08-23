@@ -31,6 +31,13 @@ func (t *CommonTokens) GetTokenList() ([]CommonTokens, error) {
 
 
 func (t *CommonTokens) GetTokenPage(page, rows int, tokenid int32) (ctoks []CommonTokens,total int64,err error) {
+	if page <= 1 {
+		page = 1
+	}
+	if rows <= 0 {
+		rows = 10
+	}
+
 	engine := utils.Engine_common
 	query := engine.Asc("id")
 	ctk := new(CommonTokens)
@@ -44,7 +51,6 @@ func (t *CommonTokens) GetTokenPage(page, rows int, tokenid int32) (ctoks []Comm
 		fmt.Println(err)
 		return
 	}
-
 	total, _ = countQuery.Count(ctk)
 	return
 }
