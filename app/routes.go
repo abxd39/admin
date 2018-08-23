@@ -22,4 +22,5 @@ func Router(r *gin.Engine) {
 	new(controller.NodeController).Router(r)
 	new(controller.NodeAPIController).Router(r)
 	new(controller.ConfigController).Router(r)
+	new(controller.WallectController).Router(r)
 }

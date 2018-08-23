@@ -148,8 +148,10 @@ func (this *CurrencyDailySheet) TradeTrendList(filter map[string]interface{}) ([
 
 	var list []*CurrencyDailySheet
 	err := session.
-		Select("date, sum(buy_total) as buy_total, sum(buy_cny) as buy_cny, "+
-			"sum(sell_total) as sell_total, sum(sell_cny) as sell_cny").
+		Select("date, sum(buy_total) as buy_total, sum(buy_cny) as buy_cny"+
+			",sum(sell_total) as sell_total, sum(sell_cny) as sell_cny"+
+			",sum(fee_buy_total) as fee_buy_total, sum(fee_buy_cny) as fee_buy_cny"+
+			",sum(fee_sell_total) as fee_sell_total, sum(fee_sell_cny) as fee_sell_cny").
 		And("date>=?", dateBegin+" 00:00:00").
 		And("date<=?", dateEnd+" 00:00:00").
 		GroupBy("date").

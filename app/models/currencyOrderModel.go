@@ -2,11 +2,9 @@ package models
 
 import (
 	"admin/utils"
+	"admin/utils/convert"
 	"errors"
 	"fmt"
-	"strconv"
-	"time"
-	"admin/utils/convert"
 )
 
 // 订单表
@@ -100,13 +98,13 @@ func (this *Order) GetOrderListOfUid(page, rows, uid, token_id int) (*ModelList,
 	engine := utils.Engine_currency
 	//统计
 	type Statistics struct {
-		TokenId      int       `json:"token_id"`
-		TokenName    string    `json:"token_name"`
-		BuyTotal     string   `json:"buy_toal"` //累计买入
-		BuyTotalCny  string   `json:"buy_toal_cny"` //累计买入折合
-		SellTotal    string   `json:"sell_total"` //累计卖出
-		SellTotalCny string   `json:"sell_total_cny"`//累计卖出折合
-		Transfer     string   `json:"transfer"`  //累计划转
+		TokenId      int    `json:"token_id"`
+		TokenName    string `json:"token_name"`
+		BuyTotal     string `json:"buy_toal"`       //累计买入
+		BuyTotalCny  string `json:"buy_toal_cny"`   //累计买入折合
+		SellTotal    string `json:"sell_total"`     //累计卖出
+		SellTotalCny string `json:"sell_total_cny"` //累计卖出折合
+		Transfer     string `json:"transfer"`       //累计划转
 	}
 
 	//查询所有币种名称及Id
@@ -118,18 +116,18 @@ func (this *Order) GetOrderListOfUid(page, rows, uid, token_id int) (*ModelList,
 	}
 
 	type TokenIdStruct struct {
-		TokenId   int32  `json:"token_id"`
+		TokenId int32 `json:"token_id"`
 	}
 	var gettokenIdSql string
-	var tokenList  []TokenIdStruct
+	var tokenList []TokenIdStruct
 	if token_id != 0 {
 		tokenList = append(tokenList, TokenIdStruct{TokenId: int32(token_id)})
-	}else{
+	} else {
 		gettokenIdSql = "SELECT token_id FROM  g_currency.`user_currency_history` WHERE `uid`=?  GROUP BY token_id  LIMIT ? OFFSET ?"
-		err = engine.SQL(gettokenIdSql, uid, rows, (page - 1)* rows ).Find(&tokenList)
+		err = engine.SQL(gettokenIdSql, uid, rows, (page-1)*rows).Find(&tokenList)
 		if err != nil {
 			fmt.Println(err)
-			return tmplist,err
+			return tmplist, err
 		}
 	}
 
@@ -143,38 +141,36 @@ func (this *Order) GetOrderListOfUid(page, rows, uid, token_id int) (*ModelList,
 		tokenIdList = append(tokenIdList, tk.TokenId)
 	}
 
-	result, err  := new(CommonTokens).GetTokenByTokenIds(tokenIdList)
+	result, err := new(CommonTokens).GetTokenByTokenIds(tokenIdList)
 	if err != nil {
 		fmt.Println(err)
 		return tmplist, err
 	}
-	tokenNameMap :=  make(map[int32]string, 0)
+	tokenNameMap := make(map[int32]string, 0)
 	for _, token := range result {
 		tokenNameMap[int32(token.Id)] = token.Mark
 	}
 
-
 	fmt.Println("tokenList:", tokenList)
 
 	type AllToken struct {
-		Num            int64   `json:"num"`
-		NumTotalPrice  int64   `json:"num_total_price"`
-		TokenId        int64   `json:"token_id"`
+		Num           int64 `json:"num"`
+		NumTotalPrice int64 `json:"num_total_price"`
+		TokenId       int64 `json:"token_id"`
 	}
 
 	type AllTransfer struct {
-		Num   	int64   `json:"num"`
-		TokenId int64   `json:"token_id"`
+		Num     int64 `json:"num"`
+		TokenId int64 `json:"token_id"`
 	}
 
 	// 查买入统计
 	var alltokenBuy []AllToken
-	buySql :="select num, num_total_price, token_id from `order` where `buy_id`=? and states = 3"
+	buySql := "select num, num_total_price, token_id from `order` where `buy_id`=? and states = 3"
 	err = engine.SQL(buySql, uid).In("token_id", tokenList).Find(&alltokenBuy)
 	if err != nil {
 		fmt.Println(err)
 	}
-
 
 	// 卖出统计
 	var alltokenSell []AllToken
@@ -212,35 +208,35 @@ func (this *Order) GetOrderListOfUid(page, rows, uid, token_id int) (*ModelList,
 		}
 		var totalTransNum int64
 		for _, tkTrans := range alltransfers {
-			if tkTrans.TokenId == int64(tk.TokenId){
+			if tkTrans.TokenId == int64(tk.TokenId) {
 				totalTransNum += tkTrans.Num
 			}
 		}
 		tmp := Statistics{}
-		tmp.TokenId   = int(tk.TokenId)
+		tmp.TokenId = int(tk.TokenId)
 		tmp.TokenName = tokenNameMap[tk.TokenId]
-		tmp.BuyTotal    = convert.Int64ToStringBy8Bit(totalBuyNum)
+		tmp.BuyTotal = convert.Int64ToStringBy8Bit(totalBuyNum)
 		tmp.BuyTotalCny = fmt.Sprintf("%.2f", convert.Int64ToFloat64By8Bit(totalBuyNumCny))
-		tmp.SellTotal   = convert.Int64ToStringBy8Bit(totalSellNum)
+		tmp.SellTotal = convert.Int64ToStringBy8Bit(totalSellNum)
 		tmp.SellTotalCny = fmt.Sprintf("%.2f", convert.Int64ToFloat64By8Bit(totalSellNumCny))
-		tmp.Transfer     = convert.Int64ToStringBy8Bit(totalTransNum)
+		tmp.Transfer = convert.Int64ToStringBy8Bit(totalTransNum)
 		if totalTransNum <= 0 && totalSellNum <= 0 && totalBuyNum <= 0 && totalSellNumCny <= 0 && totalBuyNumCny <= 0 {
 			continue
-		}else{
-			statics       = append(statics, tmp)
+		} else {
+			statics = append(statics, tmp)
 		}
 	}
 
 	var pagecount int
-	if (int(total) % rows) == 0{
+	if (int(total) % rows) == 0 {
 		pagecount = int(total) / rows
 	} else {
 		pagecount = (int(total) / rows) + 1
 	}
 	tmplist.IsPage = true
-	tmplist.Total  = int(total)
+	tmplist.Total = int(total)
 	tmplist.PageCount = pagecount
-	tmplist.PageSize  = rows
+	tmplist.PageSize = rows
 	tmplist.PageIndex = page
 	tmplist.Items = statics
 
@@ -322,31 +318,4 @@ func (this *Order) GetOrderList(Page, PageNum, AdType, States, TokenId int, sear
 	modelList.Items = list
 	return modelList, nil
 
-}
-
-//法币交易手续费 ---> 注：仪表盘 买卖都需要加起来。 获取当天的。
-func (this *Order) GetOrderDayFee() (float64, error) {
-	engine := utils.Engine_currency
-	current := time.Now().Format("2006-01-02 15:04:05")
-	sql := fmt.Sprintf("SELECT m.fee fee,c.price price FROM (SELECT t.days,t.fee,t.token_id FROM (SELECT SUBSTRING(confirm_time,1,10) days,fee,token_id FROM g_currency.`order` WHERE pay_status=3) t  WHERE t.days ='%s' GROUP BY t.token_id) m JOIN  g_token.`config_token_cny` c ON m.token_id= c.token_id", current[:10])
-	type fee struct {
-		Fee   int64
-		Price int64
-	}
-	list := make([]fee, 0)
-	err := engine.SQL(sql).Find(&list)
-	if err != nil {
-		return 0, err
-	}
-	var total float64
-	for _, v := range list {
-		result := this.Int64MulInt64By8BitString(v.Fee, v.Price)
-		float, err := strconv.ParseFloat(result, 64)
-		if err != nil {
-			utils.AdminLog.Println(err.Error())
-			continue
-		}
-		total += float
-	}
-	return total, nil
 }

@@ -2,9 +2,7 @@ package models
 
 import (
 	"admin/utils"
-	"fmt"
 	"strconv"
-	"time"
 )
 
 //bibi 交易表
@@ -238,21 +236,4 @@ func (this *Trade) GetFeeInfoList(page, rows, uid, opt int, date uint64, name st
 	}
 	mlist.Items = list
 	return mlist, nil
-}
-
-//获取单日bibi交易手续费
-func (this *Trade) GetTodayFee() (float64, error) {
-	engine := utils.Engine_token
-	sql := "SELECT fee FROM (SELECT FROM_UNIXTIME(deal_time,'%Y-%m-%d')days,SUM(fee_cny) fee FROM g_token.trade where states=2  ) t WHERE "
-	current := time.Now().Format("2006-01-02 15:04:05")
-	current = fmt.Sprintf(" t.days='%s'", current[:10])
-	fee := &struct {
-		Fee float64
-	}{}
-
-	_, err := engine.SQL(sql + current).Get(fee)
-	if err != nil {
-		return 0, err
-	}
-	return fee.Fee, nil
 }

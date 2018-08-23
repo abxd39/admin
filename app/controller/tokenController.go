@@ -37,10 +37,10 @@ func (this *TokenController) Router(r *gin.Engine) {
 		g.GET("/add_take_list", this.GetAddTakeList)        //p5-1-1-1提币手续费明细
 		g.GET("/total_trade", this.GetTradeTotalList)       //p5-1-0币币交易手续费汇总
 		//提币 充币管理
-		g.GET("/in_token_list", this.GetTokenInList) //充币
-		g.GET("/out_token_list", this.GetTokenOutList) //提币
-		g.POST("/opt_token_pass", this.OptTakeTokenPass)      // 审核通过
-		g.POST("/opt_token_failed", this.OptTakeTokenFailed)      // 审核撤销
+		g.GET("/in_token_list", this.GetTokenInList)         //充币
+		g.GET("/out_token_list", this.GetTokenOutList)       //提币
+		g.POST("/opt_token_pass", this.OptTakeTokenPass)     // 审核通过
+		g.POST("/opt_token_failed", this.OptTakeTokenFailed) // 审核撤销
 		//日提币充币汇总
 		g.GET("/total_token_list", this.GetTotalTokenList) //
 		g.GET("/total_token_info_list", this.GetTotalTokenInfoList)
@@ -50,10 +50,7 @@ func (this *TokenController) Router(r *gin.Engine) {
 		g.GET("/token_order_fee_total", this.GetOderFeeTotalList)
 		//提币手续费汇总表
 		g.GET("/token_inout_daily_sheet", this.GetTokenInOutDailySheetList)
-		//仪表盘
-		//手续费走势图
-		g.GET("/fee_trend_map", this.GetFeeTrendMap)
-		g.GET("/test1", this.test1)
+
 		//划转
 		g.GET("/list_transfer_daily_sheet", this.ListTransferDailySheet)
 		g.GET("/list_transfer", this.ListTransfer)
@@ -64,7 +61,8 @@ func (this *TokenController) Router(r *gin.Engine) {
 		//每天平台内充币详细信息
 		g.GET("/platform_day", this.PlatformDay)
 
-		//币币交易走势
+		//仪表盘
+		g.GET("/fee_trend", this.FeeTrend)
 		g.GET("/trade_trend", this.TradeTrend)
 	}
 }
@@ -135,48 +133,6 @@ func (this *TokenController) BackstagePut(c *gin.Context) {
 		this.RespErr(c, err)
 		return
 	}
-	this.RespOK(c)
-	return
-}
-
-func (this *TokenController) test1(c *gin.Context) {
-	//new(models.TokenFeeDailySheet).Test1()
-	//new(models.CurencyFeeDailySheet).BoottimeTimingSettlement()
-	//new(models.WalletInoutDailySheet).BoottimeTimingSettlement()
-	//new(models.TokenFeeDailySheet).BoottimeTimingSettlement()
-	//new(apis.VendorApi).Test()
-	this.RespOK(c)
-	return
-}
-
-func (this *TokenController) GetFeeTrendMap(c *gin.Context) {
-	//手续费 注：当天
-	//币币交易手续费
-	tokenFee, err := new(models.Trade).GetTodayFee()
-	if err != nil {
-		this.RespErr(c, err)
-		return
-	}
-	//fmt.Println("---------------->0")
-	//法币交易手续费
-	currencyTotalFee, err := new(models.Order).GetOrderDayFee()
-	if err != nil {
-		this.RespErr(c, err)
-		return
-	}
-	//fmt.Println("---------------->1")
-	//提币手续费
-	outTokenFee, err := new(models.TokenInout).GetOutTokenFee()
-	if err != nil {
-		this.RespErr(c, err)
-		return
-	}
-	//fmt.Println("---------------->2")
-	//this.Put(c,"tFee",)
-	this.Put(c, "tradeFee", currencyTotalFee+tokenFee)
-	this.Put(c, "oFee", outTokenFee)
-	date := fmt.Sprintf("%02d%02d", time.Now().Month(), time.Now().Day())
-	this.Put(c, "date", date)
 	this.RespOK(c)
 	return
 }
@@ -303,7 +259,7 @@ func (this *TokenController) GetTokenOutList(c *gin.Context) {
 	return
 }
 
-func (this * TokenController) getTokenList(c*gin.Context){
+func (this *TokenController) getTokenList(c *gin.Context) {
 	req := struct {
 		Page    int    `form:"page" json:"page" binding:"required"`
 		Rows    int    `form:"rows" json:"rows" `
@@ -341,7 +297,7 @@ func (this *TokenController) OptTakeTokenFailed(c *gin.Context) {
 	return
 }
 
-func (this* TokenController) optTakeToken(c*gin.Context){
+func (this *TokenController) optTakeToken(c *gin.Context) {
 	req := struct {
 		Id     int `form:"id" json:"id" binding:"required"`
 		Status int `form:"status" json:"status" binding:"required"`
@@ -912,6 +868,136 @@ func (t *TokenController) ListTransfer(ctx *gin.Context) {
 
 	// 设置返回数据
 	t.Put(ctx, "list", modelList)
+
+	// 返回
+	t.RespOK(ctx)
+	return
+}
+
+// 手续费走势
+func (t *TokenController) FeeTrend(ctx *gin.Context) {
+	// 筛选
+	tokenFilter := make(map[string]interface{})
+	currencyFilter := make(map[string]interface{})
+	inOutFilter := make(map[string]interface{})
+	if v := t.GetString(ctx, "token_id"); v != "" {
+		tokenFilter["token_id"] = v
+		currencyFilter["token_id"] = v
+		inOutFilter["token_id"] = v
+	}
+	if v := t.GetString(ctx, "date_begin"); v != "" {
+		if matched, err := regexp.Match(constant.REGE_PATTERN_DATE, []byte(v)); err != nil || !matched {
+			t.RespErr(ctx, "参数date_begin格式错误")
+			return
+		}
+		dateTime, _ := time.Parse(utils.LAYOUT_DATE, v)
+
+		tokenFilter["date_begin"] = dateTime.Unix()
+		currencyFilter["date_begin"] = v
+		inOutFilter["date_begin"] = v
+	}
+	if v := t.GetString(ctx, "date_end"); v != "" {
+		if matched, err := regexp.Match(constant.REGE_PATTERN_DATE, []byte(v)); err != nil || !matched {
+			t.RespErr(ctx, "参数date_end格式错误")
+			return
+		}
+		dateTime, _ := time.Parse(utils.LAYOUT_DATE, v)
+
+		tokenFilter["date_end"] = dateTime.Unix()
+		currencyFilter["date_end"] = v
+		inOutFilter["date_end"] = v
+	}
+
+	// 调用model
+	//1. 币币买入、卖出手续费
+	tokenList, err := new(models.TokenDailySheet).TradeTrendList(tokenFilter)
+	if err != nil {
+		t.RespErr(ctx, err)
+		return
+	}
+
+	//2. 法币买入、卖出手续费
+	currencyList, err := new(models.CurrencyDailySheet).TradeTrendList(currencyFilter)
+	if err != nil {
+		t.RespErr(ctx, err)
+		return
+	}
+
+	//3. 提币手续费
+	inOutList, err := new(models.TokenInoutDailySheet).InOutTrendList(inOutFilter)
+	if err != nil {
+		t.RespErr(ctx, err)
+		return
+	}
+
+	// 转换成以日期作为key的map
+	tokenListMap := make(map[string]*models.TokenDailySheet)
+	for _, v := range tokenList {
+		tokenListMap[time.Unix(v.Date, 0).Format("0102")] = v
+	}
+
+	currencyListMap := make(map[string]*models.CurrencyDailySheet)
+	for _, v := range currencyList {
+		datetime, _ := time.Parse(utils.LAYOUT_DATE_TIME, v.Date)
+		currencyListMap[datetime.Format("0102")] = v
+	}
+
+	inOutListMap := make(map[string]*models.InOutTrend)
+	for _, v := range inOutList {
+		datetime, _ := time.Parse(utils.LAYOUT_DATE_TIME, v.Date)
+		inOutListMap[datetime.Format("0102")] = v
+	}
+
+	// 组装数据
+	listLen := len(tokenList)
+	x := make([]string, listLen)
+	yBuy := make([]string, listLen)
+	ySell := make([]string, listLen)
+	yOut := make([]string, listLen)
+
+	var allBuyTotal int64
+	var allSellTotal int64
+	var allOutTotal int64
+	var allTotal int64
+	for k, v := range tokenList {
+		date := time.Unix(v.Date, 0).Format("0102")
+
+		var buy int64
+		var sell int64
+		var out int64
+		if md, ok := tokenListMap[date]; ok {
+			buy += md.FeeBuyTotal
+			sell += md.FeeSellTotal
+		}
+		if md, ok := currencyListMap[date]; ok {
+			buy += md.FeeBuyTotal
+			sell += md.FeeSellTotal
+		}
+		if md, ok := inOutListMap[date]; ok {
+			out += md.FeeTotal
+		}
+
+		x[k] = date
+
+		yBuy[k] = convert.Int64ToStringBy8Bit(buy)
+		ySell[k] = convert.Int64ToStringBy8Bit(sell)
+		yOut[k] = convert.Int64ToStringBy8Bit(out)
+
+		allBuyTotal += buy
+		allSellTotal += sell
+		allOutTotal += out
+		allTotal += buy + sell + out
+	}
+
+	// 设置返回数据
+	t.Put(ctx, "x", x)
+	t.Put(ctx, "y_buy", yBuy)
+	t.Put(ctx, "y_sell", ySell)
+	t.Put(ctx, "y_out", yOut)
+	t.Put(ctx, "all_buy_total", convert.Int64ToStringBy8Bit(allBuyTotal))
+	t.Put(ctx, "all_sell_total", convert.Int64ToStringBy8Bit(allSellTotal))
+	t.Put(ctx, "all_out_total", convert.Int64ToStringBy8Bit(allOutTotal))
+	t.Put(ctx, "all_total", convert.Int64ToStringBy8Bit(allTotal))
 
 	// 返回
 	t.RespOK(ctx)
