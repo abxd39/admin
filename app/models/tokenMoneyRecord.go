@@ -117,8 +117,10 @@ func (m *MoneyRecord) GetMoneyListForDateOrType(page, rows, ty, status int, tid 
 	if bt!=0{
 		if et!=0{
 			query = query.Where("uch.token_id=?  AND uch.created_time BETWEEN ? AND ? ", tid,bt ,et+86400)
+		}else {
+			query = query.Where("uch.token_id=?  AND uch.created_time BETWEEN ? AND ? ", tid,bt ,bt+86400)
 		}
-		query = query.Where("uch.token_id=?  AND uch.created_time BETWEEN ? AND ? ", tid,bt ,bt+86400)
+
 	}else{
 		query = query.Where("uch.token_id=?  AND uch.created_time BETWEEN ? AND ? ", tid,subDate-86400,subDate)
 	}

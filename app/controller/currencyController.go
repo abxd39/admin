@@ -115,6 +115,8 @@ func (cu *CurrencyController) currencyChangeHistory(c *gin.Context) {
 	req := struct {
 		Page   int    `form:"page" json:"page" binding:"required"`
 		Rows   int    `form:"rows" json:"rows" `
+		Bt string `form:"bt" json:"bt"`
+		Et string `form:"et" json:"et"`
 		Search string `form:"search" json:"search" `             //搜索的内容
 		Status int    `form:"status" json:"status" `             //用户账号状态
 		Tid    int    `form:"tid" json:"tid" binding:"required"` //货币id
@@ -132,7 +134,7 @@ func (cu *CurrencyController) currencyChangeHistory(c *gin.Context) {
 		cu.RespErr(c, err)
 		return
 	}
-	ulist, err := new(models.UserCurrencyHistory).GetListForUid(req.Page, req.Rows, req.Tid, req.Status, req.Chtype, req.Search)
+	ulist, err := new(models.UserCurrencyHistory).GetListForUid(req.Page, req.Rows, req.Tid, req.Status, req.Chtype, req.Bt,req.Et,req.Search)
 	if err != nil {
 		utils.AdminLog.Errorf(err.Error())
 		cu.RespErr(c, err)

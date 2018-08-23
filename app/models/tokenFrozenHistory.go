@@ -43,8 +43,10 @@ func (f*FrozenHistory)GetFrozenHistory(page,rows,typ,tid,status int,bt,et uint64
 	if bt!=0{
 		if et!=0{
 			query = query.Where("fh.token_id=?  AND fh.created_time BETWEEN ? AND ? ", tid,bt ,et+86400)
+		}else {
+			query = query.Where("fh.token_id=?  AND fh.created_time BETWEEN ? AND ? ", tid,bt ,bt+86400)
 		}
-		query = query.Where("fh.token_id=?  AND fh.created_time BETWEEN ? AND ? ", tid,bt ,bt+86400)
+
 	}
 	if search != `` {
 		temp := fmt.Sprintf(" concat(IFNULL(u.`uid`,''),IFNULL(u.`phone`,''),IFNULL(ex.`nick_name`,''),IFNULL(u.`email`,'')) LIKE '%%%s%%'  ", search)

@@ -87,6 +87,18 @@ func Int64MulInt64By8BitString(a int64, b int64) string {
 	return r.String()
 }
 
+func Int64MulInt64By8BitFloat(a ,b int64) float64{
+	dd := decimal.New(a, 0)
+	dp := decimal.New(b, 0)
+	m := dd.Mul(dp)
+	d := decimal.New(100000000, 0)
+	n := m.Div(d)
+
+	r := n.Div(decimal.New(100000000, 0))
+	v,_:=r.Float64()
+	return  v
+}
+
 func Int64MulFloat64(a int64, b float64) int64 {
 	dd := decimal.New(a, 0)
 	dp := decimal.NewFromFloat(b)
