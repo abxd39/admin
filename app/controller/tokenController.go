@@ -12,6 +12,7 @@ import (
 	"admin/utils/convert"
 
 	"github.com/gin-gonic/gin"
+	"admin/apis"
 )
 
 type TokenController struct {
@@ -519,6 +520,7 @@ func (this *TokenController) ChangeDetail(c *gin.Context) {
 		Page   int    `form:"page" json:"page" binding:"required"`
 		Rows   int    `form:"rows" json:"rows" `
 		Tid    int    `form:"tid" json:"tid" binding:"required"`
+		Date uint64 `form:"date" json:"date"`
 		Search string `form:"search" json:"search" ` //刷选
 		Type   int    `form:"type" json:"type" `     //交易方向 买 卖 划转
 		Status int    `form:"status" json:"status" ` //用户状态
@@ -536,7 +538,7 @@ func (this *TokenController) ChangeDetail(c *gin.Context) {
 		return
 	}
 	fmt.Println("------------------------>what funck you ", req.Status)
-	mlist, err := new(models.MoneyRecord).GetMoneyListForDateOrType(req.Page, req.Rows, req.Type, req.Status, req.Tid, req.Search)
+	mlist, err := new(models.MoneyRecord).GetMoneyListForDateOrType(req.Page, req.Rows, req.Type, req.Status, req.Tid,req.Date, req.Search)
 	if err != nil {
 		this.RespErr(c, err)
 		return
@@ -627,6 +629,31 @@ func (this *TokenController) GetTokenBalance(c *gin.Context) {
 	if err != nil {
 		this.RespErr(c, err)
 		return
+	}
+	uidList := make([]uint64, 0)
+	value, OK := list.Items.([]models.PersonalProperty)
+	if !OK {
+		this.RespErr(c, errors.New("assert failed"))
+		return
+	}
+	for _, value := range value {
+		uidList = append(uidList, uint64(value.Uid))
+	}
+	fmt.Println("uid", uidList)
+
+	tokenList, err := new(apis.VendorApi).GetCny(uidList, 1)
+	if err != nil {
+		utils.AdminLog.Errorln(err.Error())
+		this.RespErr(c, err.Error())
+		return
+	}
+	for i,v :=range value{
+		for _, vc := range tokenList {
+			if vc.Uid == uint64(v.Uid) {
+				value[i].AmountTo = vc.TotalCny
+				break
+			}
+		}
 	}
 
 	this.Put(c, "list", list)

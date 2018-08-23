@@ -108,12 +108,18 @@ func (m *MoneyRecord) GetMoneyList(page, rows int, uid []int64) (*ModelList, err
 	return modelList, nil
 }
 
-func (m *MoneyRecord) GetMoneyListForDateOrType(page, rows, ty, status int, tid int, search string) (*ModelList, error) {
+func (m *MoneyRecord) GetMoneyListForDateOrType(page, rows, ty, status int, tid int,date uint64, search string) (*ModelList, error) {
 	engine := utils.Engine_token
 	query := engine.Alias("uch").Desc("u.uid")
 	query = query.Join("LEFT", "g_common.user u ", "u.uid= uch.uid")
 	query = query.Join("LEFT", "g_common.user_ex ex", "uch.uid=ex.uid")
-	query = query.Where("uch.token_id=?", tid)
+	subDate := time.Now().Unix()
+	if date!=0{
+		query = query.Where("uch.token_id=?  AND uch.created_time BETWEEN ? AND ? ", tid,date -3600 ,date)
+	}else{
+		query = query.Where("uch.token_id=?  AND uch.created_time BETWEEN ? AND ? ", tid,subDate-3600,subDate)
+	}
+
 
 	if search != `` {
 		temp := fmt.Sprintf(" concat(IFNULL(u.`uid`,''),IFNULL(u.`phone`,''),IFNULL(ex.`nick_name`,''),IFNULL(u.`email`,'')) LIKE '%%%s%%'  ", search)
@@ -145,6 +151,8 @@ func (m *MoneyRecord) GetMoneyListForDateOrType(page, rows, ty, status int, tid 
 	return modelList, nil
 
 }
+//u优化
+
 
 //流水列表
 func (s *MoneyRecord) List(pageIndex, pageSize int, filter map[string]interface{}) (*ModelList, []*MoneyRecordWithToken, error) {

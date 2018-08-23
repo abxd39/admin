@@ -143,6 +143,39 @@ func (this *UserCurrency) CurrencyBalance(page, rows, status int, search string)
 	return mList, nil
 }
 
+func (this *UserCurrency) CurrencyBalanceNew(page, rows, status int, search string) (*ModelList, error) {
+	engine := utils.Engine_currency
+	query := engine.Alias("uc").Desc("uc.uid")
+	//query = query.Cols()
+	//query = query.Cols()
+	//query = query.Cols("ex.nick_name")
+	query = query.Join("LEFT", "g_common.user u", "u.uid=uc.uid")
+	query = query.Join("LEFT", "g_common.user_ex ex", "ex.uid=uc.uid")
+	//query =query.GroupBy("uc.uid")
+	if status != 0 {
+		query = query.Where("u.status=?", status)
+	}
+	if len(search) != 0 {
+		temp := fmt.Sprintf(" concat(IFNULL(uc.`uid`,''),IFNULL(u.`phone`,''),IFNULL(ex.`nick_name`,''),IFNULL(u.`email`,'')) LIKE '%%%s%%'  ", search)
+		query = query.Where(temp)
+	}
+
+	countQuery := *query
+	count, err := countQuery.Distinct("uc.uid").Count(&AmountToCny{})
+	if err != nil {
+		return nil, err
+	}
+	offset, mList := this.Paging(page, rows, int(count))
+	list := make([]AmountToCny, 0)
+	err = query.Select(" u.uid ,uc.token_id, u.phone,u.email,u.status,u.account").GroupBy("u.uid").Limit(mList.PageSize, offset).Find(&list)
+	if err != nil {
+		return nil, err
+	}
+
+	mList.Items = list
+	return mList, nil
+}
+
 func (this *UserCurrency) Decimal(value float64) float64 {
 	value, _ = strconv.ParseFloat(fmt.Sprintf("%.2f", value), 64)
 	return value

@@ -343,7 +343,7 @@ func (cu *CurrencyController) ExportTotalCurrencyBalance(c *gin.Context) {
 func (cu *CurrencyController) totalCurrencyBalance(c *gin.Context) {
 	req := struct {
 		Page     int    `form:"page" json:"page" binding:"required"`
-		Page_num int    `form:"rows" json:"rows" `
+		Rows int    `form:"rows" json:"rows" `
 		Search   string `form:"search" json:"search" ` //搜索的内容
 		Status   int    `form:"status" json:"status" ` //用户账号状态
 	}{}
@@ -354,12 +354,40 @@ func (cu *CurrencyController) totalCurrencyBalance(c *gin.Context) {
 		return
 	}
 	fmt.Println(".0.................0.0.0.0.0.0.0.0.......")
-	//result, err := new(models.UserGroup).GetAllUser(req.Page, req.Page_num, req.Status, req.Search)
-	result, err := new(models.UserCurrency).CurrencyBalance(req.Page, req.Page_num, req.Status, req.Search)
+	////result, err := new(models.UserGroup).GetAllUser(req.Page, req.Page_num, req.Status, req.Search)
+	result, err := new(models.UserCurrency).CurrencyBalanceNew(req.Page, req.Rows, req.Status, req.Search)
 	if err != nil {
 		cu.RespErr(c, err)
 	}
 
+	uidList := make([]uint64, 0)
+	value, OK := result.Items.([]models.AmountToCny)
+	if !OK {
+		cu.RespErr(c, errors.New("assert failed"))
+		return
+	}
+	for _, value := range value {
+		uidList = append(uidList, uint64(value.Uid))
+	}
+	fmt.Println("uid", uidList)
+
+	tokenList, err := new(apis.VendorApi).GetCny(uidList, 2)
+	if err != nil {
+		utils.AdminLog.Errorln(err.Error())
+		cu.RespErr(c, err.Error())
+		return
+	}
+	for i,v :=range value{
+		for _, vc := range tokenList {
+			if vc.Uid == uint64(v.Uid) {
+				value[i].AmountTo = vc.TotalCny
+				break
+			}
+		}
+	}
+
+
+	result.Items = value
 	//法币账户折和没有计算
 	cu.Put(c, "list", result)
 

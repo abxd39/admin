@@ -5,9 +5,9 @@ import (
 	"admin/utils"
 	"admin/utils/convert"
 	"fmt"
-	"log"
 	"time"
 
+	"log"
 	"github.com/robfig/cron"
 )
 
@@ -214,7 +214,7 @@ func (tk *TokenDailySheet) TimingFunc(begin, end int64) {
 		p := time.Unix(begin, 0).Format("2006-01-02 ")
 		utils.AdminLog.Printf("insert into token_id %d,time %s", v.TokenId, p)
 		v.Date = begin
-		sql := fmt.Sprintf("SELECT SUM(t.balance) AS balance ,SUM(t.frozen) AS frozen FROM `user_token` t WHERE t.token_id=%d", v.TokenId)
+		sql := fmt.Sprintf("SELECT SUM(t.balance) AS balance ,SUM(t.frozen) AS frozeen FROM `user_token` t WHERE t.token_id=%d", v.TokenId)
 		_, err := engine.Table("user_token").SQL(sql).Get(result)
 		if err != nil {
 			continue
@@ -253,7 +253,7 @@ func (t *TokenDailySheet) Run() {
 	unix := theTime.Unix()
 	fmt.Println("当前时间戳", unix)
 	t.TimingFunc(unix-86400, unix)
-	//t.TimingFunc(1532448000, 1534867200)
+	//t.TimingFunc(1532448000, 1534953600)
 }
 
 //启动
@@ -285,4 +285,4 @@ func DailyStart() {
 //	new(TokenDailySheet).Run()
 //
 //}
-//
+

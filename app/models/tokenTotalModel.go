@@ -25,9 +25,9 @@ type PersonalProperty struct {
 	NickName   string  `json:"nick_name"`
 	Phone      string  `json:"phone"`
 	Email      string  `json:"email"`
-	AmountTo   float64 `xorm:"-"json:"amount_to"`    //折合人民币
-	BalanceCny float64 `xorm:"-" json:"balance_cny"` // 这和人民币总数
-	FrozenCny  float64 `xorm:"-" json:"frozen_cny"`
+	AmountTo   string `xorm:"-"json:"amount_to"`    //折合人民币
+	//BalanceCny float64 `xorm:"-" json:"balance_cny"` // 这和人民币总数
+	//FrozenCny  float64 `xorm:"-" json:"frozen_cny"`
 	Status     int     `json:"status"` //账号状态
 	Account    string  `json:"account"`
 }
@@ -86,6 +86,7 @@ func (u *DetailToken) GetTokenDetailOfUid(page, rows, uid, tokenId int) (*ModelL
 		for _,pv:=range priceList{
 			if v.TokenId == pv.TokenId{
 				//list[i].AmountTo = u.Int64ToFloat64By8Bit(v.BalanceCny) + u.Int64ToFloat64By8Bit(v.FrozenCny)
+				fmt.Println("bibi",v.Balance)
 				temp :=u.Int64MulInt64By8BitString(pv.CnyPriceInt,v.Balance)
 				fmt.Println(temp)
 				list[i].AmountTo = temp
@@ -122,14 +123,35 @@ func (t *PersonalProperty) TotalUserBalance(page, rows, status int, search strin
 	}
 	offset, mList := t.Paging(page, rows, int(count))
 	list := make([]PersonalProperty, 0)
-	err = query.Desc("ut.uid").Select("sum(ut.frozen_cny) balance_cny, sum(ut.frozen_cny) frozen_cny,ut.uid uid, u.phone phone,u.email email,ex.nick_name nick_name,u.status status,u.account account").GroupBy("ut.uid").Limit(mList.PageSize, offset).Find(&list)
+	err = query.Desc("ut.uid").Select("ut.token_id,ut.uid uid, u.phone phone,u.email email,ex.nick_name nick_name,u.status status,u.account account").GroupBy("ut.uid").Limit(mList.PageSize, offset).Find(&list)
 	if err != nil {
 		return nil, err
 	}
 	//折合rmb为空是因为 数据库上就空
-	for i, v := range list {
-		list[i].AmountTo = v.BalanceCny + v.FrozenCny
-	}
+	//h获取rmb 价格
+	//tidList:=make([]int,0)
+	//for _,v:=range list{
+	//	tidList = append(tidList,v.TokenId)
+	//}
+	//fmt.Println("uid=",tidList)
+	//
+	//priceList,err:=new(apis.VendorApi).GetTokenCnyPriceList(tidList)
+	//if err!=nil{
+	//	utils.AdminLog.Errorln(err.Error())
+	//	return nil,errors.New(err.Error())
+	//}
+	//
+	//
+	//for i, v := range list {
+	//	for _,vt:=range priceList{
+	//		if vt.TokenId == v.TokenId {
+	//			list[i].AmountTo = convert.Int64MulInt64By8BitString( v.Balance + v.Frozen,vt.CnyPriceInt)
+	//			break
+	//		}
+	//	}
+	//	fmt.Println("bibi账户折合",v.Balance,v.Frozen)
+	//
+	//}
 	mList.Items = list
 	return mList, nil
 }
