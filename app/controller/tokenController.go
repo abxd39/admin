@@ -1083,18 +1083,16 @@ func (t *TokenController) NumTrend(ctx *gin.Context) {
 			t.RespErr(ctx, "参数date_begin格式错误")
 			return
 		}
-		dateTime, _ := time.Parse(utils.LAYOUT_DATE, v)
 
-		filter["date_begin"] = dateTime.Unix()
+		filter["date_begin"] = v
 	}
 	if v := t.GetString(ctx, "date_end"); v != "" {
 		if matched, err := regexp.Match(constant.REGE_PATTERN_DATE, []byte(v)); err != nil || !matched {
 			t.RespErr(ctx, "参数date_end格式错误")
 			return
 		}
-		dateTime, _ := time.Parse(utils.LAYOUT_DATE, v)
 
-		filter["date_end"] = dateTime.Unix()
+		filter["date_end"] = v
 	}
 
 	// 调用model

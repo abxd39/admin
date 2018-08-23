@@ -46,7 +46,7 @@ func (t *TokensDailySheet) NumTrend(filter map[string]interface{}) ([]*TokensDai
 	var list []*TokensDailySheet
 	err := session.
 		Select("date, sum(token_total) as token_total, sum(currency_total) as currency_total, sum(total) as total").
-		Where("date>=?", dateBegin).
+		And("date>=?", dateBegin).
 		And("date<=?", dateEnd).
 		GroupBy("date").
 		OrderBy("date ASC").
