@@ -35,12 +35,19 @@ func Int64ToFloat64By8Bit(b int64) (x float64) {
 	return
 }
 
+//int 去掉8个零
 func Int64ToStringBy8Bit(b int64) string {
 	a := decimal.New(b, 0)
 	r := a.Div(decimal.New(100000000, 0))
 	return r.String()
 }
-
+//int 加八个零
+func Int64ToStringAdd8Bit(b int64)string{
+	str:=decimal.New(b,0)
+	str1:=decimal.New(100000000,0)
+	b1:=str.Mul(str1)
+	return b1.String()
+}
 
 ////0.00001001
 func StringAddString(a, b string) (string, error) {
@@ -57,7 +64,7 @@ func StringAddString(a, b string) (string, error) {
 
 }
 
-
+//大数string 相除
 func StringDivString(a, b string)( string, error) {
 	astr, err := decimal.NewFromString(a)
 	if err != nil {
@@ -68,11 +75,12 @@ func StringDivString(a, b string)( string, error) {
 		return "",nil
 	}
 	result := astr.Div(bstr)
-	return result.String(), nil
+
+	return result.Round(8).String(), nil
 }
 
 
-
+//string 去掉8个零
 func StringTo8Bit(a string)(string, error) {
 	s , err := decimal.NewFromString(a)
 	if err != nil {

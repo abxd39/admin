@@ -313,7 +313,7 @@ func (cu *CurrencyController)totalCoin(c *gin.Context) {
 	tokenBalanceList, tokenUserCoin, err:= new(models.UserToken).GetAllTokenCoin(tokenIdList)
 
 	for _, tk := range tokenList {
-		var totalnum   string
+		var totalnum string
 		var totaluser  int64
 		var tmp TotalCoin
 		tmp.TokenId = int(tk.Id)
@@ -332,9 +332,15 @@ func (cu *CurrencyController)totalCoin(c *gin.Context) {
 				totalnum += currencyBalance.TotalFreeze
 			}
 		}
-		fmt.Println("totalnum:", totalnum, totaluser)
+
 		
-		tmp.TotalNum, err  = convert.StringTo8Bit(totalnum)
+		totalnumstr  , err  := convert.StringTo8Bit(totalnum)
+		if totalnumstr ==``{
+			tmp.TotalNum ="0"
+		} else {
+			tmp.TotalNum = totalnumstr
+		}
+
 		if err != nil {
 			fmt.Println(err)
 		}
@@ -348,15 +354,23 @@ func (cu *CurrencyController)totalCoin(c *gin.Context) {
 				totaluser = totaluser  + cuUser.TotalUser
 			}
 		}
+		fmt.Println("totalnum:", totalnum, totaluser)
 		tmp.TotalUser = totaluser
 		if totaluser <= 0 {
 			tmp.AverageNum = "0"
 		}else{
-			tempStr, err :=convert.StringDivString(totalnum ,convert.Int64ToStringBy8Bit(totaluser))
+			fmt.Println(totalnum,totaluser,convert.Int64ToStringAdd8Bit(totaluser))
+
+			tempStr, err :=convert.StringDivString(totalnum ,convert.Int64ToStringAdd8Bit(totaluser))
 			if err != nil {
 				tmp.AverageNum = "0"
 			}else{
-				tmp.AverageNum, _  = convert.StringTo8Bit(tempStr)
+				fmt.Println("人均持有=",tempStr)
+				if tempStr==``{
+					tempStr="0"
+				}
+				tmp.AverageNum= tempStr//convert.StringTo8Bit(tempStr)
+				fmt.Println("去掉8=",tmp.AverageNum)
 			}
 
 		}
