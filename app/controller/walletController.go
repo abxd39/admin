@@ -21,6 +21,7 @@ func (w *WallectController) Router(r *gin.Engine) {
 	}
 }
 
+// 充币提币走势
 func (w *WallectController) InOutTrend(ctx *gin.Context) {
 	// 筛选
 	filter := make(map[string]interface{})
