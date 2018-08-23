@@ -56,7 +56,7 @@ func (u *UserCurrencyHistory) GetList(page, rows, ot int, date string) (*ModelLi
 }
 
 //p2-3-3法币账户变更详情
-func (u *UserCurrencyHistory) GetListForUid(page, rows, tid, status, chType int, search string) (*ModelList, error) {
+func (u *UserCurrencyHistory) GetListForUid(page, rows, tid, status, chType int,bt,et string, search string) (*ModelList, error) {
 	engine := utils.Engine_currency
 	fmt.Println("------------------------>")
 	query := engine.Alias("uch").Desc("u.uid")
@@ -73,6 +73,18 @@ func (u *UserCurrencyHistory) GetListForUid(page, rows, tid, status, chType int,
 	}
 	if status != 0 {
 		query = query.Where("u.status=?", status)
+	}
+
+
+	if bt!=``{
+		if et!=``{
+			subst := et[:11] + "23:59:59"
+			query = query.Where("uch.created_time BETWEEN ? AND ? ",bt ,subst)
+		}else {
+			subst :=bt[:11] + "23:59:59"
+			query = query.Where("uch.created_time BETWEEN ? AND ? ",bt ,subst)
+		}
+
 	}
 	if search != `` {
 		temp := fmt.Sprintf(" concat(IFNULL(u.`uid`,''),IFNULL(u.`phone`,''),IFNULL(ex.`nick_name`,''),IFNULL(u.`email`,'')) LIKE '%%%s%%'  ", search)
@@ -92,6 +104,11 @@ func (u *UserCurrencyHistory) GetListForUid(page, rows, tid, status, chType int,
 	for i, v := range list {
 		list[i].NumTrue = u.Int64ToFloat64By8Bit(v.Num)
 		list[i].SurplusTrue = u.Int64ToFloat64By8Bit(v.Surplus)
+	}
+	for i,v:=range list{
+		if v.Operator ==3 || v.Operator ==4{
+			list[i].UpdatedTime = v.CreatedTime
+		}
 	}
 	modelList.Items = list
 	return modelList, nil

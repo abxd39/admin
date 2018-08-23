@@ -1,17 +1,16 @@
 package main
 
 import (
-	"admin/app"
-	"admin/app/models"
+	"os"
+	"github.com/gin-gonic/gin"
+	"github.com/gin-contrib/sessions"
+	"fmt"
 	"admin/cron"
+	"admin/utils"
+	"admin/app/models"
 	"admin/middleware"
 	"admin/session"
-	"admin/utils"
-	"fmt"
-	"os"
-
-	"github.com/gin-contrib/sessions"
-	"github.com/gin-gonic/gin"
+	"admin/app"
 )
 
 func main() {
@@ -30,6 +29,8 @@ func main() {
 	r := gin.Default()
 	//定时任务
 	go models.DailyStart()
+
+
 	// session
 	r.Use(sessions.Sessions("mysession", session.Store))
 
