@@ -305,8 +305,10 @@ func (cu *CurrencyController)totalCoin(c *gin.Context) {
 	}
 
 	var totalcoinList []TotalCoin
-	tokenBalanceList, tokenUserCoin, err := new(models.UserCurrency).GetAllCurrencyCoin(tokenIdList)
-	currencyBalanceList, currencyUserCoin, err := new(models.UserToken).GetAllTokenCoin(tokenIdList)
+
+
+	currencyBalanceList, currencyUserCoin, err := new(models.UserCurrency).GetAllCurrencyCoin(tokenIdList)
+	tokenBalanceList, tokenUserCoin, err:= new(models.UserToken).GetAllTokenCoin(tokenIdList)
 
 	for _, tk := range tokenList {
 		var totalnum   int64
@@ -317,25 +319,24 @@ func (cu *CurrencyController)totalCoin(c *gin.Context) {
 		for _, tokenBalance := range tokenBalanceList{
 			if tokenBalance.TokenId == int32(tk.Id) {
 				totalnum += tokenBalance.TotalBalance
-				totalnum += tokenBalance.TotalFreeze
+				totalnum += tokenBalance.TotalFrozen
 			}
 		}
 		for _, currencyBalance := range currencyBalanceList {
 			if currencyBalance.TokenId == int32(tk.Id) {
 				totalnum += currencyBalance.TotalBalance
-				totalnum += currencyBalance.TotalFrozen
+				totalnum += currencyBalance.TotalFreeze
 			}
 		}
 		tmp.TotalNum = convert.Int64ToStringBy8Bit(totalnum)
-
 		for _, tkUser := range tokenUserCoin {
 			if tkUser.TokenId == int32(tk.Id){
-				totaluser += tkUser.TotalUser
+				totaluser = totaluser +  tkUser.TotalUser
 			}
 		}
 		for _, cuUser := range currencyUserCoin {
 			if cuUser.TokenId == int32(tk.Id) {
-				totaluser += cuUser.TotalUser
+				totaluser = totaluser  + cuUser.TotalUser
 			}
 		}
 		tmp.TotalUser = totaluser

@@ -206,7 +206,7 @@ func (this *UserCurrency) GetAllCurrencyCoin(tokenIdList []int32) (allBalanceLis
 	if err != nil {
 		fmt.Println(err)
 	}
-	usersSql := "SELECT count(uid) as total_user, token_id  FROM g_currency.`user_currency`  WHERE (balance > 0 OR freeze > 0 ) GROUP BY uid"
+	usersSql := "SELECT count(uid) as total_user, token_id  FROM g_currency.`user_currency`  WHERE (balance > 0 OR freeze > 0 ) GROUP BY token_id"
 	err = engine.In("token_id", tokenIdList).SQL(usersSql).Find(&allCoinUsers)
 	if err != nil {
 		fmt.Println(err)
