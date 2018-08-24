@@ -23,6 +23,7 @@ type EntrustDetail struct {
 	States      int     `xorm:"not null comment('0是挂单，1是部分成交,2成交， 3撤销') TINYINT(4)" json:"states"`
 	CreatedTime int64   `xorm:"not null comment('添加时间') BIGINT(10)"`
 	Sum         int64   `xorm:"comment('委托总额') BIGINT(20)"`
+	TradeNum    int64 	`xorm:" comment('已成交') BIGINT(20)" json:"trade_num"`
 }
 
 type ReturnValueOperator struct {

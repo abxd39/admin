@@ -333,7 +333,7 @@ func (cu *CurrencyController) totalCoin(c *gin.Context) {
 		if totalnum == `` {
 			tmp.TotalNum = "0"
 		} else {
-			tmp.TotalNum = totalnum
+			tmp.TotalNum,_ = convert.StringTo8Bit(totalnum)
 		}
 
 		if err != nil {

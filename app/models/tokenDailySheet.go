@@ -130,7 +130,7 @@ func (this *TokenDailySheet) GetDailySheetList(page, rows int, date uint64) (*Mo
 	}
 	offset, mList := this.Paging(page, rows, int(Count.Num))
 	list := make([]total, 0)
-	limitSql := fmt.Sprintf("limit %d offset %d", mList.PageSize, offset)
+	limitSql := fmt.Sprintf(" limit %d offset %d", mList.PageSize, offset)
 
 	err = engine.Table("token_daily_sheet").SQL(sql + limitSql).Find(&list)
 	if err != nil {
