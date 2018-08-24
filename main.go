@@ -1,16 +1,17 @@
 package main
 
 import (
+	"admin/app"
+	"admin/app/models"
+	"admin/cron"
+	"admin/utils"
+	"fmt"
 	"os"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-contrib/sessions"
-	"fmt"
-	"admin/cron"
-	"admin/utils"
-	"admin/app/models"
-	"admin/middleware"
 	"admin/session"
-	"admin/app"
+	"admin/middleware"
+
 )
 
 func main() {
@@ -18,9 +19,9 @@ func main() {
 		panic("环境变量ADMIN_API_ENV未设置")
 	}
 
-
 	// 定时任务
 	cron.InitCron()
+	go models.DailyStart()
 
 	//启动定时器
 	//go new(models.TokenFeeDailySheet).BoottimeTimingSettlement()

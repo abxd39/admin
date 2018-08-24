@@ -2,14 +2,30 @@ package app
 
 import (
 	"admin/app/controller"
+	"admin/middleware"
 	"admin/session"
+
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
 
-func Router(r *gin.Engine) {
-	//session
-	r.Use(sessions.Sessions("mysession", session.Store))
+var App *gin.Engine
+
+func Init() {
+	App = gin.Default()
+
+	// session
+	App.Use(sessions.Sessions("mysession", session.Store))
+
+	// 自定义中间件
+	App.Use(middleware.JsCors())
+	App.Use(middleware.CheckLogin())
+
+	// 路由
+	router(App)
+}
+
+func router(r *gin.Engine) {
 	new(controller.PublicController).Router(r)
 	new(controller.TestController).Router(r)
 	new(controller.WebsocketController).Router(r)

@@ -1,5 +1,5 @@
 
-/admin.ini
+*.ini
 
 # 可执行文件
 /admin.exe

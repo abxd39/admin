@@ -1,10 +1,10 @@
 package models
 
 import (
-	"admin/utils"
-	"fmt"
 	"admin/apis"
 	"admin/errors"
+	"admin/utils"
+	"fmt"
 )
 
 type UserToken struct {
@@ -21,15 +21,15 @@ type UserToken struct {
 
 //资产
 type PersonalProperty struct {
-	UserToken  `xorm:"extends"`
-	NickName   string  `json:"nick_name"`
-	Phone      string  `json:"phone"`
-	Email      string  `json:"email"`
-	AmountTo   string `xorm:"-"json:"amount_to"`    //折合人民币
+	UserToken `xorm:"extends"`
+	NickName  string `json:"nick_name"`
+	Phone     string `json:"phone"`
+	Email     string `json:"email"`
+	AmountTo  string `xorm:"-"json:"amount_to"` //折合人民币
 	//BalanceCny float64 `xorm:"-" json:"balance_cny"` // 这和人民币总数
 	//FrozenCny  float64 `xorm:"-" json:"frozen_cny"`
-	Status     int     `json:"status"` //账号状态
-	Account    string  `json:"account"`
+	Status  int    `json:"status"` //账号状态
+	Account string `json:"account"`
 }
 
 // var Total []PersonalProperty
@@ -41,7 +41,7 @@ type PersonalProperty struct {
 type DetailToken struct {
 	UserToken   `xorm:"extends"`
 	Mark        string  `json:"mark" `
-	AmountTo    string `xorm:"-"json:"amount_to"` //折合人民币
+	AmountTo    string  `xorm:"-"json:"amount_to"` //折合人民币
 	BalanceTrue float64 `xorm:"-" json:"balance_true"`
 	FrozenTrue  float64 `xorm:"-" json:"frozen_true"`
 }
@@ -68,26 +68,26 @@ func (u *DetailToken) GetTokenDetailOfUid(page, rows, uid, tokenId int) (*ModelL
 	if err != nil {
 		return nil, err
 	}
-	tidList:=make([]int,0)
-	for _,v:=range list{
-		tidList = append(tidList,v.TokenId)
+	tidList := make([]int, 0)
+	for _, v := range list {
+		tidList = append(tidList, v.TokenId)
 	}
 	fmt.Println(tidList)
-	priceList,err:=new(apis.VendorApi).GetTokenCnyPriceList(tidList)
-	if err!=nil{
+	priceList, err := new(apis.VendorApi).GetTokenCnyPriceList(tidList)
+	if err != nil {
 		utils.AdminLog.Errorln(err.Error())
-		return nil,errors.New(err.Error())
+		return nil, errors.New(err.Error())
 	}
 	//注 折合为空是因为 还没有计算折合
 	for i, v := range list {
 
 		list[i].BalanceTrue = u.Int64ToFloat64By8Bit(v.Balance)
 		list[i].FrozenTrue = u.Int64ToFloat64By8Bit(v.Frozen)
-		for _,pv:=range priceList{
-			if v.TokenId == pv.TokenId{
+		for _, pv := range priceList {
+			if v.TokenId == pv.TokenId {
 				//list[i].AmountTo = u.Int64ToFloat64By8Bit(v.BalanceCny) + u.Int64ToFloat64By8Bit(v.FrozenCny)
-				fmt.Println("bibi",v.Balance)
-				temp :=u.Int64MulInt64By8BitString(pv.CnyPriceInt,v.Balance)
+				fmt.Println("bibi", v.Balance)
+				temp := u.Int64MulInt64By8BitString(pv.CnyPriceInt, v.Balance)
 				fmt.Println(temp)
 				list[i].AmountTo = temp
 			}
@@ -156,30 +156,27 @@ func (t *PersonalProperty) TotalUserBalance(page, rows, status int, search strin
 	return mList, nil
 }
 
-
-
-
 /*
 	统计平台所有币余额
 */
 type TotalTokenCoin struct {
 	//TotalBalance       int64  `xorm:"-" json:"total_balance"`
 	//TotalFrozen        int64  `xorm:"-" json:"total_frozen"`
-	TotalBalanceStr       string  `json:"total_balance_str"`
- 	TotalFrozenStr        string  `json:"total_frozen_str"`
-	TokenId            int32  `json:"token_id"`
-	TokenName          string `json:"token_name"`
+	TotalBalanceStr string `json:"total_balance_str"`
+	TotalFrozenStr  string `json:"total_frozen_str"`
+	TokenId         int32  `json:"token_id"`
+	TokenName       string `json:"token_name"`
 }
 type TotalTokenCoinUser struct {
-	TotalUser    int64   `json:"total_user"`
-	TokenId      int32   `json:"token_id"`
+	TotalUser int64 `json:"total_user"`
+	TokenId   int32 `json:"token_id"`
 }
 
 type CountToken struct {
-	Total  int64 `json:"total"`
+	Total int64 `json:"total"`
 }
 
-func (this *UserToken) GetAllTokenCoin(tokenIdList []int32) (allbalanceList []TotalTokenCoin, allCoinUsers []TotalTokenCoinUser , err error) {
+func (this *UserToken) GetAllTokenCoin(tokenIdList []int32) (allbalanceList []TotalTokenCoin, allCoinUsers []TotalTokenCoinUser, err error) {
 	engine := utils.Engine_token
 	sql := "SELECT SUM(balance) AS total_balance_str, SUM(frozen) AS total_frozen_str, token_id, token_name FROM  g_token.`user_token` GROUP BY token_id"
 	engine.In("token_id", tokenIdList).SQL(sql).Find(&allbalanceList)
@@ -194,4 +191,3 @@ func (this *UserToken) GetAllTokenCoin(tokenIdList []int32) (allbalanceList []To
 	}
 	return
 }
-
