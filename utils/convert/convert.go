@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+
 	"github.com/shopspring/decimal"
 	//"math/big"
 )
@@ -53,7 +54,6 @@ func Int64ToStringAdd8Bit(b int64) string {
 ////0.00001001
 
 func StringAddString(a, b string) (string, error) {
-<<<<<<< HEAD
 
 	if a == "" && b == "" {
 		return "", nil
@@ -71,23 +71,14 @@ func StringAddString(a, b string) (string, error) {
 			return "", err
 		}
 		return stra.Add(strb).String(), err
-=======
-	stra, err := decimal.NewFromString(a)
-	if err != nil {
-		return "", err
 	}
-	strb, err := decimal.NewFromString(b)
-	if err != nil {
-		return "", err
-	}
-	return stra.Add(strb).String(), nil
+
 }
 
 func StringAddStrings(a string, bs ...string) (string, error) {
 	stra, err := decimal.NewFromString(a)
 	if err != nil {
 		return "", err
->>>>>>> 3f560a4f314ed1ac4d66ecae25b55ad0b6979857
 	}
 
 	for _, b := range bs {
@@ -118,15 +109,11 @@ func StringDivString(a, b string) (string, error) {
 }
 
 //string 去掉8个零
-<<<<<<< HEAD
 
 func StringTo8Bit(a string) (string, error) {
 	if a == `` {
 		return "", nil
 	}
-=======
-func StringTo8Bit(a string) (string, error) {
->>>>>>> 3f560a4f314ed1ac4d66ecae25b55ad0b6979857
 	s, err := decimal.NewFromString(a)
 	if err != nil {
 		return "", err
@@ -136,10 +123,6 @@ func StringTo8Bit(a string) (string, error) {
 	return n.String(), nil
 }
 
-<<<<<<< HEAD
-
-=======
->>>>>>> 3f560a4f314ed1ac4d66ecae25b55ad0b6979857
 //0.00001001
 func StringToInt64By8Bit(s string) (int64, error) {
 	d, err := decimal.NewFromString(s)
