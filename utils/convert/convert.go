@@ -54,7 +54,6 @@ func Int64ToStringAdd8Bit(b int64) string {
 ////0.00001001
 
 func StringAddString(a, b string) (string, error) {
-
 	if a == "" && b == "" {
 		return "", nil
 	} else if a == "" && b != "" {

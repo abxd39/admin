@@ -180,21 +180,12 @@ type CountToken struct {
 }
 
 func (this *UserToken) GetAllTokenCoin(tokenIdList []int32) (allbalanceList []TotalTokenCoin, allCoinUsers []TotalTokenCoinUser , err error) {
-
 	engine := utils.Engine_token
 	sql := "SELECT SUM(balance) AS total_balance_str, SUM(frozen) AS total_frozen_str, token_id, token_name FROM  g_token.`user_token` GROUP BY token_id"
-
-	//var counttotal CountToken
 	engine.In("token_id", tokenIdList).SQL(sql).Find(&allbalanceList)
-
-	//result, err := engine.In("token_id", tokenIdList).SQL(sql).Query()
 	if err != nil {
 		fmt.Println("token balance sum err:", err)
 	}
-
-	fmt.Println(allbalanceList)
-
-
 
 	usersSql := "SELECT count(uid) as total_user, token_id  FROM g_token.`user_token` WHERE (balance > 0 OR frozen > 0 ) GROUP BY token_id"
 	err = engine.In("token_id", tokenIdList).SQL(usersSql).Find(&allCoinUsers)
@@ -204,19 +195,3 @@ func (this *UserToken) GetAllTokenCoin(tokenIdList []int32) (allbalanceList []To
 	return
 }
 
-
-//func (this *UserToken) GetAllTokenCoinPage(tokenIdList []int32, page, rows int64 ) (allbalanceList []TotalTokenCoin, err error) {
-//	if page <= 0 {
-//		page = 1
-//	}
-//	if rows <= 0 {
-//		rows = 2
-//	}
-//	sql := "SELECT SUM(balance) AS total_balance, SUM(frozen) AS total_frozen, token_id, token_name FROM  g_token.`user_token` GROUP BY token_id  limit ? offset ?"
-//	engine := utils.Engine_token
-//	err = engine.In("token_id", tokenIdList).SQL(sql, rows, (page-1) * rows).Find(&allbalanceList)
-//	if err != nil {
-//		fmt.Println("token balance sum err:", err)
-//	}
-//	return
-//}
