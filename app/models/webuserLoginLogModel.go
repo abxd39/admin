@@ -3,6 +3,7 @@ package models
 import (
 	"admin/utils"
 	"fmt"
+	"time"
 )
 
 type UserLoginLog struct {
@@ -16,7 +17,7 @@ type UserLoginLog struct {
 }
 
 type UserLogInLogGroup struct {
-	//UserLoginLog `xorm:"extends"`
+	UserLoginLog `xorm:"extends"`
 	NickName     string `xorm:"not null default '' comment('用户昵称') VARCHAR(64)"`
 	Phone        string `xorm:"comment('手机') unique VARCHAR(64)"`
 	Email        string `xorm:"comment('邮箱') unique VARCHAR(128)"`
@@ -41,8 +42,11 @@ func (u *UserLoginLog) GetUserLoginLogList(page, rows, terminal_type, status int
 	if terminal_type != 0 {
 		query = query.Where("terminal_type=?", terminal_type)
 	}
+	var tm =time.Now().Unix()
 	if login_time != 0 {
 		query = query.Where("`user_login_log`.`login_time`  BETWEEN ? AND ? ", login_time, login_time+86400) //86400 为一天的秒数
+	}else {
+		query = query.Where("`user_login_log`.`login_time`  BETWEEN ? AND ? ", tm-86400, tm)
 	}
 	if len(search) != 0 {
 		temp := fmt.Sprintf(" concat(IFNULL(`user`.`uid`,''),IFNULL(`user`.`phone`,''),IFNULL(`user_ex`.`nick_name`,''),IFNULL(`user`.`email`,'')) LIKE '%%%s%%'  ", search)

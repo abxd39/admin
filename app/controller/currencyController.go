@@ -304,7 +304,9 @@ func (cu *CurrencyController) totalCoin(c *gin.Context) {
 
 	var totalcoinList []TotalCoin
 
+	// 统计场外总币数和持有币总人数
 	currencyBalanceList, currencyUserCoin, err := new(models.UserCurrency).GetAllCurrencyCoin(tokenIdList)
+	// 统计币币交易总币数和对应币总持有人数
 	tokenBalanceList, tokenUserCoin, err := new(models.UserToken).GetAllTokenCoin(tokenIdList)
 
 	for _, tk := range tokenList {
@@ -315,24 +317,23 @@ func (cu *CurrencyController) totalCoin(c *gin.Context) {
 		tmp.TokenName = tk.Mark
 		for _, tokenBalance := range tokenBalanceList {
 			if tokenBalance.TokenId == int32(tk.Id) {
-				//totalnum += convert.StringToInt64By8Bit() tokenBalance.TotalBalance
+				fmt.Println("bibi : ", tk.Mark, " you :", tokenBalance.TotalBalanceStr, tokenBalance.TotalFrozenStr)
 				totalnum, _ = convert.StringAddString(totalnum, tokenBalance.TotalBalanceStr)
-				//totalnum += tokenBalance.TotalFrozen
 				totalnum, _ = convert.StringAddString(totalnum, tokenBalance.TotalFrozenStr)
 			}
 		}
 		for _, currencyBalance := range currencyBalanceList {
 			if currencyBalance.TokenId == int32(tk.Id) {
-				totalnum += currencyBalance.TotalBalance
-				totalnum += currencyBalance.TotalFreeze
+				fmt.Println("fabi : ", tk.Mark, " you :", currencyBalance.TotalBalance, currencyBalance.TotalFreeze)
+				totalnum, _ = convert.StringAddString(totalnum, currencyBalance.TotalBalance)
+				totalnum, _ = convert.StringAddString(totalnum, currencyBalance.TotalFreeze)
 			}
 		}
 
-		totalnumstr, err := convert.StringTo8Bit(totalnum)
-		if totalnumstr == `` {
+		if totalnum == `` {
 			tmp.TotalNum = "0"
 		} else {
-			tmp.TotalNum = totalnumstr
+			tmp.TotalNum = totalnum
 		}
 
 		if err != nil {
@@ -359,12 +360,11 @@ func (cu *CurrencyController) totalCoin(c *gin.Context) {
 			if err != nil {
 				tmp.AverageNum = "0"
 			} else {
-				fmt.Println("人均持有=", tempStr)
+				fmt.Println(tk.Mark, " 人均持有=", tempStr)
 				if tempStr == `` {
 					tempStr = "0"
 				}
-				tmp.AverageNum = tempStr //convert.StringTo8Bit(tempStr)
-				fmt.Println("去掉8=", tmp.AverageNum)
+				tmp.AverageNum = tempStr
 			}
 
 		}

@@ -38,14 +38,17 @@ type TokenDailySheet struct {
 }
 
 type TokenFeeDailySheetGroup struct {
-	TotalBuy  float64 `json:"total_buy"`
-	TotalSell float64 `json:"total_sell"`
-	Total     float64 `json:"total"`
+	TotalBuy  string `json:"total_buy"`
+	TotalSell string `json:"total_sell"`
+	Total     string `json:"total"`
 }
 
 type total struct {
-	TokenDailySheet `xorm:"extends"`
-	Total           float64 `xorm:"-" json:"total" `
+	Id           int
+	Total           string `xorm:"-" json:"total" `
+	Buy     		string `json:"buy"`
+	Sell 			string `json:"sell"`
+	Date         int64 `json:"date"` 
 }
 
 // 走势返回string，内容是int
@@ -107,39 +110,49 @@ func (this *TokenDailySheet) TradeTrendList(filter map[string]interface{}) ([]*T
 	return list, nil
 }
 
-//获取历史交易记录
+//手续费报表 一天显示一条记录
 func (this *TokenDailySheet) GetDailySheetList(page, rows int, date uint64) (*ModelList, *TokenFeeDailySheetGroup, error) {
 	engine := utils.Engine_token
-	query := engine.Desc("id")
+	fmt.Println("bibi 交易手续费汇总")
+	//query := engine.Desc("date")
+	sql:=" SELECT id,date,SUM(fee_buy_cny) buy, SUM(fee_sell_cny) sell  FROM `token_daily_sheet` GROUP BY date ORDER BY `date` DESC "
 	if date != 0 {
-		query = query.Where("date between ? and ?", date, date+86400)
+		sql = fmt.Sprintf(" SELECT id,date,SUM(fee_buy_cny) as buy, SUM(fee_sell_cny) as sell  FROM `token_daily_sheet` where date between %d and %d GROUP BY date ORDER BY `date` DESC",date,date+86400)
 	}
-	countQuery := *query
-	count, err := countQuery.Count(&TokenDailySheet{})
+	Count:=& struct {
+		Num int64
+	}{}
+	 countSql:= fmt.Sprintf("select  count(*) num from (%s) t",sql)
+	 _,err:=engine.SQL(countSql).Get(Count)
 	if err != nil {
 		return nil, nil, err
 	}
-	offset, mList := this.Paging(page, rows, int(count))
+	offset, mList := this.Paging(page, rows, int(Count.Num))
 	list := make([]total, 0)
-	err = query.Table("token_daily_sheet").Limit(mList.PageSize, offset).Find(&list)
+	limitSql:=fmt.Sprintf("limit %d offset %d",mList.PageSize,offset)
+
+	err =engine.Table("token_daily_sheet").SQL(sql+limitSql).Find(&list)
 	if err != nil {
 		return nil, nil, err
 	}
 	for i, v := range list {
-		list[i].Total = this.Int64ToFloat64By8Bit(v.BuyTotalCny + v.SellTotalCny)
+
+		temp,_ := convert.StringAddString(v.Buy , v.Sell)
+		list[i].Total,_ = convert.StringTo8Bit(temp)
+		list[i].Buy,_ = convert.StringTo8Bit(v.Buy)
+		list[i].Sell,_ = convert.StringTo8Bit(v.Sell)
 	}
 	mList.Items = list
-	result, err := engine.SumsInt(this, "buy_total_cny", "sell_total_cny")
+	tfd:=new(TokenFeeDailySheetGroup)
+	_, err = engine.SQL("SELECT COALESCE(sum(`fee_buy_cny`),0) AS total_buy, COALESCE(sum(`fee_sell_cny`),0) AS total_sell FROM `token_daily_sheet`").Get(tfd)
 	if err != nil {
 		return nil, nil, err
 	}
-	totalBuy := result[1]
-	totalSell := result[0]
-	return mList, &TokenFeeDailySheetGroup{
-		Total:     this.Int64ToFloat64By8Bit(totalBuy + totalSell),
-		TotalBuy:  this.Int64ToFloat64By8Bit(totalBuy),
-		TotalSell: this.Int64ToFloat64By8Bit(totalSell),
-	}, nil
+	tfd.Total,_= convert.StringAddString(tfd.TotalBuy , tfd.TotalSell)
+	tfd.Total ,_=convert.StringTo8Bit(tfd.Total)
+	tfd.TotalSell,_= convert.StringTo8Bit(tfd.TotalSell)
+	tfd.TotalBuy,_= convert.StringTo8Bit(tfd.TotalBuy)
+	return mList, tfd, nil
 }
 
 //李宇舶 写的
@@ -149,6 +162,7 @@ func (tk *TokenDailySheet) TimingFunc(begin, end int64) {
 	fmt.Println("定时任务开始--------------------------------------->")
 	fmt.Println(time.Now().Unix())
 	engine := utils.Engine_token
+	// 统计买的手续费
 	sql := fmt.Sprintf("select sum(num) as a,sum(fee) as b ,sum(fee_cny) as c ,sum(total_cny) as d,token_admission_id  from trade where deal_time>=%d and deal_time<%d  and opt=1 group by token_admission_id", begin, end)
 	r, err := engine.Query(sql)
 	if err != nil {
@@ -190,6 +204,8 @@ func (tk *TokenDailySheet) TimingFunc(begin, end int64) {
 		l[h.TokenId] = h
 	}
 
+
+	// 统计卖的手续费
 	sql = fmt.Sprintf("select token_id, sum(num) as a,sum(fee) as b ,sum(fee_cny) as c ,sum(total_cny) as d,token_admission_id  from trade where deal_time>=%d and deal_time<%d  and opt=2 group by token_admission_id", begin, end)
 	r, err = engine.Query(sql)
 	if err != nil {
@@ -227,6 +243,9 @@ func (tk *TokenDailySheet) TimingFunc(begin, end int64) {
 		Balance int64
 		Frozeen int64
 	}{}
+
+	fmt.Println("len l:", len(l))
+
 	for _, v := range l {
 		p := time.Unix(begin, 0).Format("2006-01-02 ")
 		utils.AdminLog.Printf("insert into token_id %d,time %s", v.TokenId, p)
@@ -238,21 +257,40 @@ func (tk *TokenDailySheet) TimingFunc(begin, end int64) {
 		}
 		v.FrozenAll = result.Frozeen
 		v.BalanceAll = result.Balance
-		_, err = engine.Cols("token_id", "fee_buy_cny", "fee_buy_total", "fee_sell_cny", "fee_sell_total", "buy_total", "sell_total_cny", "sell_total", "date", "balance_all", "frozen_all").InsertOne(v)
+
+		fmt.Println("================================= v ===============================")
+		fmt.Println("v:",  v.TokenId , v.SellTotalCny, v.BuyTotalCny)
+		/*
+		_, err = engine.Table("token_daily_sheet").Cols("token_id", "fee_buy_cny", "fee_buy_total", "fee_sell_cny", "fee_sell_total", "buy_total", "sell_total_cny", "sell_total", "date", "balance_all", "frozen_all").InsertOne(v)
 		if err != nil {
 			utils.AdminLog.Errorln(err.Error())
 			return
 		}
+		*/
 
-	}
-	//sql := fmt.Sprintf("insert into TokenDailySheet (`token_id`,`FeeBuyCny`,`FeeBuyTotal`,`FeeSellCny`,`FeeSellTotal`,`BuyTotal`,`BuyTotalCny`,`SellTotalCny`,`SellTotal`)  values(20001,0,1) on  DUPLICATE key update num=num+values(num)")
-	/*
-		_,err = DB.GetMysqlConn().Insert(l)
+		//  判断当前id这个date是否已经统计
+		tdsheet:= TokenDailySheet{TokenId:v.TokenId,Date:v.Date}
+		isExistSql := " SELECT token_id, `date` FROM  g_token.`token_daily_sheet`   WHERE token_id=? AND `date`=?"
+		has, err := engine.Table("token_daily_sheet").SQL(isExistSql, v.TokenId, v.Date).Exist(&tdsheet)
 		if err != nil {
-			log.Fatalln(err.Error())
+			fmt.Println(err)
+			utils.AdminLog.Errorln(err)
+		}
+		if has {
+			fmt.Println("exists:", v.TokenId, v.Date)
+			utils.AdminLog.Infoln("exists:", v.TokenId, v.Date)
+			continue
+		}
+		// 不存在，则插入
+		newSql := "INSERT INTO `token_daily_sheet` (`token_id`,`fee_buy_cny`,`fee_buy_total`,`fee_sell_cny`,`fee_sell_total`,`buy_total`,`sell_total_cny`,`sell_total`,`balance_all`,`frozen_all`,`date`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+		_,err = engine.Exec(newSql,v.TokenId, v.FeeBuyCny, v.FeeBuyTotal, v.FeeSellCny, v.FeeSellTotal, v.BuyTotal, v.SellTotalCny, v.SellTotal, v.BalanceAll, v.FrozenAll, v.Date)
+		if err != nil {
+			fmt.Println(err)
+			utils.AdminLog.Errorln(err)
 			return
 		}
-	*/
+	}
+
 	//如果日期设置的是十天前那么会从十天前统计到现在
 	be := begin + 86400
 	if be > time.Now().Unix() {
