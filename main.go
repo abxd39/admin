@@ -4,14 +4,14 @@ import (
 	"admin/app"
 	"admin/app/models"
 	"admin/cron"
+	"admin/middleware"
+	"admin/session"
 	"admin/utils"
 	"fmt"
 	"os"
-	"github.com/gin-gonic/gin"
-	"github.com/gin-contrib/sessions"
-	"admin/session"
-	"admin/middleware"
 
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
@@ -22,11 +22,6 @@ func main() {
 	// 定时任务
 	cron.InitCron()
 	go models.DailyStart()
-
-	//启动定时器
-	//go new(models.TokenFeeDailySheet).BoottimeTimingSettlement()
-	//go new(models.WalletInoutDailySheet).BoottimeTimingSettlement()
-	//go new(models.CurencyFeeDailySheet).BoottimeTimingSettlement()
 
 	// 配置gin
 	r := gin.Default()
@@ -40,9 +35,10 @@ func main() {
 	// custom middleware
 	r.Use(middleware.JsCors())
 	r.Use(middleware.CheckLogin())
-	app.Router(r)
 
-	r.Run(fmt.Sprintf(":%d", utils.Cfg.MustInt("http", "port")))
+	// 启动gin
+	app.Init()
+	app.App.Run(fmt.Sprintf(":%d", utils.Cfg.MustInt("http", "port")))
 
 }
 
