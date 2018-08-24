@@ -16,7 +16,7 @@ type UserLoginLog struct {
 }
 
 type UserLogInLogGroup struct {
-	//UserLoginLog `xorm:"extends"`
+	UserLoginLog `xorm:"extends"`
 	NickName     string `xorm:"not null default '' comment('用户昵称') VARCHAR(64)"`
 	Phone        string `xorm:"comment('手机') unique VARCHAR(64)"`
 	Email        string `xorm:"comment('邮箱') unique VARCHAR(128)"`
