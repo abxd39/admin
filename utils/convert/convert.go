@@ -112,7 +112,7 @@ func StringDivString(a, b string) (string, error) {
 
 func StringTo8Bit(a string) (string, error) {
 	if a == `` {
-		return "", nil
+		return "0", nil
 	}
 	s, err := decimal.NewFromString(a)
 	if err != nil {

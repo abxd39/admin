@@ -304,7 +304,9 @@ func (cu *CurrencyController) totalCoin(c *gin.Context) {
 
 	var totalcoinList []TotalCoin
 
+	// 统计场外总币数和持有币总人数
 	currencyBalanceList, currencyUserCoin, err := new(models.UserCurrency).GetAllCurrencyCoin(tokenIdList)
+	// 统计币币交易总币数和对应币总持有人数
 	tokenBalanceList, tokenUserCoin, err := new(models.UserToken).GetAllTokenCoin(tokenIdList)
 	fmt.Println("法币总额=", currencyBalanceList)
 	fmt.Println("法币持有人数=", currencyUserCoin)
@@ -317,13 +319,8 @@ func (cu *CurrencyController) totalCoin(c *gin.Context) {
 		tmp.TokenId = int(tk.Id)
 		tmp.TokenName = tk.Mark
 		for _, tokenBalance := range tokenBalanceList {
-			if tokenBalance.TokenId == 1 {
-				fmt.Println(":::::", tokenBalance)
-			}
 			if tokenBalance.TokenId == int32(tk.Id) {
-				//totalnum += convert.StringToInt64By8Bit() tokenBalance.TotalBalance
 				totalnum, _ = convert.StringAddString(totalnum, tokenBalance.TotalBalanceStr)
-				//totalnum += tokenBalance.TotalFrozen
 				totalnum, _ = convert.StringAddString(totalnum, tokenBalance.TotalFrozenStr)
 			}
 		}
