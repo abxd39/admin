@@ -17,6 +17,8 @@ func main() {
 	if os.Getenv("ADMIN_API_ENV") == "" {
 		panic("环境变量ADMIN_API_ENV未设置")
 	}
+
+
 	// 定时任务
 	cron.InitCron()
 
