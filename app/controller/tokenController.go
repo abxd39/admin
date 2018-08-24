@@ -932,12 +932,12 @@ func (t *TokenController) FeeTrend(ctx *gin.Context) {
 	}
 
 	// 转换成以日期作为key的map
-	tokenListMap := make(map[string]*models.TokenDailySheet)
+	tokenListMap := make(map[string]*models.TokenTradeTrend)
 	for _, v := range tokenList {
 		tokenListMap[time.Unix(v.Date, 0).Format("0102")] = v
 	}
 
-	currencyListMap := make(map[string]*models.CurrencyDailySheet)
+	currencyListMap := make(map[string]*models.CurrencyTradeTrend)
 	for _, v := range currencyList {
 		datetime, _ := time.Parse(utils.LAYOUT_DATE_TIME, v.Date)
 		currencyListMap[datetime.Format("0102")] = v
@@ -956,49 +956,54 @@ func (t *TokenController) FeeTrend(ctx *gin.Context) {
 	ySell := make([]string, listLen)
 	yOut := make([]string, listLen)
 
-	var allBuyTotal int64
-	var allSellTotal int64
-	var allOutTotal int64
-	var allTotal int64
+	var allBuyTotal = "0"
+	var allSellTotal = "0"
+	var allOutTotal = "0"
+	var allTotal = "0"
 	for k, v := range tokenList {
 		date := time.Unix(v.Date, 0).Format("0102")
 
-		var buy int64
-		var sell int64
-		var out int64
+		var buy = "0"
+		var sell = "0"
+		var out = "0"
 		if md, ok := tokenListMap[date]; ok {
-			buy += md.FeeBuyTotal
-			sell += md.FeeSellTotal
+			buy, _ = convert.StringAddString(buy, md.FeeBuyTotal)
+			sell, _ = convert.StringAddString(sell, md.FeeSellTotal)
 		}
 		if md, ok := currencyListMap[date]; ok {
-			buy += md.FeeBuyTotal
-			sell += md.FeeSellTotal
+			buy, _ = convert.StringAddString(buy, md.FeeBuyTotal)
+			sell, _ = convert.StringAddString(sell, md.FeeSellTotal)
 		}
 		if md, ok := inOutListMap[date]; ok {
-			out += md.FeeTotal
+			out, _ = convert.StringAddString(out, md.FeeTotal)
 		}
 
 		x[k] = date
 
-		yBuy[k] = convert.Int64ToStringBy8Bit(buy)
-		ySell[k] = convert.Int64ToStringBy8Bit(sell)
-		yOut[k] = convert.Int64ToStringBy8Bit(out)
+		yBuy[k], _ = convert.StringTo8Bit(buy)
+		ySell[k], _ = convert.StringTo8Bit(sell)
+		yOut[k], _ = convert.StringTo8Bit(out)
 
-		allBuyTotal += buy
-		allSellTotal += sell
-		allOutTotal += out
-		allTotal += buy + sell + out
+		allBuyTotal, _ = convert.StringAddString(allBuyTotal, buy)
+		allSellTotal, _ = convert.StringAddString(allSellTotal, sell)
+		allOutTotal, _ = convert.StringAddString(allOutTotal, out)
+		allTotal, _ = convert.StringAddStrings(allTotal, buy, sell, out)
 	}
+
+	allBuyTotalFloat, _ := convert.StringTo8Bit(allBuyTotal) // 转成float
+	allSellTotalFloat, _ := convert.StringTo8Bit(allSellTotal)
+	allOutTotalFloat, _ := convert.StringTo8Bit(allOutTotal)
+	allTotalFloat, _ := convert.StringTo8Bit(allTotal)
 
 	// 设置返回数据
 	t.Put(ctx, "x", x)
 	t.Put(ctx, "y_buy", yBuy)
 	t.Put(ctx, "y_sell", ySell)
 	t.Put(ctx, "y_out", yOut)
-	t.Put(ctx, "all_buy_total", convert.Int64ToStringBy8Bit(allBuyTotal))
-	t.Put(ctx, "all_sell_total", convert.Int64ToStringBy8Bit(allSellTotal))
-	t.Put(ctx, "all_out_total", convert.Int64ToStringBy8Bit(allOutTotal))
-	t.Put(ctx, "all_total", convert.Int64ToStringBy8Bit(allTotal))
+	t.Put(ctx, "all_buy_total", allBuyTotalFloat)
+	t.Put(ctx, "all_sell_total", allSellTotalFloat)
+	t.Put(ctx, "all_out_total", allOutTotalFloat)
+	t.Put(ctx, "all_total", allTotalFloat)
 
 	// 返回
 	t.RespOK(ctx)
@@ -1044,22 +1049,25 @@ func (t *TokenController) TradeTrend(ctx *gin.Context) {
 	yBuy := make([]string, listLen)
 	ySell := make([]string, listLen)
 
-	var allBuyTotal, allSellTotal int64
+	allBuyTotal := "0"  // 买入总计
+	allSellTotal := "0" // 卖出总计
 	for k, v := range list {
 		x[k] = time.Unix(v.Date, 0).Format("0102")
-		yBuy[k] = convert.Int64ToStringBy8Bit(v.BuyTotal)
-		ySell[k] = convert.Int64ToStringBy8Bit(v.SellTotal)
+		yBuy[k], _ = convert.StringTo8Bit(v.BuyTotal)
+		ySell[k], _ = convert.StringTo8Bit(v.SellTotal)
 
-		allBuyTotal += v.BuyTotal
-		allSellTotal += v.SellTotal
+		allBuyTotal, _ = convert.StringAddString(allBuyTotal, v.BuyTotal)
+		allSellTotal, _ = convert.StringAddString(allSellTotal, v.SellTotal)
 	}
+	allBuyTotalFloat, _ := convert.StringTo8Bit(allBuyTotal)   // 转成float
+	allSellTotalFloat, _ := convert.StringTo8Bit(allSellTotal) // 转成float
 
 	// 设置返回数据
 	t.Put(ctx, "x", x)
 	t.Put(ctx, "y_buy", yBuy)
 	t.Put(ctx, "y_sell", ySell)
-	t.Put(ctx, "all_buy_total", convert.Int64ToStringBy8Bit(allBuyTotal))
-	t.Put(ctx, "all_sell_total", convert.Int64ToStringBy8Bit(allSellTotal))
+	t.Put(ctx, "all_buy_total", allBuyTotalFloat)
+	t.Put(ctx, "all_sell_total", allSellTotalFloat)
 
 	// 返回
 	t.RespOK(ctx)
@@ -1107,19 +1115,22 @@ func (t *TokenController) NumTrend(ctx *gin.Context) {
 	x := make([]string, listLen)
 	y := make([]string, listLen)
 
-	var allTotal int64
+	var allTotal = "0"
 	for k, v := range list {
 		datetime, _ := time.Parse(utils.LAYOUT_DATE, v.Date)
-		x[k] = datetime.Format("0102")
-		y[k] = convert.Int64ToStringBy8Bit(v.TokenTotal + v.CurrencyTotal)
+		total, _ := convert.StringAddString(v.TokenTotal, v.CurrencyTotal)
 
-		allTotal += v.TokenTotal + v.CurrencyTotal
+		x[k] = datetime.Format("0102")
+		y[k], _ = convert.StringTo8Bit(total)
+
+		allTotal, _ = convert.StringAddStrings(allTotal, v.TokenTotal, v.CurrencyTotal)
 	}
+	allTotalFloat, _ := convert.StringTo8Bit(allTotal)
 
 	// 设置返回数据
 	t.Put(ctx, "x", x)
 	t.Put(ctx, "y", y)
-	t.Put(ctx, "all_total", convert.Int64ToStringBy8Bit(allTotal))
+	t.Put(ctx, "all_total", allTotalFloat)
 
 	// 返回
 	t.RespOK(ctx)

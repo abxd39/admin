@@ -58,23 +58,26 @@ func (w *WallectController) InOutTrend(ctx *gin.Context) {
 	yIn := make([]string, listLen)
 	yOut := make([]string, listLen)
 
-	var allInTotal, allOutTotal int64
+	allInTotal := "0"  // 充币总计
+	allOutTotal := "0" // 提币总计
 	for k, v := range list {
 		datetime, _ := time.Parse(utils.LAYOUT_DATE_TIME, v.Date)
 		x[k] = datetime.Format("0102")
-		yIn[k] = convert.Int64ToStringBy8Bit(v.InTotal)
-		yOut[k] = convert.Int64ToStringBy8Bit(v.OutTotal)
+		yIn[k], _ = convert.StringTo8Bit(v.InTotal)
+		yOut[k], _ = convert.StringTo8Bit(v.OutTotal)
 
-		allInTotal += v.InTotal
-		allOutTotal += v.OutTotal
+		allInTotal, _ = convert.StringAddString(allInTotal, v.InTotal)
+		allOutTotal, _ = convert.StringAddString(allOutTotal, v.OutTotal)
 	}
+	allInTotalFloat, _ := convert.StringTo8Bit(allInTotal)
+	allOutTotalFloat, _ := convert.StringTo8Bit(allOutTotal)
 
 	// 设置返回数据
 	w.Put(ctx, "x", x)
 	w.Put(ctx, "y_in", yIn)
 	w.Put(ctx, "y_out", yOut)
-	w.Put(ctx, "all_in_total", convert.Int64ToStringBy8Bit(allInTotal))
-	w.Put(ctx, "all_out_total", convert.Int64ToStringBy8Bit(allOutTotal))
+	w.Put(ctx, "all_in_total", allInTotalFloat)
+	w.Put(ctx, "all_out_total", allOutTotalFloat)
 
 	// 返回
 	w.RespOK(ctx)

@@ -46,10 +46,12 @@ type FeeTotalSheet struct {
 	TotalDayNumFeeTrue   float64 `xorm:"-" json:"total_day_num_fee_true"`
 }
 
+// 走势返回string，内容是int64
+// 如果用int64，数据太大时xorm sum会溢出报错
 type InOutTrend struct {
-	InTotal  int64  `xorm:"in_total"`
-	OutTotal int64  `xorm:"out_total"`
-	FeeTotal int64  `xorm:"fee_total"`
+	InTotal  string `xorm:"in_total"`
+	OutTotal string `xorm:"out_total"`
+	FeeTotal string `xorm:"fee_total"`
 	Date     string `xorm:"date"`
 }
 

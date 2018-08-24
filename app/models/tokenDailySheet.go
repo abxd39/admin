@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"time"
 
-	"log"
 	"github.com/robfig/cron"
+	"log"
 )
 
 //type TokenFeeDailySheet struct {
@@ -48,8 +48,22 @@ type total struct {
 	Total           float64 `xorm:"-" json:"total" `
 }
 
-// 交易趋势
-func (this *TokenDailySheet) TradeTrendList(filter map[string]interface{}) ([]*TokenDailySheet, error) {
+// 走势返回string，内容是int
+// 如果用int64，数据太大时xorm sum会溢出报错
+type TokenTradeTrend struct {
+	BuyTotal     string `xorm:"buy_total"`
+	BuyTotalCny  string `xorm:"but_total_cny"`
+	SellTotal    string `xorm:"sell_total"`
+	SellTotalCny string `xorm:"sell_total_cny"`
+	FeeBuyTotal  string `xorm:"fee_buy_total"`
+	FeeBuyCny    string `xorm:"fee_buy_cny"`
+	FeeSellTotal string `xorm:"fee_sell_total"`
+	FeeSellCny   string `xorm:"fee_sell_cny"`
+	Date         int64  `xorm:"date"`
+}
+
+// 交易走势
+func (this *TokenDailySheet) TradeTrendList(filter map[string]interface{}) ([]*TokenTradeTrend, error) {
 	// 时间区间，默认最近一周
 	today, err := time.Parse(utils.LAYOUT_DATE_TIME, fmt.Sprintf("%s 00:00:00", time.Now().Format(utils.LAYOUT_DATE)))
 	if err != nil {
@@ -74,8 +88,9 @@ func (this *TokenDailySheet) TradeTrendList(filter map[string]interface{}) ([]*T
 		session.And("token_id=?", v)
 	}
 
-	var list []*TokenDailySheet
+	var list []*TokenTradeTrend
 	err = session.
+		Table(this).
 		Select("date, sum(buy_total) as buy_total, sum(buy_total_cny) as buy_total_cny"+
 			",sum(sell_total) as sell_total, sum(sell_total_cny) as sell_total_cny"+
 			",sum(fee_buy_total) as fee_buy_total, sum(fee_buy_cny) as fee_buy_cny"+
@@ -287,4 +302,3 @@ func DailyStart() {
 //	new(TokenDailySheet).Run()
 //
 //}
-

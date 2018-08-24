@@ -44,7 +44,6 @@ func (this *CurrencyController) Router(r *gin.Engine) {
 		g.GET("/total_coin", this.TotalCoin)
 		g.GET("/export_total_coin", this.ExportTotalCoin)
 
-
 		//g.GET("/")                                               //p2-3-0-0币数统计列表
 		//划转到币币账户货币数量日统计 注释接口没有实现
 		g.GET("/layoff_list", this.GetLayOffList)
@@ -115,8 +114,8 @@ func (cu *CurrencyController) currencyChangeHistory(c *gin.Context) {
 	req := struct {
 		Page   int    `form:"page" json:"page" binding:"required"`
 		Rows   int    `form:"rows" json:"rows" `
-		Bt string `form:"bt" json:"bt"`
-		Et string `form:"et" json:"et"`
+		Bt     string `form:"bt" json:"bt"`
+		Et     string `form:"et" json:"et"`
 		Search string `form:"search" json:"search" `             //搜索的内容
 		Status int    `form:"status" json:"status" `             //用户账号状态
 		Tid    int    `form:"tid" json:"tid" binding:"required"` //货币id
@@ -134,7 +133,7 @@ func (cu *CurrencyController) currencyChangeHistory(c *gin.Context) {
 		cu.RespErr(c, err)
 		return
 	}
-	ulist, err := new(models.UserCurrencyHistory).GetListForUid(req.Page, req.Rows, req.Tid, req.Status, req.Chtype, req.Bt,req.Et,req.Search)
+	ulist, err := new(models.UserCurrencyHistory).GetListForUid(req.Page, req.Rows, req.Tid, req.Status, req.Chtype, req.Bt, req.Et, req.Search)
 	if err != nil {
 		utils.AdminLog.Errorf(err.Error())
 		cu.RespErr(c, err)
@@ -247,8 +246,6 @@ func (cu *CurrencyController) total(c *gin.Context) {
 	return
 }
 
-
-
 /*
 	total coin
 */
@@ -257,18 +254,17 @@ func (cu *CurrencyController) TotalCoin(c *gin.Context) {
 	return
 }
 
-func (cu *CurrencyController)ExportTotalCoin(c *gin.Context){
+func (cu *CurrencyController) ExportTotalCoin(c *gin.Context) {
 	cu.totalCoin(c)
 	return
 }
 
-
-func (cu *CurrencyController)totalCoin(c *gin.Context) {
+func (cu *CurrencyController) totalCoin(c *gin.Context) {
 	fmt.Println("total coin ...")
 	req := struct {
-		Page   int     `form:"page"       json:"page" binding:"required"`
-		Rows   int     `form:"rows"       json:"rows" `
-		TokenId int    `form:"token_id"   json:"token_id"`
+		Page    int `form:"page"       json:"page" binding:"required"`
+		Rows    int `form:"rows"       json:"rows" `
+		TokenId int `form:"token_id"   json:"token_id"`
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
@@ -285,49 +281,57 @@ func (cu *CurrencyController)totalCoin(c *gin.Context) {
 		req.Rows = 10
 	}
 	if req.TokenId > 0 {
-		tokenList , total, err = new(models.CommonTokens).GetTokenPage(req.Page, req.Rows, int32(req.TokenId))
-	}else{
-		tokenList , total, err = new(models.CommonTokens).GetTokenPage(req.Page, req.Rows, 0)
+		tokenList, total, err = new(models.CommonTokens).GetTokenPage(req.Page, req.Rows, int32(req.TokenId))
+	} else {
+		tokenList, total, err = new(models.CommonTokens).GetTokenPage(req.Page, req.Rows, 0)
 	}
 
 	if err != nil {
 		fmt.Println(err)
 	}
 	var tokenIdList []int32
-	for _, tk := range tokenList{
+	for _, tk := range tokenList {
 		tokenIdList = append(tokenIdList, int32(tk.Id))
 	}
-	
+
 	type TotalCoin struct {
-		TokenId      int     `json:"token_id"`
-		TokenName    string   `json:"token_name"`
-		TotalUser    int64    `json:"total_user"`
-		TotalNum     string  `json:"total_num"`
-		AverageNum   string  `json:"average_num"`
+		TokenId    int    `json:"token_id"`
+		TokenName  string `json:"token_name"`
+		TotalUser  int64  `json:"total_user"`
+		TotalNum   string `json:"total_num"`
+		AverageNum string `json:"average_num"`
 	}
 
 	var totalcoinList []TotalCoin
 
-
 	currencyBalanceList, currencyUserCoin, err := new(models.UserCurrency).GetAllCurrencyCoin(tokenIdList)
+<<<<<<< HEAD
 	tokenBalanceList, tokenUserCoin, err:= new(models.UserToken).GetAllTokenCoin(tokenIdList)
 	fmt.Println("法币总额=",currencyBalanceList)
 	fmt.Println("法币持有人数=",currencyUserCoin)
 	fmt.Println("bi币总额=",tokenBalanceList)
 	fmt.Println("bi币持有人数=",tokenUserCoin)
+=======
+	tokenBalanceList, tokenUserCoin, err := new(models.UserToken).GetAllTokenCoin(tokenIdList)
+
+>>>>>>> 3f560a4f314ed1ac4d66ecae25b55ad0b6979857
 	for _, tk := range tokenList {
 		var totalnum string
-		var totaluser  int64
+		var totaluser int64
 		var tmp TotalCoin
 		tmp.TokenId = int(tk.Id)
 		tmp.TokenName = tk.Mark
+<<<<<<< HEAD
 		for _, tokenBalance := range tokenBalanceList{
 			if tokenBalance.TokenId ==1{
 				fmt.Println( ":::::",tokenBalance)
 			}
+=======
+		for _, tokenBalance := range tokenBalanceList {
+>>>>>>> 3f560a4f314ed1ac4d66ecae25b55ad0b6979857
 			if tokenBalance.TokenId == int32(tk.Id) {
 				//totalnum += convert.StringToInt64By8Bit() tokenBalance.TotalBalance
-				totalnum, _ = convert.StringAddString(totalnum,tokenBalance.TotalBalanceStr)
+				totalnum, _ = convert.StringAddString(totalnum, tokenBalance.TotalBalanceStr)
 				//totalnum += tokenBalance.TotalFrozen
 				totalnum, _ = convert.StringAddString(totalnum, tokenBalance.TotalFrozenStr)
 			}
@@ -339,10 +343,9 @@ func (cu *CurrencyController)totalCoin(c *gin.Context) {
 			}
 		}
 
-		
-		totalnumstr  , err  := convert.StringTo8Bit(totalnum)
-		if totalnumstr ==``{
-			tmp.TotalNum ="0"
+		totalnumstr, err := convert.StringTo8Bit(totalnum)
+		if totalnumstr == `` {
+			tmp.TotalNum = "0"
 		} else {
 			tmp.TotalNum = totalnumstr
 		}
@@ -351,56 +354,55 @@ func (cu *CurrencyController)totalCoin(c *gin.Context) {
 			fmt.Println(err)
 		}
 		for _, tkUser := range tokenUserCoin {
-			if tkUser.TokenId == int32(tk.Id){
-				totaluser = totaluser +  tkUser.TotalUser
+			if tkUser.TokenId == int32(tk.Id) {
+				totaluser = totaluser + tkUser.TotalUser
 			}
 		}
 		for _, cuUser := range currencyUserCoin {
 			if cuUser.TokenId == int32(tk.Id) {
-				totaluser = totaluser  + cuUser.TotalUser
+				totaluser = totaluser + cuUser.TotalUser
 			}
 		}
 		fmt.Println("totalnum:", totalnum, totaluser)
 		tmp.TotalUser = totaluser
 		if totaluser <= 0 {
 			tmp.AverageNum = "0"
-		}else{
-			fmt.Println(totalnum,totaluser,convert.Int64ToStringAdd8Bit(totaluser))
+		} else {
+			fmt.Println(totalnum, totaluser, convert.Int64ToStringAdd8Bit(totaluser))
 
-			tempStr, err :=convert.StringDivString(totalnum ,convert.Int64ToStringAdd8Bit(totaluser))
+			tempStr, err := convert.StringDivString(totalnum, convert.Int64ToStringAdd8Bit(totaluser))
 			if err != nil {
 				tmp.AverageNum = "0"
-			}else{
-				fmt.Println("人均持有=",tempStr)
-				if tempStr==``{
-					tempStr="0"
+			} else {
+				fmt.Println("人均持有=", tempStr)
+				if tempStr == `` {
+					tempStr = "0"
 				}
-				tmp.AverageNum= tempStr//convert.StringTo8Bit(tempStr)
-				fmt.Println("去掉8=",tmp.AverageNum)
+				tmp.AverageNum = tempStr //convert.StringTo8Bit(tempStr)
+				fmt.Println("去掉8=", tmp.AverageNum)
 			}
 
 		}
-		totalcoinList = append(totalcoinList, tmp )
+		totalcoinList = append(totalcoinList, tmp)
 	}
 	respList := new(models.ModelList)
 	respList.IsPage = true
 	respList.Items = totalcoinList
 	respList.Total = int(total)
 	respList.PageIndex = req.Page
-	respList.PageSize  = req.Rows
+	respList.PageSize = req.Rows
 	var pagecount int
-	if int(total) % req.Rows == 0 {
+	if int(total)%req.Rows == 0 {
 		pagecount = int(total) / req.Rows
-	}else{
+	} else {
 		pagecount = (int(total) / req.Rows) + 1
 	}
 	respList.PageCount = pagecount
-	
+
 	cu.Put(c, "list", respList)
 	cu.RespOK(c)
 	return
 }
-
 
 func (cu *CurrencyController) DownTradeAds(c *gin.Context) {
 	req := struct {
@@ -505,10 +507,10 @@ func (cu *CurrencyController) ExportTotalCurrencyBalance(c *gin.Context) {
 
 func (cu *CurrencyController) totalCurrencyBalance(c *gin.Context) {
 	req := struct {
-		Page     int    `form:"page" json:"page" binding:"required"`
-		Rows int    `form:"rows" json:"rows" `
-		Search   string `form:"search" json:"search" ` //搜索的内容
-		Status   int    `form:"status" json:"status" ` //用户账号状态
+		Page   int    `form:"page" json:"page" binding:"required"`
+		Rows   int    `form:"rows" json:"rows" `
+		Search string `form:"search" json:"search" ` //搜索的内容
+		Status int    `form:"status" json:"status" ` //用户账号状态
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
@@ -540,7 +542,7 @@ func (cu *CurrencyController) totalCurrencyBalance(c *gin.Context) {
 		cu.RespErr(c, err.Error())
 		return
 	}
-	for i,v :=range value{
+	for i, v := range value {
 		for _, vc := range tokenList {
 			if vc.Uid == uint64(v.Uid) {
 				value[i].AmountTo = vc.TotalCny
@@ -548,7 +550,6 @@ func (cu *CurrencyController) totalCurrencyBalance(c *gin.Context) {
 			}
 		}
 	}
-
 
 	result.Items = value
 	//法币账户折和没有计算
@@ -682,26 +683,28 @@ func (t *CurrencyController) TradeTrend(ctx *gin.Context) {
 	yBuy := make([]string, listLen)
 	ySell := make([]string, listLen)
 
-	var allBuyTotal, allSellTotal int64
+	allBuyTotal := "0"  // 买入总计
+	allSellTotal := "0" // 卖出总计
 	for k, v := range list {
 		datetime, _ := time.Parse(utils.LAYOUT_DATE_TIME, v.Date)
 		x[k] = datetime.Format("0102")
-		yBuy[k] = convert.Int64ToStringBy8Bit(v.BuyTotal)
-		ySell[k] = convert.Int64ToStringBy8Bit(v.SellTotal)
+		yBuy[k], _ = convert.StringTo8Bit(v.BuyTotal)
+		ySell[k], _ = convert.StringTo8Bit(v.SellTotal)
 
-		allBuyTotal += v.BuyTotal
-		allSellTotal += v.SellTotal
+		allBuyTotal, _ = convert.StringAddString(allBuyTotal, v.BuyTotal)
+		allSellTotal, _ = convert.StringAddString(allSellTotal, v.SellTotal)
 	}
+	allBuyTotalFloat, _ := convert.StringTo8Bit(allBuyTotal)   // 转成float
+	allSellTotalFloat, _ := convert.StringTo8Bit(allSellTotal) // 转成float
 
 	// 设置返回数据
 	t.Put(ctx, "x", x)
 	t.Put(ctx, "y_buy", yBuy)
 	t.Put(ctx, "y_sell", ySell)
-	t.Put(ctx, "all_buy_total", convert.Int64ToStringBy8Bit(allBuyTotal))
-	t.Put(ctx, "all_sell_total", convert.Int64ToStringBy8Bit(allSellTotal))
+	t.Put(ctx, "all_buy_total", allBuyTotalFloat)
+	t.Put(ctx, "all_sell_total", allSellTotalFloat)
 
 	// 返回
 	t.RespOK(ctx)
 	return
 }
-
