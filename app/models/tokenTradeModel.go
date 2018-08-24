@@ -3,6 +3,7 @@ package models
 import (
 	"admin/utils"
 	"strconv"
+	"fmt"
 )
 
 //bibi 交易表
@@ -81,7 +82,7 @@ func (t *TotalTradeCNY) TableName() string {
 }
 
 func (this *Trade) TotalTotalTradeList(page, rows int, date uint64) (*ModelList, error) {
-
+	fmt.Println("到这里了")
 	engine := utils.Engine_token
 	query := engine.Desc("deal_time")
 	query = query.Join("left", "config_token_cny p", "trade.token_id = p.token_id")
@@ -146,8 +147,8 @@ func (this *Trade) TotalTotalTradeList(page, rows int, date uint64) (*ModelList,
 		}
 
 	}
-
-	return nil, nil
+	mList.Items =totalDateList
+	return mList, nil
 }
 
 func (this *Trade) GetTokenRecordList(page, rows, opt, uid int, bt, et uint64, name string) (*ModelList, error) {

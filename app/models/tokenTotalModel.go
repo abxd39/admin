@@ -192,7 +192,7 @@ func (this *UserToken) GetAllTokenCoin(tokenIdList []int32) (allbalanceList []To
 		fmt.Println("token balance sum err:", err)
 	}
 
-	//fmt.Println(result)
+	fmt.Println(allbalanceList)
 
 
 

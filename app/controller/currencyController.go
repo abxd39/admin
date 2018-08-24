@@ -311,7 +311,10 @@ func (cu *CurrencyController)totalCoin(c *gin.Context) {
 
 	currencyBalanceList, currencyUserCoin, err := new(models.UserCurrency).GetAllCurrencyCoin(tokenIdList)
 	tokenBalanceList, tokenUserCoin, err:= new(models.UserToken).GetAllTokenCoin(tokenIdList)
-
+	fmt.Println("法币总额=",currencyBalanceList)
+	fmt.Println("法币持有人数=",currencyUserCoin)
+	fmt.Println("bi币总额=",tokenBalanceList)
+	fmt.Println("bi币持有人数=",tokenUserCoin)
 	for _, tk := range tokenList {
 		var totalnum string
 		var totaluser  int64
@@ -319,6 +322,9 @@ func (cu *CurrencyController)totalCoin(c *gin.Context) {
 		tmp.TokenId = int(tk.Id)
 		tmp.TokenName = tk.Mark
 		for _, tokenBalance := range tokenBalanceList{
+			if tokenBalance.TokenId ==1{
+				fmt.Println( ":::::",tokenBalance)
+			}
 			if tokenBalance.TokenId == int32(tk.Id) {
 				//totalnum += convert.StringToInt64By8Bit() tokenBalance.TotalBalance
 				totalnum, _ = convert.StringAddString(totalnum,tokenBalance.TotalBalanceStr)

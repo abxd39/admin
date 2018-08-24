@@ -50,15 +50,24 @@ func Int64ToStringAdd8Bit(b int64)string{
 }
 
 ////0.00001001
+
 func StringAddString(a, b string) (string, error) {
-	stra, err := decimal.NewFromString(a)
-	if err != nil {
-		return "", err
-	}
-	strb, err := decimal.NewFromString(b)
-	if err != nil {
-		return "", err
-	}else{
+
+	if a == "" && b == "" {
+		return "", nil
+	} else if a == "" && b != "" {
+		return b, nil
+	} else if a != "" && b == "" {
+		return a, nil
+	} else {
+		stra, err := decimal.NewFromString(a)
+		if err != nil {
+			return "", err
+		}
+		strb, err := decimal.NewFromString(b)
+		if err != nil {
+			return "", err
+		}
 		return stra.Add(strb).String(), err
 	}
 
@@ -81,8 +90,12 @@ func StringDivString(a, b string)( string, error) {
 
 
 //string 去掉8个零
-func StringTo8Bit(a string)(string, error) {
-	s , err := decimal.NewFromString(a)
+
+func StringTo8Bit(a string) (string, error) {
+	if a == `` {
+		return "", nil
+	}
+	s, err := decimal.NewFromString(a)
 	if err != nil {
 		return "", err
 	}
@@ -90,7 +103,6 @@ func StringTo8Bit(a string)(string, error) {
 	n := s.Div(d)
 	return n.String(), nil
 }
-
 
 
 //0.00001001
