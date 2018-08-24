@@ -44,8 +44,11 @@ type TokenFeeDailySheetGroup struct {
 }
 
 type total struct {
-	TokenDailySheet `xorm:"extends"`
-	Total           float64 `xorm:"-" json:"total" `
+	Id           int
+	Total           string `xorm:"-" json:"total" `
+	Buy     		string `json:"buy"`
+	Sell 			string `json:"sell"`
+	Date         int64 `json:"date"` 
 }
 
 // 走势返回string，内容是int
@@ -111,23 +114,33 @@ func (this *TokenDailySheet) TradeTrendList(filter map[string]interface{}) ([]*T
 func (this *TokenDailySheet) GetDailySheetList(page, rows int, date uint64) (*ModelList, *TokenFeeDailySheetGroup, error) {
 	engine := utils.Engine_token
 	fmt.Println("bibi 交易手续费汇总")
-	query := engine.Desc("date")
+	//query := engine.Desc("date")
+	sql:=" SELECT id,date,SUM(fee_buy_cny) buy, SUM(fee_sell_cny) sell  FROM `token_daily_sheet` GROUP BY date ORDER BY `date` DESC "
 	if date != 0 {
-		query = query.Where("date between ? and ?", date, date+86400)
+		sql = fmt.Sprintf(" SELECT id,date,SUM(fee_buy_cny) as buy, SUM(fee_sell_cny) as sell  FROM `token_daily_sheet` where date between %d and %d GROUP BY date ORDER BY `date` DESC",date,date+86400)
 	}
-	countQuery := *query
-	count, err := countQuery.Count(&TokenDailySheet{})
+	Count:=& struct {
+		Num int64
+	}{}
+	 countSql:= fmt.Sprintf("select  count(*) num from (%s) t",sql)
+	 _,err:=engine.SQL(countSql).Get(Count)
 	if err != nil {
 		return nil, nil, err
 	}
-	offset, mList := this.Paging(page, rows, int(count))
+	offset, mList := this.Paging(page, rows, int(Count.Num))
 	list := make([]total, 0)
-	err = query.Table("token_daily_sheet").Select("date,SUM(fee_buy_cny) fee_buy_cny, SUM(fee_sell_cny) fee_sell_cny ").Limit(mList.PageSize, offset).GroupBy("date").Find(&list)
+	limitSql:=fmt.Sprintf("limit %d offset %d",mList.PageSize,offset)
+
+	err =engine.Table("token_daily_sheet").SQL(sql+limitSql).Find(&list)
 	if err != nil {
 		return nil, nil, err
 	}
 	for i, v := range list {
-		list[i].Total = convert.Int64ToFloat64By8Bit(v.BuyTotalCny + v.SellTotalCny)
+
+		temp,_ := convert.StringAddString(v.Buy , v.Sell)
+		list[i].Total,_ = convert.StringTo8Bit(temp)
+		list[i].Buy,_ = convert.StringTo8Bit(v.Buy)
+		list[i].Sell,_ = convert.StringTo8Bit(v.Sell)
 	}
 	mList.Items = list
 	tfd:=new(TokenFeeDailySheetGroup)
