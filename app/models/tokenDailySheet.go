@@ -122,7 +122,7 @@ func (this *TokenDailySheet) GetDailySheetList(page, rows int, date uint64) (*Mo
 	Count:=& struct {
 		Num int64
 	}{}
-	 countSql:= fmt.Sprintf("select  count(*) num from (%s) t",sql)
+	 countSql:= fmt.Sprintf("select  count(id) num from (%s) t",sql)
 	 _,err:=engine.SQL(countSql).Get(Count)
 	if err != nil {
 		return nil, nil, err
@@ -296,7 +296,7 @@ func (tk *TokenDailySheet) TimingFunc(begin, end int64) {
 	if be > time.Now().Unix() {
 		return
 	}
-	tk.TimingFunc(begin+86400, end+86400)
+	tk.TimingFunc(begin+86400, end)
 	fmt.Println("successful!!!!")
 }
 
@@ -308,7 +308,7 @@ func (t *TokenDailySheet) Run() {
 	unix := theTime.Unix()
 	fmt.Println("当前时间戳", unix)
 	t.TimingFunc(unix-86400, unix)
-	//t.TimingFunc(1532448000, 1534953600)
+	//t.TimingFunc(1532448000, unix)
 }
 
 //启动
@@ -336,7 +336,17 @@ func DailyStart() {
 	select {}
 }
 
-//func DailyStart() {
-//	new(TokenDailySheet).Run()
-//
-//}
+func DailyStart1() {
+	new(TokenDailySheet).Run_tool()
+
+}
+
+func (t *TokenDailySheet) Run_tool() {
+	toBeCharge := time.Now().Format("2006-01-02 ") + "00:00:00"
+	timeLayout := "2006-01-02 15:04:05"
+	loc, _ := time.LoadLocation("Local")
+	theTime, _ := time.ParseInLocation(timeLayout, toBeCharge, loc)
+	unix := theTime.Unix()
+	fmt.Println("当前时间戳", unix)
+	t.TimingFunc(1532448000, unix)
+}

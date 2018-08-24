@@ -31,8 +31,8 @@ func main() {
 	r := gin.Default()
 	//定时任务
 	go models.DailyStart()
-
-
+	//定时任务工具
+	//go models.DailyStart1()
 	// session
 	r.Use(sessions.Sessions("mysession", session.Store))
 
