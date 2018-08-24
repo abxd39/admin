@@ -38,9 +38,9 @@ type TokenDailySheet struct {
 }
 
 type TokenFeeDailySheetGroup struct {
-	TotalBuy  float64 `json:"total_buy"`
-	TotalSell float64 `json:"total_sell"`
-	Total     float64 `json:"total"`
+	TotalBuy  string `json:"total_buy"`
+	TotalSell string `json:"total_sell"`
+	Total     string `json:"total"`
 }
 
 type total struct {
@@ -107,10 +107,11 @@ func (this *TokenDailySheet) TradeTrendList(filter map[string]interface{}) ([]*T
 	return list, nil
 }
 
-//获取历史交易记录
+//手续费报表 一天显示一条记录
 func (this *TokenDailySheet) GetDailySheetList(page, rows int, date uint64) (*ModelList, *TokenFeeDailySheetGroup, error) {
 	engine := utils.Engine_token
-	query := engine.Desc("id")
+	fmt.Println("bibi 交易手续费汇总")
+	query := engine.Desc("date")
 	if date != 0 {
 		query = query.Where("date between ? and ?", date, date+86400)
 	}
@@ -121,25 +122,24 @@ func (this *TokenDailySheet) GetDailySheetList(page, rows int, date uint64) (*Mo
 	}
 	offset, mList := this.Paging(page, rows, int(count))
 	list := make([]total, 0)
-	err = query.Table("token_daily_sheet").Limit(mList.PageSize, offset).Find(&list)
+	err = query.Table("token_daily_sheet").Select("date,SUM(fee_buy_cny) fee_buy_cny, SUM(fee_sell_cny) fee_sell_cny ").Limit(mList.PageSize, offset).GroupBy("date").Find(&list)
 	if err != nil {
 		return nil, nil, err
 	}
 	for i, v := range list {
-		list[i].Total = this.Int64ToFloat64By8Bit(v.BuyTotalCny + v.SellTotalCny)
+		list[i].Total = convert.Int64ToFloat64By8Bit(v.BuyTotalCny + v.SellTotalCny)
 	}
 	mList.Items = list
-	result, err := engine.SumsInt(this, "buy_total_cny", "sell_total_cny")
+	tfd:=new(TokenFeeDailySheetGroup)
+	_, err = engine.SQL("SELECT COALESCE(sum(`fee_buy_cny`),0) AS total_buy, COALESCE(sum(`fee_sell_cny`),0) AS total_sell FROM `token_daily_sheet`").Get(tfd)
 	if err != nil {
 		return nil, nil, err
 	}
-	totalBuy := result[1]
-	totalSell := result[0]
-	return mList, &TokenFeeDailySheetGroup{
-		Total:     this.Int64ToFloat64By8Bit(totalBuy + totalSell),
-		TotalBuy:  this.Int64ToFloat64By8Bit(totalBuy),
-		TotalSell: this.Int64ToFloat64By8Bit(totalSell),
-	}, nil
+	tfd.Total,_= convert.StringAddString(tfd.TotalBuy , tfd.TotalSell)
+	tfd.Total ,_=convert.StringTo8Bit(tfd.Total)
+	tfd.TotalSell,_= convert.StringTo8Bit(tfd.TotalSell)
+	tfd.TotalBuy,_= convert.StringTo8Bit(tfd.TotalBuy)
+	return mList, tfd, nil
 }
 
 //李宇舶 写的
