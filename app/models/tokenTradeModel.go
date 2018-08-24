@@ -2,8 +2,8 @@ package models
 
 import (
 	"admin/utils"
-	"strconv"
 	"fmt"
+	"strconv"
 	"time"
 )
 
@@ -148,7 +148,7 @@ func (this *Trade) TotalTotalTradeList(page, rows int, date uint64) (*ModelList,
 		}
 
 	}
-	mList.Items =totalDateList
+	mList.Items = totalDateList
 	return mList, nil
 }
 
@@ -206,7 +206,7 @@ func (this *Trade) GetFeeInfoList(page, rows, uid, opt int, date uint64, name st
 	engine := utils.Engine_token
 	query := engine.Desc("trade.token_id")
 	query = query.Join("left", "config_token_cny p", "trade.token_id = p.token_id")
-	tm :=time.Now().Unix()
+	tm := time.Now().Unix()
 	toBeCharge := time.Now().Format("2006-01-02 ") + "00:00:00"
 	timeLayout := "2006-01-02 15:04:05"
 	loc, _ := time.LoadLocation("Local")
@@ -217,7 +217,7 @@ func (this *Trade) GetFeeInfoList(page, rows, uid, opt int, date uint64, name st
 	}
 	if date != 0 {
 		query = query.Where("deal_time BETWEEN ? AND ?", date, date+86400)
-	}else{
+	} else {
 		query = query.Where("deal_time BETWEEN ? AND ?", unix, tm)
 	}
 	if opt != 0 {

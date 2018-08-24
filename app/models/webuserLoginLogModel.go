@@ -28,7 +28,6 @@ func (u *UserLogInLogGroup) TableName() string {
 	return "user_login_log"
 }
 
-
 //获取用户登录日志
 func (u *UserLoginLog) GetUserLoginLogList(page, rows, terminal_type, status int, login_time uint64, search string) (*ModelList, error) {
 	engine := utils.Engine_common
@@ -42,10 +41,10 @@ func (u *UserLoginLog) GetUserLoginLogList(page, rows, terminal_type, status int
 	if terminal_type != 0 {
 		query = query.Where("terminal_type=?", terminal_type)
 	}
-	var tm =time.Now().Unix()
+	var tm = time.Now().Unix()
 	if login_time != 0 {
 		query = query.Where("`user_login_log`.`login_time`  BETWEEN ? AND ? ", login_time, login_time+86400) //86400 为一天的秒数
-	}else {
+	} else {
 		query = query.Where("`user_login_log`.`login_time`  BETWEEN ? AND ? ", tm-86400, tm)
 	}
 	if len(search) != 0 {
