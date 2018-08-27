@@ -35,7 +35,7 @@ func (this *TokenController) Router(r *gin.Engine) {
 		g.GET("/change_detail", this.ChangeDetail)          //p2-3-4币币账户变更详情
 		g.GET("/fee_list", this.GetFeeInfoList)             //p5-1-0-1币币交易手续费明细
 		g.GET("/add_take_list", this.GetAddTakeList)        //p5-1-1-1提币手续费明细
-		g.GET("/total_trade", this.GetTradeTotalList)       //p5-1-0币币交易手续费汇总
+		//g.GET("/total_trade", this.GetTradeTotalList)       //p5-1-0-1币币交易手续费明細 此函数已经重写
 		//提币 充币管理
 		g.GET("/in_token_list", this.GetTokenInList)         //充币
 		g.GET("/out_token_list", this.GetTokenOutList)       //提币
@@ -318,28 +318,28 @@ func (this *TokenController) optTakeToken(c *gin.Context) {
 	return
 }
 
-func (this *TokenController) GetTradeTotalList(c *gin.Context) {
-	req := struct {
-		Page int    `form:"page" json:"page" binding:"required"`
-		Rows int    `form:"rows" json:"rows" `
-		Date uint64 `form:"date",json:"date"` //日期
-	}{}
-	err := c.ShouldBind(&req)
-	if err != nil {
-		utils.AdminLog.Errorf(err.Error())
-		this.RespErr(c, err)
-		return
-	}
-	list, err := new(models.Trade).TotalTotalTradeList(req.Page, req.Rows, req.Date)
-	if err != nil {
-		utils.AdminLog.Println(err.Error())
-		this.RespErr(c, err)
-		return
-	}
-	this.Put(c, "list", list)
-	this.RespOK(c)
-	return
-}
+//func (this *TokenController) GetTradeTotalList(c *gin.Context) {
+//	req := struct {
+//		Page int    `form:"page" json:"page" binding:"required"`
+//		Rows int    `form:"rows" json:"rows" `
+//		Date uint64 `form:"date",json:"date"` //日期
+//	}{}
+//	err := c.ShouldBind(&req)
+//	if err != nil {
+//		utils.AdminLog.Errorf(err.Error())
+//		this.RespErr(c, err)
+//		return
+//	}
+//	list, err := new(models.Trade).TotalTotalTradeList(req.Page, req.Rows, req.Date)
+//	if err != nil {
+//		utils.AdminLog.Println(err.Error())
+//		this.RespErr(c, err)
+//		return
+//	}
+//	this.Put(c, "list", list)
+//	this.RespOK(c)
+//	return
+//}
 
 //p5-1-1-1提币手续费明细
 func (this *TokenController) GetAddTakeList(c *gin.Context) {

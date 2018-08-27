@@ -3,7 +3,6 @@ package models
 import (
 	"admin/utils"
 	"fmt"
-	"strconv"
 	"time"
 	"admin/utils/convert"
 )
@@ -87,75 +86,75 @@ func (t *TotalTradeCNY) TableName() string {
 	return "trade"
 }
 
-func (this *Trade) TotalTotalTradeList(page, rows int, date uint64) (*ModelList, error) {
-	fmt.Println("到这里了")
-	engine := utils.Engine_token
-	query := engine.Desc("deal_time")
-	query = query.Join("left", "config_token_cny p", "trade.token_id = p.token_id")
-	query = query.GroupBy("deal_time")
-	if date != 0 {
-		temp := date / 1000
-		query = query.Where("left(deal_time,7)=?", temp)
-	}
-	tempQuery := *query
-	buyQuery := *query
-	sellQuery := *query
-	count, err := tempQuery.Count(&Trade{})
-	if err != nil {
-		return nil, err
-	}
-	offset, mList := this.Paging(page, rows, int(count))
-	//买入总额
-	buyList := make([]TradeEx, 0)
-	err = buyQuery.Where("opt=1").Limit(mList.PageSize, offset).Find(&buyList)
-	if err != nil {
-		return nil, err
-	}
-	//卖出总额
-	sellList := make([]TradeEx, 0)
-	err = sellQuery.Where("opt=2").Limit(mList.PageSize, offset).Find(&sellList)
-	//var totalBuy uint64
-	//var totalSell uint64
-	//买卖总金额
-	totalDateList := make([]map[int64]*TotalTradeCNY, 0)
-	dateMap := make(map[int64]*TotalTradeCNY, 0)
-	for _, v := range buyList {
-		key := v.DealTime / 1000
-		for i, _ := range totalDateList {
-			if _, ok := totalDateList[i][key]; !ok {
-				dateMap[key] = &TotalTradeCNY{Date: v.DealTime}
-				totalDateList = append(totalDateList, dateMap)
-			}
-			strBuy := this.Int64MulInt64By8BitString(v.Num, v.ConfigTokenCny.Price)
-			buy, err := strconv.ParseUint(strBuy, 10, 64)
-			if err != nil {
-				continue
-			}
-			totalDateList[i][key].Buy += buy
-
-		}
-
-	}
-
-	for _, v := range sellList {
-		key := v.DealTime / 1000
-		for i, _ := range totalDateList {
-			if _, ok := totalDateList[i][key]; !ok {
-				dateMap[key] = &TotalTradeCNY{Date: v.DealTime}
-				totalDateList = append(totalDateList, dateMap)
-			}
-			strSell := this.Int64MulInt64By8BitString(v.Num, v.ConfigTokenCny.Price)
-			sell, err := strconv.ParseUint(strSell, 10, 64)
-			if err != nil {
-				continue
-			}
-			totalDateList[i][key].Sell += sell
-		}
-
-	}
-	mList.Items = totalDateList
-	return mList, nil
-}
+//func (this *Trade) TotalTotalTradeList(page, rows int, date uint64) (*ModelList, error) {
+//	fmt.Println("bibi 交易手续费一天汇总")
+//	engine := utils.Engine_token
+//	query := engine.Desc("deal_time")
+//	query = query.Join("left", "config_token_cny p", "trade.token_id = p.token_id")
+//	query = query.GroupBy("deal_time")
+//	if date != 0 {
+//		temp := date / 1000
+//		query = query.Where("left(deal_time,7)=?", temp)
+//	}
+//	tempQuery := *query
+//	buyQuery := *query
+//	sellQuery := *query
+//	count, err := tempQuery.Count(&Trade{})
+//	if err != nil {
+//		return nil, err
+//	}
+//	offset, mList := this.Paging(page, rows, int(count))
+//	//买入总额
+//	buyList := make([]TradeEx, 0)
+//	err = buyQuery.Where("opt=1").Limit(mList.PageSize, offset).Find(&buyList)
+//	if err != nil {
+//		return nil, err
+//	}
+//	//卖出总额
+//	sellList := make([]TradeEx, 0)
+//	err = sellQuery.Where("opt=2").Limit(mList.PageSize, offset).Find(&sellList)
+//	//var totalBuy uint64
+//	//var totalSell uint64
+//	//买卖总金额
+//	totalDateList := make([]map[int64]*TotalTradeCNY, 0)
+//	dateMap := make(map[int64]*TotalTradeCNY, 0)
+//	for _, v := range buyList {
+//		key := v.DealTime / 1000
+//		for i, _ := range totalDateList {
+//			if _, ok := totalDateList[i][key]; !ok {
+//				dateMap[key] = &TotalTradeCNY{Date: v.DealTime}
+//				totalDateList = append(totalDateList, dateMap)
+//			}
+//			strBuy := this.Int64MulInt64By8BitString(v.Num, v.ConfigTokenCny.Price)
+//			buy, err := strconv.ParseUint(strBuy, 10, 64)
+//			if err != nil {
+//				continue
+//			}
+//			totalDateList[i][key].Buy += buy
+//
+//		}
+//
+//	}
+//
+//	for _, v := range sellList {
+//		key := v.DealTime / 1000
+//		for i, _ := range totalDateList {
+//			if _, ok := totalDateList[i][key]; !ok {
+//				dateMap[key] = &TotalTradeCNY{Date: v.DealTime}
+//				totalDateList = append(totalDateList, dateMap)
+//			}
+//			strSell := this.Int64MulInt64By8BitString(v.Num, v.ConfigTokenCny.Price)
+//			sell, err := strconv.ParseUint(strSell, 10, 64)
+//			if err != nil {
+//				continue
+//			}
+//			totalDateList[i][key].Sell += sell
+//		}
+//
+//	}
+//	mList.Items = totalDateList
+//	return mList, nil
+//}
 
 func (this *Trade) GetTokenRecordList(page, rows, opt, uid int, bt, et uint64, name string) (*ModelList, error) {
 	engine := utils.Engine_token
@@ -250,11 +249,10 @@ func (this *Trade) GetFeeInfoList(page, rows, uid, opt int, date uint64, name st
 	if err != nil {
 		return nil, err
 	}
-	//未完待续 折合成人民币
 	//fmt.Println("len=",len(list))
 	for i, v := range list {
-		list[i].TotalTrue = this.Int64ToFloat64By8Bit(v.Num)
-		list[i].FeeTrue = this.Int64ToFloat64By8Bit(v.Fee)
+		list[i].TotalTrue = this.Int64ToFloat64By8Bit(v.TotalCny)
+		list[i].FeeTrue = this.Int64ToFloat64By8Bit(v.FeeCny)
 	}
 	mlist.Items = list
 	return mlist, nil
