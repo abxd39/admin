@@ -211,7 +211,7 @@ func (this *Trade) GetTokenRecordList(page, rows, opt, uid int, bt, et uint64, n
 //p5-1-0-1币币交易手续费明细
 /********************************
 * id 兑币id
-* trade_type 交易方向 1 卖 2买
+* trade_type 交易方向 2 卖 1买
 * search 筛选
  */
 func (this *Trade) GetFeeInfoList(page, rows, uid, opt int, date uint64, name string) (*ModelList, error) {

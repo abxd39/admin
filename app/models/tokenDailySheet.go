@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"log"
-
 	"github.com/robfig/cron"
 )
 
@@ -156,6 +155,8 @@ func (this *TokenDailySheet) GetDailySheetList(page, rows int, date uint64) (*Mo
 	return mList, tfd, nil
 }
 
+// 作为工具是需要
+var BeginTime int64 =0
 //李宇舶 写的
 func (tk *TokenDailySheet) TimingFunc(begin, end int64) {
 	//g:=make([]*Trade,0)
@@ -290,13 +291,6 @@ func (tk *TokenDailySheet) TimingFunc(begin, end int64) {
 			return
 		}
 	}
-
-	//如果日期设置的是十天前那么会从十天前统计到现在
-	be := begin + 86400
-	if be > time.Now().Unix() {
-		return
-	}
-	tk.TimingFunc(begin+86400, end)
 	fmt.Println("successful!!!!")
 }
 
@@ -348,5 +342,11 @@ func (t *TokenDailySheet) Run_tool() {
 	theTime, _ := time.ParseInLocation(timeLayout, toBeCharge, loc)
 	unix := theTime.Unix()
 	fmt.Println("当前时间戳", unix)
-	t.TimingFunc(1532448000, unix)
+	begin:=1533139200
+	BeginTime = int64(begin)
+	for  BeginTime < unix{
+		t.TimingFunc(BeginTime, unix)
+		BeginTime+=86400
+	}
+
 }
