@@ -62,6 +62,8 @@ func (this *TokenController) Router(r *gin.Engine) {
 		g.GET("/platform_day", this.PlatformDay)
 
 		//仪表盘
+		g.GET("/trade_count", this.TradeCount)
+		g.GET("/trade_total", this.TradeTotal)
 		g.GET("/fee_total", this.FeeTotal)
 		g.GET("/fee_trend", this.FeeTrend)
 		g.GET("/trade_trend", this.TradeTrend)
@@ -900,43 +902,148 @@ func (t *TokenController) ListTransfer(ctx *gin.Context) {
 	return
 }
 
-// 手续费合计
-func (t *TokenController) FeeTotal(ctx *gin.Context) {
+// 交易次数合计
+func (t *TokenController) TradeCount(ctx *gin.Context) {
 	// 调用model
-	//1. 币币买入、卖出手续费
-	tokenFeeTotal, err := new(models.Trade).FeeTotal()
+	//1. 币币交易
+	tokenTradeTotal, err := new(models.Trade).TradeTotal()
 	if err != nil {
 		t.RespErr(ctx, err)
 		return
 	}
 
-	//2. 法币买入、卖出手续费
-	currencyFeeTotal, err := new(models.UserCurrencyHistory).FeeTotal()
+	//2. 法币交易
+	currencyTradeTotal, err := new(models.UserCurrencyHistory).TradeTotal()
 	if err != nil {
 		t.RespErr(ctx, err)
 		return
 	}
 
-	//3. 提币手续费
-	inOutFeeTotal, err := new(models.TokenInout).FeeTotal()
+	//3. 提币交易
+	inOutTradeTotal, err := new(models.TokenInout).TradeTotal()
 	if err != nil {
 		t.RespErr(ctx, err)
 		return
 	}
 
 	// 整理数据
-	todayTotal, _ := convert.StringAddString(tokenFeeTotal.TodayTotal, currencyFeeTotal.TodayTotal, inOutFeeTotal.TodayTotal)
-	yesterdayTotal, _ := convert.StringAddString(tokenFeeTotal.YesterdayTotal, currencyFeeTotal.YesterdayTotal, inOutFeeTotal.YesterdayTotal)
-	lastWeekDayTotal, _ := convert.StringAddString(tokenFeeTotal.LastWeekDayTotal, currencyFeeTotal.LastWeekDayTotal, inOutFeeTotal.LastWeekDayTotal)
+	total := tokenTradeTotal.TotalTime + currencyTradeTotal.TotalTime + inOutTradeTotal.TotalTime
 
+	// 相较昨日、上周今日
+	todayTotal := tokenTradeTotal.TodayTotalTime + currencyTradeTotal.TodayTotalTime + inOutTradeTotal.TodayTotalTime
+	yesterdayTotal := tokenTradeTotal.YesterdayTotalTime + currencyTradeTotal.YesterdayTotalTime + inOutTradeTotal.YesterdayTotalTime
+	lastWeekDayTotal := tokenTradeTotal.LastWeekDayTotalTime + currencyTradeTotal.LastWeekDayTotalTime + inOutTradeTotal.LastWeekDayTotalTime
+
+	// 昨日
+	upDay := todayTotal - yesterdayTotal
+
+	// 上周今日
+	upWeek := todayTotal - lastWeekDayTotal
+
+	// 设置返回数据
+	t.Put(ctx, "total_count", total)
+	t.Put(ctx, "upday", upDay)
+	t.Put(ctx, "upweek", upWeek)
+
+	// 返回
+	t.RespOK(ctx)
+	return
+}
+
+// 交易数量合计
+func (t *TokenController) TradeTotal(ctx *gin.Context) {
+	// 调用model
+	//1. 币币交易
+	tokenTradeTotal, err := new(models.Trade).TradeTotal()
+	if err != nil {
+		t.RespErr(ctx, err)
+		return
+	}
+
+	//2. 法币交易
+	currencyTradeTotal, err := new(models.UserCurrencyHistory).TradeTotal()
+	if err != nil {
+		t.RespErr(ctx, err)
+		return
+	}
+
+	//3. 提币交易
+	inOutTradeTotal, err := new(models.TokenInout).TradeTotal()
+	if err != nil {
+		t.RespErr(ctx, err)
+		return
+	}
+
+	// 整理数据
+	total, _ := convert.StringAddString(tokenTradeTotal.TotalNum, currencyTradeTotal.TotalNum, inOutTradeTotal.TotalNum)
+	total, _ = convert.StringTo8Bit(total)
+
+	// 相较昨日、上周今日
+	todayTotal, _ := convert.StringAddString(tokenTradeTotal.TodayTotalNum, currencyTradeTotal.TodayTotalNum, inOutTradeTotal.TodayTotalNum)
+	yesterdayTotal, _ := convert.StringAddString(tokenTradeTotal.YesterdayTotalNum, currencyTradeTotal.YesterdayTotalNum, inOutTradeTotal.YesterdayTotalNum)
+	lastWeekDayTotal, _ := convert.StringAddString(tokenTradeTotal.LastWeekDayTotalNum, currencyTradeTotal.LastWeekDayTotalNum, inOutTradeTotal.LastWeekDayTotalNum)
+
+	// 昨日
 	upDay, _ := convert.StringSubString(todayTotal, yesterdayTotal)
 	upDay, _ = convert.StringTo8Bit(upDay)
 
+	// 上周今日
 	upWeek, _ := convert.StringSubString(todayTotal, lastWeekDayTotal)
 	upWeek, _ = convert.StringTo8Bit(upWeek)
 
 	// 设置返回数据
-	t.Put(ctx, "total_fee", todayTotal)
+	t.Put(ctx, "total_num", total)
+	t.Put(ctx, "upday", upDay)
+	t.Put(ctx, "upweek", upWeek)
+
+	// 返回
+	t.RespOK(ctx)
+	return
+}
+
+// 手续费合计
+func (t *TokenController) FeeTotal(ctx *gin.Context) {
+	// 调用model
+	//1. 币币交易
+	tokenTradeTotal, err := new(models.Trade).TradeTotal()
+	if err != nil {
+		t.RespErr(ctx, err)
+		return
+	}
+
+	//2. 法币交易
+	currencyTradeTotal, err := new(models.UserCurrencyHistory).TradeTotal()
+	if err != nil {
+		t.RespErr(ctx, err)
+		return
+	}
+
+	//3. 提币交易
+	inOutTradeTotal, err := new(models.TokenInout).TradeTotal()
+	if err != nil {
+		t.RespErr(ctx, err)
+		return
+	}
+
+	// 整理数据
+	total, _ := convert.StringAddString(tokenTradeTotal.TotalFee, currencyTradeTotal.TotalFee, inOutTradeTotal.TotalFee)
+	total, _ = convert.StringTo8Bit(total)
+
+	// 相较昨日、上周今日
+	todayTotal, _ := convert.StringAddString(tokenTradeTotal.TodayTotalFee, currencyTradeTotal.TodayTotalFee, inOutTradeTotal.TodayTotalFee)
+	yesterdayTotal, _ := convert.StringAddString(tokenTradeTotal.YesterdayTotalFee, currencyTradeTotal.YesterdayTotalFee, inOutTradeTotal.YesterdayTotalFee)
+	lastWeekDayTotal, _ := convert.StringAddString(tokenTradeTotal.LastWeekDayTotalFee, currencyTradeTotal.LastWeekDayTotalFee, inOutTradeTotal.LastWeekDayTotalFee)
+
+	// 昨日
+	upDay, _ := convert.StringSubString(todayTotal, yesterdayTotal)
+	upDay, _ = convert.StringTo8Bit(upDay)
+
+	// 上周今日
+	upWeek, _ := convert.StringSubString(todayTotal, lastWeekDayTotal)
+	upWeek, _ = convert.StringTo8Bit(upWeek)
+
+	// 设置返回数据
+	t.Put(ctx, "total_fee", total)
 	t.Put(ctx, "upday", upDay)
 	t.Put(ctx, "upweek", upWeek)
 
