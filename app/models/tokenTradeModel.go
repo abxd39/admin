@@ -286,17 +286,30 @@ func (this *Trade) GetFeeInfoList(page, rows, uid, opt int, date uint64, name st
 	return mlist, nil
 }
 
-// 手续费合计
-type TokenFeeTotal struct {
-	Total            string `xorm:"total"`               // 总计
-	TodayTotal       string `xorm:"today_total"`         // 今日合计
-	YesterdayTotal   string `xorm:"yesterday_total"`     // 上日合计
-	LastWeekDayTotal string `xorm:"last_week_day_total"` // 上周同日合计
+// 币s币交易合计
+type TokenTradeTotal struct {
+	// 交易次数
+	TotalTime            int64 `xorm:"total_time"`               // 交易总次数
+	TodayTotalTime       int64 `xorm:"today_total_time"`         // 今日交易次数
+	YesterdayTotalTime   int64 `xorm:"yesterday_total_time"`     // 上日交易次数
+	LastWeekDayTotalTime int64 `xorm:"last_week_day_total_time"` // 上周同日交易次数
+
+	// 交易量
+	TotalNum            string `xorm:"total_num"`               // 总计交易量
+	TodayTotalNum       string `xorm:"today_total_num"`         // 今日交易量
+	YesterdayTotalNum   string `xorm:"yesterday_total_num"`     // 上日交易量
+	LastWeekDayTotalNum string `xorm:"last_week_day_total_num"` // 上周同日交易量
+
+	// 交易手续费
+	TotalFee            string `xorm:"total_fee"`               // 手续费总计
+	TodayTotalFee       string `xorm:"today_total_fee"`         // 今日合计手续费
+	YesterdayTotalFee   string `xorm:"yesterday_total_fee"`     // 上日合计手续费
+	LastWeekDayTotalFee string `xorm:"last_week_day_total_fee"` // 上周同日合计手续费
 }
 
-// 手续费合计
+// 交易次数、数量、手续费合计
 // 今日、上日、上周同日
-func (this *Trade) FeeTotal() (*TokenFeeTotal, error) {
+func (this *Trade) TradeTotal() (*TokenTradeTotal, error) {
 	// 计算日期
 	todayDate := time.Now().Format(utils.LAYOUT_DATE)
 	datetime, _ := time.Parse(utils.LAYOUT_DATE_TIME, fmt.Sprintf("%s 00:00:00", todayDate))
@@ -306,20 +319,20 @@ func (this *Trade) FeeTotal() (*TokenFeeTotal, error) {
 
 	// 开始合计
 	//1. 总计
-	feeTotal := &TokenFeeTotal{}
+	feeTotal := &TokenTradeTotal{}
 	_, err := utils.Engine_token.
 		Table(this).
-		Select("IFNULL(sum(fee), 0) total").
+		Select("COUNT(trade_id) total_time, IFNULL(SUM(num+fee), 0) total_num, IFNULL(SUM(fee), 0) total_fee").
 		Get(feeTotal)
 	if err != nil {
 		return nil, errors.NewSys(err)
 	}
 
 	//2. 今日
-	todayFeeTotal := &TokenFeeTotal{}
+	todayFeeTotal := &TokenTradeTotal{}
 	_, err = utils.Engine_token.
 		Table(this).
-		Select("IFNULL(sum(fee), 0) today_total").
+		Select("COUNT(trade_id) today_total_time, IFNULL(SUM(num+fee), 0) today_total_num, IFNULL(SUM(fee), 0) today_total_fee").
 		And("deal_time>=?", todayTime).
 		Get(todayFeeTotal)
 	if err != nil {
@@ -327,10 +340,10 @@ func (this *Trade) FeeTotal() (*TokenFeeTotal, error) {
 	}
 
 	//3. 上日
-	yesFeeTotal := &TokenFeeTotal{}
+	yesFeeTotal := &TokenTradeTotal{}
 	_, err = utils.Engine_token.
 		Table(this).
-		Select("IFNULL(sum(fee), 0) yesterday_total").
+		Select("COUNT(trade_id) yesterday_total_time, IFNULL(SUM(num+fee), 0) yesterday_total_num, IFNULL(SUM(fee), 0) yesterday_total_fee").
 		And("deal_time>=?", yesterdayTime).
 		And("deal_time<?", yesterdayTime+24*60*60).
 		Get(yesFeeTotal)
@@ -339,10 +352,10 @@ func (this *Trade) FeeTotal() (*TokenFeeTotal, error) {
 	}
 
 	//4. 上周同日
-	lastWeekFeeTotal := &TokenFeeTotal{}
+	lastWeekFeeTotal := &TokenTradeTotal{}
 	_, err = utils.Engine_token.
 		Table(this).
-		Select("IFNULL(sum(fee), 0) last_week_day_total").
+		Select("COUNT(trade_id) last_week_day_total_time, IFNULL(SUM(num+fee), 0) last_week_day_total_num, IFNULL(sum(fee), 0) last_week_day_total_fee").
 		And("deal_time>=?", lastWeekDayTime).
 		And("deal_time<?", lastWeekDayTime+24*60*60).
 		Get(lastWeekFeeTotal)
@@ -351,9 +364,17 @@ func (this *Trade) FeeTotal() (*TokenFeeTotal, error) {
 	}
 
 	// 合并
-	feeTotal.TodayTotal = todayFeeTotal.TodayTotal
-	feeTotal.YesterdayTotal = yesFeeTotal.YesterdayTotal
-	feeTotal.LastWeekDayTotal = lastWeekFeeTotal.LastWeekDayTotal
+	feeTotal.TodayTotalTime = todayFeeTotal.TodayTotalTime
+	feeTotal.TodayTotalNum = todayFeeTotal.TodayTotalNum
+	feeTotal.TodayTotalFee = todayFeeTotal.TodayTotalFee
+
+	feeTotal.YesterdayTotalTime = yesFeeTotal.YesterdayTotalTime
+	feeTotal.YesterdayTotalNum = yesFeeTotal.YesterdayTotalNum
+	feeTotal.YesterdayTotalFee = yesFeeTotal.YesterdayTotalFee
+
+	feeTotal.LastWeekDayTotalTime = lastWeekFeeTotal.LastWeekDayTotalTime
+	feeTotal.LastWeekDayTotalNum = lastWeekFeeTotal.LastWeekDayTotalNum
+	feeTotal.LastWeekDayTotalFee = lastWeekFeeTotal.LastWeekDayTotalFee
 
 	return feeTotal, nil
 }
