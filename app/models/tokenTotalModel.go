@@ -5,6 +5,8 @@ import (
 	"admin/errors"
 	"admin/utils"
 	"fmt"
+	"strings"
+"admin/utils/convert"
 )
 
 type UserToken struct {
@@ -26,8 +28,8 @@ type PersonalProperty struct {
 	Phone     string `json:"phone"`
 	Email     string `json:"email"`
 	AmountTo  string `xorm:"-"json:"amount_to"` //折合人民币
-	//BalanceCny float64 `xorm:"-" json:"balance_cny"` // 这和人民币总数
-	//FrozenCny  float64 `xorm:"-" json:"frozen_cny"`
+	BalanceTrue string `xorm:"-" json:"balance_true"` // 这和人民币总数
+	FrozenTrue  string `xorm:"-" json:"frozen_true"`
 	Status  int    `json:"status"` //账号状态
 	Account string `json:"account"`
 }
@@ -123,12 +125,30 @@ func (u *DetailToken) GetTokenDetailOfUid(page, rows, uid, tokenId int) (*ModelL
 
 //所有用户 的全部币币资产
 //第一步get 所有用户
-func (t *PersonalProperty) TotalUserBalance(page, rows, status int, search string) (*ModelList, error) {
+func (t *PersonalProperty) TotalUserBalance(page, rows, status,tid int,Range, search string) (*ModelList, error) {
 	fmt.Println("this is run")
 	engine := utils.Engine_token
 	query := engine.Alias("ut")
 	query = query.Join("LEFT", "g_common.user u", "u.uid=ut.uid")
 	query = query.Join("LEFT", "g_common.user_ex ex", "ex.uid=ut.uid")
+	if Range!=``{
+		query= query.Desc("ut.balance","ut.frozen")
+	}else {
+		query =query.Desc("ut.uid")
+	}
+	if tid !=0{
+		query = query.Where("ut.token_id=?",tid)
+	}
+	fmt.Println("range===========",Range)
+	if strings.Compare(Range,"1~1000")==0{
+		query =query.Where("ut.balance div 100000000  between ? and ? and ut.frozen div 100000000 between ? and ?",1,1000,1,1000)
+	}else if strings.Compare(Range,"1001~10000")==0{
+		query =query.Where("ut.balance div 100000000 between ? and ? and ut.frozen div 100000000 between ? and ?  ",1001,10000,1001,10000)
+	}else if strings.Compare(Range,"10001~50000")==0{
+		query =query.Where("ut.balance div 100000000 between ? and ? and ut.frozen div 100000000 between ? and ?",10001,50000,10001,50000)
+	}else if strings.Compare(Range,"50万以上")==0{
+		query =query.Where("ut.balance div 100000000 >? or ut.frozen >?",500000,500000)
+	}
 	if status != 0 {
 		query = query.Where("u.status=?", status)
 	}
@@ -145,35 +165,14 @@ func (t *PersonalProperty) TotalUserBalance(page, rows, status int, search strin
 	}
 	offset, mList := t.Paging(page, rows, int(count))
 	list := make([]PersonalProperty, 0)
-	err = query.Desc("ut.uid").Select("ut.id,ut.token_id,ut.uid uid, u.phone phone,u.email email,ex.nick_name nick_name,u.status status,u.account account").GroupBy("ut.uid").Limit(mList.PageSize, offset).Find(&list)
+	err = query.Select("ut.id,ut.token_id,ut.uid uid, ut.balance,ut.frozen, u.phone phone,u.email email,ex.nick_name nick_name,u.status status,u.account account ").GroupBy("ut.uid").Limit(mList.PageSize, offset).Find(&list)
 	if err != nil {
 		return nil, err
 	}
-	//折合rmb为空是因为 数据库上就空
-	//h获取rmb 价格
-	//tidList:=make([]int,0)
-	//for _,v:=range list{
-	//	tidList = append(tidList,v.TokenId)
-	//}
-	//fmt.Println("uid=",tidList)
-	//
-	//priceList,err:=new(apis.VendorApi).GetTokenCnyPriceList(tidList)
-	//if err!=nil{
-	//	utils.AdminLog.Errorln(err.Error())
-	//	return nil,errors.New(err.Error())
-	//}
-	//
-	//
-	//for i, v := range list {
-	//	for _,vt:=range priceList{
-	//		if vt.TokenId == v.TokenId {
-	//			list[i].AmountTo = convert.Int64MulInt64By8BitString( v.Balance + v.Frozen,vt.CnyPriceInt)
-	//			break
-	//		}
-	//	}
-	//	fmt.Println("bibi账户折合",v.Balance,v.Frozen)
-	//
-	//}
+	for i,v:=range list{
+		list[i].BalanceTrue = convert.Int64ToStringBy8Bit(v.Balance)
+		list[i].FrozenTrue =convert.Int64ToStringBy8Bit(v.Frozen)
+	}
 	mList.Items = list
 	return mList, nil
 }
