@@ -62,6 +62,7 @@ func (this *TokenController) Router(r *gin.Engine) {
 		g.GET("/platform_day", this.PlatformDay)
 
 		//仪表盘
+		g.GET("/fee_total", this.FeeTotal)
 		g.GET("/fee_trend", this.FeeTrend)
 		g.GET("/trade_trend", this.TradeTrend)
 		g.GET("/num_trend", this.NumTrend)
@@ -869,6 +870,44 @@ func (t *TokenController) ListTransfer(ctx *gin.Context) {
 
 	// 设置返回数据
 	t.Put(ctx, "list", modelList)
+
+	// 返回
+	t.RespOK(ctx)
+	return
+}
+
+// 手续费合计
+func (t *TokenController) FeeTotal(ctx *gin.Context) {
+	// 调用model
+	//1. 币币买入、卖出手续费
+	tokenFeeTotal, err := new(models.TokenDailySheet).FeeTotal()
+	if err != nil {
+		t.RespErr(ctx, err)
+		return
+	}
+
+	//2. 法币买入、卖出手续费
+	currencyFeeTotal, err := new(models.CurrencyDailySheet).FeeTotal()
+	if err != nil {
+		t.RespErr(ctx, err)
+		return
+	}
+
+	// 整理数据
+	todayTotal, _ := convert.StringAddString(tokenFeeTotal.TodayTotal, currencyFeeTotal.TodayTotal)
+	yesterdayTotal, _ := convert.StringAddString(tokenFeeTotal.YesterdayTotal, currencyFeeTotal.YesterdayTotal)
+	lastWeekDayTotal, _ := convert.StringAddString(tokenFeeTotal.LastWeekDayTotal, currencyFeeTotal.LastWeekDayTotal)
+
+	upDay, _ := convert.StringSubString(todayTotal, yesterdayTotal)
+	upDay, _ = convert.StringTo8Bit(upDay)
+
+	upWeek, _ := convert.StringSubString(todayTotal, lastWeekDayTotal)
+	upWeek, _ = convert.StringTo8Bit(upWeek)
+
+	// 设置返回数据
+	t.Put(ctx, "total_fee", todayTotal)
+	t.Put(ctx, "upday", upDay)
+	t.Put(ctx, "upweek", upWeek)
 
 	// 返回
 	t.RespOK(ctx)
