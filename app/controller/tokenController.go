@@ -681,13 +681,13 @@ func (this *TokenController) ExportRecordList(c *gin.Context) {
 }
 func (this *TokenController) getRecordList(c *gin.Context) {
 	req := struct {
-		Page     int    `form:"page" json:"page" binding:"required"`
+		Page int    `form:"page" json:"page" binding:"required"`
 		Rows int    `form:"rows" json:"rows" `
-		Uid      int    `form:"uid" json:"uid" `
-		Bt       uint64 `form:"bt" json:"bt" `
-		Et       uint64 `form:"et" json:"et" `
-		Name     string `form:"name" json:"name" ` //交易对
-		Opt      int    `form:"opt" json:"opt" `                      //买卖方向
+		Uid  int    `form:"uid" json:"uid" `
+		Bt   uint64 `form:"bt" json:"bt" `
+		Et   uint64 `form:"et" json:"et" `
+		Name string `form:"name" json:"name" ` //交易对
+		Opt  int    `form:"opt" json:"opt" `   //买卖方向
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
@@ -719,7 +719,6 @@ func (this *TokenController) getRecordList(c *gin.Context) {
 			}
 		}
 	}
-
 
 	this.Put(c, "list", list)
 	this.RespOK(c)
@@ -1046,7 +1045,7 @@ func (t *TokenController) FeeTrend(ctx *gin.Context) {
 		allBuyTotal, _ = convert.StringAddString(allBuyTotal, buy)
 		allSellTotal, _ = convert.StringAddString(allSellTotal, sell)
 		allOutTotal, _ = convert.StringAddString(allOutTotal, out)
-		allTotal, _ = convert.StringAddStrings(allTotal, buy, sell, out)
+		allTotal, _ = convert.StringAddString(allTotal, buy, sell, out)
 	}
 
 	allBuyTotalFloat, _ := convert.StringTo8Bit(allBuyTotal) // 转成float
@@ -1182,7 +1181,7 @@ func (t *TokenController) NumTrend(ctx *gin.Context) {
 		x[k] = datetime.Format("0102")
 		y[k], _ = convert.StringTo8Bit(total)
 
-		allTotal, _ = convert.StringAddStrings(allTotal, v.TokenTotal, v.CurrencyTotal)
+		allTotal, _ = convert.StringAddString(allTotal, v.TokenTotal, v.CurrencyTotal)
 	}
 	allTotalFloat, _ := convert.StringTo8Bit(allTotal)
 
