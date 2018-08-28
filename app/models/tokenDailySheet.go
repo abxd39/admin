@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/robfig/cron"
 	"log"
+	"github.com/robfig/cron"
 )
 
 //type TokenFeeDailySheet struct {
@@ -183,14 +183,14 @@ func (this *TokenDailySheet) GetDailySheetList(page, rows int, date uint64) (*Mo
 	Count := &struct {
 		Num int64
 	}{}
-	countSql := fmt.Sprintf("select  count(*) num from (%s) t", sql)
+	countSql := fmt.Sprintf("select  count(id) num from (%s) t", sql)
 	_, err := engine.SQL(countSql).Get(Count)
 	if err != nil {
 		return nil, nil, err
 	}
 	offset, mList := this.Paging(page, rows, int(Count.Num))
 	list := make([]total, 0)
-	limitSql := fmt.Sprintf("limit %d offset %d", mList.PageSize, offset)
+	limitSql := fmt.Sprintf(" limit %d offset %d", mList.PageSize, offset)
 
 	err = engine.Table("token_daily_sheet").SQL(sql + limitSql).Find(&list)
 	if err != nil {
@@ -216,6 +216,8 @@ func (this *TokenDailySheet) GetDailySheetList(page, rows int, date uint64) (*Mo
 	return mList, tfd, nil
 }
 
+// 作为工具是需要
+var BeginTime int64 =0
 //李宇舶 写的
 func (tk *TokenDailySheet) TimingFunc(begin, end int64) {
 	//g:=make([]*Trade,0)
@@ -350,13 +352,6 @@ func (tk *TokenDailySheet) TimingFunc(begin, end int64) {
 			return
 		}
 	}
-
-	//如果日期设置的是十天前那么会从十天前统计到现在
-	be := begin + 86400
-	if be > time.Now().Unix() {
-		return
-	}
-	tk.TimingFunc(begin+86400, end+86400)
 	fmt.Println("successful!!!!")
 }
 
@@ -368,7 +363,7 @@ func (t *TokenDailySheet) Run() {
 	unix := theTime.Unix()
 	fmt.Println("当前时间戳", unix)
 	t.TimingFunc(unix-86400, unix)
-	//t.TimingFunc(1532448000, 1534953600)
+	//t.TimingFunc(1532448000, unix)
 }
 
 //启动
@@ -396,7 +391,23 @@ func DailyStart() {
 	select {}
 }
 
-//func DailyStart() {
-//	new(TokenDailySheet).Run()
-//
-//}
+func DailyStart1() {
+	new(TokenDailySheet).Run_tool()
+
+}
+
+func (t *TokenDailySheet) Run_tool() {
+	toBeCharge := time.Now().Format("2006-01-02 ") + "00:00:00"
+	timeLayout := "2006-01-02 15:04:05"
+	loc, _ := time.LoadLocation("Local")
+	theTime, _ := time.ParseInLocation(timeLayout, toBeCharge, loc)
+	unix := theTime.Unix()
+	fmt.Println("当前时间戳", unix)
+	begin:=1533139200
+	BeginTime = int64(begin)
+	for  BeginTime < unix{
+		t.TimingFunc(BeginTime, unix)
+		BeginTime+=86400
+	}
+
+}

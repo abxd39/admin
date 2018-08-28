@@ -1,12 +1,16 @@
 package main
 
 import (
-	"admin/app"
-	"admin/app/models"
-	"admin/cron"
-	"admin/utils"
-	"fmt"
 	"os"
+	"github.com/gin-gonic/gin"
+	"github.com/gin-contrib/sessions"
+	"admin/app"
+	"admin/utils"
+	"admin/middleware"
+	"admin/cron"
+	"admin/app/models"
+	"admin/session"
+	"fmt"
 )
 
 func main() {
@@ -18,18 +22,25 @@ func main() {
 	cron.InitCron()
 	go models.DailyStart()
 
-	//启动定时器
-	//go new(models.TokenFeeDailySheet).BoottimeTimingSettlement()
-	//go new(models.WalletInoutDailySheet).BoottimeTimingSettlement()
-	//go new(models.CurencyFeeDailySheet).BoottimeTimingSettlement()
+	// 配置gin
+	r := gin.Default()
+	//定时任务工具
+	//go models.DailyStart1()
+	// session
+	r.Use(sessions.Sessions("mysession", session.Store))
+
+	// custom middleware
+	r.Use(middleware.JsCors())
+	r.Use(middleware.CheckLogin())
 
 	// 启动gin
 	app.Init()
 	app.App.Run(fmt.Sprintf(":%d", utils.Cfg.MustInt("http", "port")))
+
 }
 
 //func main() {
 //
-//	models.DailyStart()
+//	models.DailyStart1()
 //
 //}

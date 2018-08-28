@@ -35,7 +35,7 @@ func (this *TokenController) Router(r *gin.Engine) {
 		g.GET("/change_detail", this.ChangeDetail)          //p2-3-4币币账户变更详情
 		g.GET("/fee_list", this.GetFeeInfoList)             //p5-1-0-1币币交易手续费明细
 		g.GET("/add_take_list", this.GetAddTakeList)        //p5-1-1-1提币手续费明细
-		g.GET("/total_trade", this.GetTradeTotalList)       //p5-1-0币币交易手续费汇总
+		//g.GET("/total_trade", this.GetTradeTotalList)       //p5-1-0-1币币交易手续费明細 此函数已经重写
 		//提币 充币管理
 		g.GET("/in_token_list", this.GetTokenInList)         //充币
 		g.GET("/out_token_list", this.GetTokenOutList)       //提币
@@ -319,28 +319,28 @@ func (this *TokenController) optTakeToken(c *gin.Context) {
 	return
 }
 
-func (this *TokenController) GetTradeTotalList(c *gin.Context) {
-	req := struct {
-		Page int    `form:"page" json:"page" binding:"required"`
-		Rows int    `form:"rows" json:"rows" `
-		Date uint64 `form:"date",json:"date"` //日期
-	}{}
-	err := c.ShouldBind(&req)
-	if err != nil {
-		utils.AdminLog.Errorf(err.Error())
-		this.RespErr(c, err)
-		return
-	}
-	list, err := new(models.Trade).TotalTotalTradeList(req.Page, req.Rows, req.Date)
-	if err != nil {
-		utils.AdminLog.Println(err.Error())
-		this.RespErr(c, err)
-		return
-	}
-	this.Put(c, "list", list)
-	this.RespOK(c)
-	return
-}
+//func (this *TokenController) GetTradeTotalList(c *gin.Context) {
+//	req := struct {
+//		Page int    `form:"page" json:"page" binding:"required"`
+//		Rows int    `form:"rows" json:"rows" `
+//		Date uint64 `form:"date",json:"date"` //日期
+//	}{}
+//	err := c.ShouldBind(&req)
+//	if err != nil {
+//		utils.AdminLog.Errorf(err.Error())
+//		this.RespErr(c, err)
+//		return
+//	}
+//	list, err := new(models.Trade).TotalTotalTradeList(req.Page, req.Rows, req.Date)
+//	if err != nil {
+//		utils.AdminLog.Println(err.Error())
+//		this.RespErr(c, err)
+//		return
+//	}
+//	this.Put(c, "list", list)
+//	this.RespOK(c)
+//	return
+//}
 
 //p5-1-1-1提币手续费明细
 func (this *TokenController) GetAddTakeList(c *gin.Context) {
@@ -682,11 +682,11 @@ func (this *TokenController) ExportRecordList(c *gin.Context) {
 func (this *TokenController) getRecordList(c *gin.Context) {
 	req := struct {
 		Page     int    `form:"page" json:"page" binding:"required"`
-		Page_num int    `form:"rows" json:"rows" `
+		Rows int    `form:"rows" json:"rows" `
 		Uid      int    `form:"uid" json:"uid" `
 		Bt       uint64 `form:"bt" json:"bt" `
 		Et       uint64 `form:"et" json:"et" `
-		Name     string `form:"name" json:"name" binding:"required" ` //交易对
+		Name     string `form:"name" json:"name" ` //交易对
 		Opt      int    `form:"opt" json:"opt" `                      //买卖方向
 	}{}
 	err := c.ShouldBind(&req)
@@ -695,12 +695,32 @@ func (this *TokenController) getRecordList(c *gin.Context) {
 		this.RespErr(c, err)
 		return
 	}
-
-	list, err := new(models.Trade).GetTokenRecordList(req.Page, req.Page_num, req.Opt, req.Uid, req.Bt, req.Et, req.Name)
+	//把货币Id转换为货币名称
+	tokenlist, err := new(models.CommonTokens).GetTokenList()
 	if err != nil {
 		this.RespErr(c, err)
 		return
 	}
+	list, err := new(models.Trade).GetTokenRecordList(req.Page, req.Rows, req.Opt, req.Uid, req.Bt, req.Et, req.Name)
+	if err != nil {
+		this.RespErr(c, err)
+		return
+	}
+	value, Ok := list.Items.([]models.TradeReturn)
+	if !Ok {
+		this.RespErr(c, errors.New("assert type UserGroup failed!!"))
+		return
+	}
+	for i, v := range value {
+		for _, vt := range tokenlist {
+			if vt.Id == uint32(v.TokenId) {
+				value[i].TokenName = vt.Mark
+				break
+			}
+		}
+	}
+
+
 	this.Put(c, "list", list)
 	this.RespOK(c)
 	return

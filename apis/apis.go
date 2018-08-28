@@ -130,7 +130,7 @@ func (VendorApi) AddAwardToken(uid int) error {
 	}
 	fmt.Printf("%#v\n", returnValue)
 	if returnValue.Code != 0 {
-		return errors.New("failed!!!")
+		return errors.New("赠送货币失败！！")
 	}
 	return nil
 }
