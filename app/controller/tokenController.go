@@ -923,18 +923,24 @@ func (t *TokenController) FeeTotal(ctx *gin.Context) {
 	}
 
 	// 整理数据
+	total, _ := convert.StringAddString(tokenFeeTotal.Total, currencyFeeTotal.Total, inOutFeeTotal.Total)
+	total, _ = convert.StringTo8Bit(total)
+
+	// 相较昨日、上周今日
 	todayTotal, _ := convert.StringAddString(tokenFeeTotal.TodayTotal, currencyFeeTotal.TodayTotal, inOutFeeTotal.TodayTotal)
 	yesterdayTotal, _ := convert.StringAddString(tokenFeeTotal.YesterdayTotal, currencyFeeTotal.YesterdayTotal, inOutFeeTotal.YesterdayTotal)
 	lastWeekDayTotal, _ := convert.StringAddString(tokenFeeTotal.LastWeekDayTotal, currencyFeeTotal.LastWeekDayTotal, inOutFeeTotal.LastWeekDayTotal)
 
+	// 昨日
 	upDay, _ := convert.StringSubString(todayTotal, yesterdayTotal)
 	upDay, _ = convert.StringTo8Bit(upDay)
 
+	// 上周今日
 	upWeek, _ := convert.StringSubString(todayTotal, lastWeekDayTotal)
 	upWeek, _ = convert.StringTo8Bit(upWeek)
 
 	// 设置返回数据
-	t.Put(ctx, "total_fee", todayTotal)
+	t.Put(ctx, "total_fee", total)
 	t.Put(ctx, "upday", upDay)
 	t.Put(ctx, "upweek", upWeek)
 

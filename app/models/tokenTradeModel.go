@@ -288,6 +288,7 @@ func (this *Trade) GetFeeInfoList(page, rows, uid, opt int, date uint64, name st
 
 // 手续费合计
 type TokenFeeTotal struct {
+	Total            string `xorm:"total"`               // 总计
 	TodayTotal       string `xorm:"today_total"`         // 今日合计
 	YesterdayTotal   string `xorm:"yesterday_total"`     // 上日合计
 	LastWeekDayTotal string `xorm:"last_week_day_total"` // 上周同日合计
@@ -304,22 +305,30 @@ func (this *Trade) FeeTotal() (*TokenFeeTotal, error) {
 	lastWeekDayTime := todayTime - 7*24*60*60
 
 	// 开始合计
-	//1. 今日
+	//1. 总计
 	feeTotal := &TokenFeeTotal{}
-	session := utils.Engine_token.Where("1=1")
-	_, err := session.
+	_, err := utils.Engine_token.
 		Table(this).
-		Select("IFNULL(sum(fee), 0) today_total").
-		And("deal_time>=?", todayTime).
+		Select("IFNULL(sum(fee), 0) total").
 		Get(feeTotal)
 	if err != nil {
 		return nil, errors.NewSys(err)
 	}
 
-	//2. 上日
+	//2. 今日
+	todayFeeTotal := &TokenFeeTotal{}
+	_, err = utils.Engine_token.
+		Table(this).
+		Select("IFNULL(sum(fee), 0) today_total").
+		And("deal_time>=?", todayTime).
+		Get(todayFeeTotal)
+	if err != nil {
+		return nil, errors.NewSys(err)
+	}
+
+	//3. 上日
 	yesFeeTotal := &TokenFeeTotal{}
-	yesSession := utils.Engine_token.Where("1=1")
-	_, err = yesSession.
+	_, err = utils.Engine_token.
 		Table(this).
 		Select("IFNULL(sum(fee), 0) yesterday_total").
 		And("deal_time>=?", yesterdayTime).
@@ -329,10 +338,9 @@ func (this *Trade) FeeTotal() (*TokenFeeTotal, error) {
 		return nil, errors.NewSys(err)
 	}
 
-	//3. 上周同日
+	//4. 上周同日
 	lastWeekFeeTotal := &TokenFeeTotal{}
-	lastWeekSession := utils.Engine_token.Where("1=1")
-	_, err = lastWeekSession.
+	_, err = utils.Engine_token.
 		Table(this).
 		Select("IFNULL(sum(fee), 0) last_week_day_total").
 		And("deal_time>=?", lastWeekDayTime).
@@ -343,6 +351,7 @@ func (this *Trade) FeeTotal() (*TokenFeeTotal, error) {
 	}
 
 	// 合并
+	feeTotal.TodayTotal = todayFeeTotal.TodayTotal
 	feeTotal.YesterdayTotal = yesFeeTotal.YesterdayTotal
 	feeTotal.LastWeekDayTotal = lastWeekFeeTotal.LastWeekDayTotal
 

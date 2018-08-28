@@ -119,6 +119,7 @@ func (u *UserCurrencyHistory) GetListForUid(page, rows, tid, status, chType int,
 
 // 手续费合计
 type CurrencyFeeTotal struct {
+	Total            string `xorm:"total"`               // 总计
 	TodayTotal       string `xorm:"today_total"`         // 今日合计
 	YesterdayTotal   string `xorm:"yesterday_total"`     // 上日合计
 	LastWeekDayTotal string `xorm:"last_week_day_total"` // 上周同日合计
@@ -140,22 +141,30 @@ func (this *UserCurrencyHistory) FeeTotal() (*CurrencyFeeTotal, error) {
 	lastWeekDayDateEnd := fmt.Sprintf("%s 23:59:59", lastWeekDayTime.Format(utils.LAYOUT_DATE))
 
 	// 开始合计
-	//1. 今日
+	//1. 合计
 	feeTotal := &CurrencyFeeTotal{}
-	session := utils.Engine_currency.Where("1=1")
-	_, err := session.
+	_, err := utils.Engine_currency.
 		Table(this).
-		Select("IFNULL(sum(fee), 0) today_total").
-		And("created_time>=?", todayDate).
+		Select("IFNULL(sum(fee), 0) total").
 		Get(feeTotal)
 	if err != nil {
 		return nil, errors.NewSys(err)
 	}
 
-	//2. 上日
+	//2. 今日
+	todayFeeTotal := &CurrencyFeeTotal{}
+	_, err = utils.Engine_currency.
+		Table(this).
+		Select("IFNULL(sum(fee), 0) today_total").
+		And("created_time>=?", todayDate).
+		Get(todayFeeTotal)
+	if err != nil {
+		return nil, errors.NewSys(err)
+	}
+
+	//3. 上日
 	yesFeeTotal := &CurrencyFeeTotal{}
-	yesSession := utils.Engine_currency.Where("1=1")
-	_, err = yesSession.
+	_, err = utils.Engine_currency.
 		Table(this).
 		Select("IFNULL(sum(fee), 0) yesterday_total").
 		And("created_time>=?", yesterdayDateBegin).
@@ -165,10 +174,9 @@ func (this *UserCurrencyHistory) FeeTotal() (*CurrencyFeeTotal, error) {
 		return nil, errors.NewSys(err)
 	}
 
-	//3. 上周同日
+	//4. 上周同日
 	lastWeekFeeTotal := &CurrencyFeeTotal{}
-	lastWeekSession := utils.Engine_currency.Where("1=1")
-	_, err = lastWeekSession.
+	_, err = utils.Engine_currency.
 		Table(this).
 		Select("IFNULL(sum(fee), 0) last_week_day_total").
 		And("created_time>=?", lastWeekDayDateBegin).
@@ -179,6 +187,7 @@ func (this *UserCurrencyHistory) FeeTotal() (*CurrencyFeeTotal, error) {
 	}
 
 	// 合并
+	feeTotal.TodayTotal = todayFeeTotal.TodayTotal
 	feeTotal.YesterdayTotal = yesFeeTotal.YesterdayTotal
 	feeTotal.LastWeekDayTotal = lastWeekFeeTotal.LastWeekDayTotal
 
