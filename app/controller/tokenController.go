@@ -62,6 +62,7 @@ func (this *TokenController) Router(r *gin.Engine) {
 		g.GET("/platform_day", this.PlatformDay)
 
 		//仪表盘
+		g.GET("/fee_total", this.FeeTotal)
 		g.GET("/fee_trend", this.FeeTrend)
 		g.GET("/trade_trend", this.TradeTrend)
 		g.GET("/num_trend", this.NumTrend)
@@ -683,13 +684,13 @@ func (this *TokenController) ExportRecordList(c *gin.Context) {
 }
 func (this *TokenController) getRecordList(c *gin.Context) {
 	req := struct {
-		Page     int    `form:"page" json:"page" binding:"required"`
+		Page int    `form:"page" json:"page" binding:"required"`
 		Rows int    `form:"rows" json:"rows" `
-		Uid      int    `form:"uid" json:"uid" `
-		Bt       uint64 `form:"bt" json:"bt" `
-		Et       uint64 `form:"et" json:"et" `
-		Name     string `form:"name" json:"name" ` //交易对
-		Opt      int    `form:"opt" json:"opt" `                      //买卖方向
+		Uid  int    `form:"uid" json:"uid" `
+		Bt   uint64 `form:"bt" json:"bt" `
+		Et   uint64 `form:"et" json:"et" `
+		Name string `form:"name" json:"name" ` //交易对
+		Opt  int    `form:"opt" json:"opt" `   //买卖方向
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
@@ -721,7 +722,6 @@ func (this *TokenController) getRecordList(c *gin.Context) {
 			}
 		}
 	}
-
 
 	this.Put(c, "list", list)
 	this.RespOK(c)
@@ -898,6 +898,44 @@ func (t *TokenController) ListTransfer(ctx *gin.Context) {
 	return
 }
 
+// 手续费合计
+func (t *TokenController) FeeTotal(ctx *gin.Context) {
+	// 调用model
+	//1. 币币买入、卖出手续费
+	tokenFeeTotal, err := new(models.TokenDailySheet).FeeTotal()
+	if err != nil {
+		t.RespErr(ctx, err)
+		return
+	}
+
+	//2. 法币买入、卖出手续费
+	currencyFeeTotal, err := new(models.CurrencyDailySheet).FeeTotal()
+	if err != nil {
+		t.RespErr(ctx, err)
+		return
+	}
+
+	// 整理数据
+	todayTotal, _ := convert.StringAddString(tokenFeeTotal.TodayTotal, currencyFeeTotal.TodayTotal)
+	yesterdayTotal, _ := convert.StringAddString(tokenFeeTotal.YesterdayTotal, currencyFeeTotal.YesterdayTotal)
+	lastWeekDayTotal, _ := convert.StringAddString(tokenFeeTotal.LastWeekDayTotal, currencyFeeTotal.LastWeekDayTotal)
+
+	upDay, _ := convert.StringSubString(todayTotal, yesterdayTotal)
+	upDay, _ = convert.StringTo8Bit(upDay)
+
+	upWeek, _ := convert.StringSubString(todayTotal, lastWeekDayTotal)
+	upWeek, _ = convert.StringTo8Bit(upWeek)
+
+	// 设置返回数据
+	t.Put(ctx, "total_fee", todayTotal)
+	t.Put(ctx, "upday", upDay)
+	t.Put(ctx, "upweek", upWeek)
+
+	// 返回
+	t.RespOK(ctx)
+	return
+}
+
 // 手续费走势
 func (t *TokenController) FeeTrend(ctx *gin.Context) {
 	// 筛选
@@ -1010,7 +1048,7 @@ func (t *TokenController) FeeTrend(ctx *gin.Context) {
 		allBuyTotal, _ = convert.StringAddString(allBuyTotal, buy)
 		allSellTotal, _ = convert.StringAddString(allSellTotal, sell)
 		allOutTotal, _ = convert.StringAddString(allOutTotal, out)
-		allTotal, _ = convert.StringAddStrings(allTotal, buy, sell, out)
+		allTotal, _ = convert.StringAddString(allTotal, buy, sell, out)
 	}
 
 	allBuyTotalFloat, _ := convert.StringTo8Bit(allBuyTotal) // 转成float
@@ -1146,7 +1184,7 @@ func (t *TokenController) NumTrend(ctx *gin.Context) {
 		x[k] = datetime.Format("0102")
 		y[k], _ = convert.StringTo8Bit(total)
 
-		allTotal, _ = convert.StringAddStrings(allTotal, v.TokenTotal, v.CurrencyTotal)
+		allTotal, _ = convert.StringAddString(allTotal, v.TokenTotal, v.CurrencyTotal)
 	}
 	allTotalFloat, _ := convert.StringTo8Bit(allTotal)
 

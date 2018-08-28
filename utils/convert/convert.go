@@ -51,45 +51,58 @@ func Int64ToStringAdd8Bit(b int64) string {
 	return b1.String()
 }
 
-////0.00001001
-
-func StringAddString(a, b string) (string, error) {
-	if a == "" && b == "" {
-		return "", nil
-	} else if a == "" && b != "" {
-		return b, nil
-	} else if a != "" && b == "" {
-		return a, nil
-	} else {
-		stra, err := decimal.NewFromString(a)
-		if err != nil {
-			return "", err
-		}
-		strb, err := decimal.NewFromString(b)
-		if err != nil {
-			return "", err
-		}
-		return stra.Add(strb).String(), err
+//字符串大数相加
+func StringAddString(a string, bArr ...string) (string, error) {
+	if a == "" {
+		a = "0"
 	}
 
-}
-
-func StringAddStrings(a string, bs ...string) (string, error) {
-	stra, err := decimal.NewFromString(a)
+	aDec, err := decimal.NewFromString(a)
 	if err != nil {
 		return "", err
 	}
 
-	for _, b := range bs {
-		strb, err := decimal.NewFromString(b)
+	for _, b := range bArr {
+		if b == "" {
+			b = "0"
+		}
+
+		bDec, err := decimal.NewFromString(b)
 		if err != nil {
 			return "", err
 		}
 
-		stra = stra.Add(strb)
+		aDec = aDec.Add(bDec)
 	}
 
-	return stra.String(), nil
+	return aDec.String(), nil
+}
+
+//字符串大数相减
+func StringSubString(a string, bArr ...string) (string, error) {
+	if a == "" {
+		a = "0"
+	}
+
+	aDec, err := decimal.NewFromString(a)
+	if err != nil {
+		return "", err
+	}
+
+	for _, b := range bArr {
+		if b == "" {
+			b = "0"
+		}
+
+		bDec, err := decimal.NewFromString(b)
+		if err != nil {
+			return "", err
+		}
+
+		aDec = aDec.Sub(bDec)
+	}
+
+	return aDec.String(), nil
 }
 
 //两数相加
