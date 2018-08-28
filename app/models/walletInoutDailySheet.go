@@ -212,7 +212,7 @@ func (t *TokenInoutDailySheet) DayPutDailySheet(page, rows, tid int, bt, et stri
 	//	}
 	//}
 	//_,mList = t.Paging(page,rows,len(result))
-	mList.Items =list
+	mList.Items = list
 	return mList, nil
 }
 
@@ -220,7 +220,7 @@ func (t *TokenInoutDailySheet) DayPutDailySheet(page, rows, tid int, bt, et stri
 func (t *TokenInoutDailySheet) DayOutDailySheet(page, rows, tid int, bt, et string) (*ModelList, error) {
 	engine := utils.Engine_wallet
 	query := engine.Desc("id")
-	query =query.Where("total/100000000 !=0 or total_day_num/100000000 !=0")
+	query = query.Where("total/100000000 !=0 or total_day_num/100000000 !=0")
 	if tid != 0 {
 		query = query.Where("token_id=?", tid)
 	}
@@ -269,7 +269,7 @@ func (this *TokenInoutDailySheet) InOutTrendList(filter map[string]interface{}) 
 	today := time.Now().Format(utils.LAYOUT_DATE)
 	todayTime, _ := time.Parse(utils.LAYOUT_DATE, today)
 
-	dateBegin := todayTime.AddDate(0, 0, -6).Format(utils.LAYOUT_DATE)
+	dateBegin := todayTime.AddDate(0, 0, -7).Format(utils.LAYOUT_DATE)
 	dateEnd := today
 
 	// 开始查询

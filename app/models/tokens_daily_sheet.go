@@ -35,7 +35,7 @@ func (t *TokensDailySheet) NumTrend(filter map[string]interface{}) ([]*TokensNum
 	today := time.Now().Format(utils.LAYOUT_DATE)
 	todayTime, _ := time.Parse(utils.LAYOUT_DATE, today)
 
-	dateBegin := todayTime.AddDate(0, 0, -6).Format(utils.LAYOUT_DATE)
+	dateBegin := todayTime.AddDate(0, 0, -7).Format(utils.LAYOUT_DATE)
 	dateEnd := today
 
 	// 开始查询

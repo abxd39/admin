@@ -136,7 +136,7 @@ func (this *TokenDailySheet) TradeTrendList(filter map[string]interface{}) ([]*T
 	}
 	todayTime := today.Unix()
 
-	dateBegin := todayTime - 6*24*60*60
+	dateBegin := todayTime - 7*24*60*60
 	dateEnd := todayTime
 
 	// 开始查询
@@ -368,17 +368,17 @@ func (tk *TokenDailySheet) TimingFuncNew(begin, end int64) {
 	sellList := make([]DayCount, 0)
 	//买入
 	for _, v := range tokenIdList {
-		if v.Id==0{
+		if v.Id == 0 {
 			continue
 		}
-		buy, err := new(Trade).Get(v.Id, begin,end, 1)
+		buy, err := new(Trade).Get(v.Id, begin, end, 1)
 		if err != nil {
 			fmt.Println(err.Error())
 			continue
 		}
 		buyList = append(buyList, *buy)
 
-		sell, err := new(Trade).Get(v.Id, begin,end, 2)
+		sell, err := new(Trade).Get(v.Id, begin, end, 2)
 		if err != nil {
 			fmt.Println(err.Error())
 			continue
@@ -386,7 +386,6 @@ func (tk *TokenDailySheet) TimingFuncNew(begin, end int64) {
 		sellList = append(sellList, *sell)
 
 	}
-
 
 	//插入数据
 	for _, v := range buyList {
@@ -398,15 +397,15 @@ func (tk *TokenDailySheet) TimingFuncNew(begin, end int64) {
 			fmt.Println(err)
 			utils.AdminLog.Errorln(err)
 		}
-		tdsheet.TokenId =v.TokenId
-		tdsheet.FeeBuyTotal= v.FeeTotal
-		tdsheet.FeeBuyCny=v.FeeTotalCny
-		tdsheet.BuyTotal=v.Total
-		tdsheet.BuyTotalCny=v.TotalCny
+		tdsheet.TokenId = v.TokenId
+		tdsheet.FeeBuyTotal = v.FeeTotal
+		tdsheet.FeeBuyCny = v.FeeTotalCny
+		tdsheet.BuyTotal = v.Total
+		tdsheet.BuyTotalCny = v.TotalCny
 		tdsheet.Date = v.Date
 		if has {
 
-			_, err := engine.Cols("fee_buy_total", "fee_buy_cny", "buy_total", "buy_total_cny").Where("token_id=? and date=?",tdsheet.TokenId,tdsheet.Date).Update(&tdsheet)
+			_, err := engine.Cols("fee_buy_total", "fee_buy_cny", "buy_total", "buy_total_cny").Where("token_id=? and date=?", tdsheet.TokenId, tdsheet.Date).Update(&tdsheet)
 			if err != nil {
 				utils.AdminLog.Info("buyList定时任务执行更新数据失败", err.Error())
 				fmt.Println(err.Error())
@@ -432,14 +431,14 @@ func (tk *TokenDailySheet) TimingFuncNew(begin, end int64) {
 			fmt.Println(err)
 			utils.AdminLog.Errorln(err)
 		}
-		tdsheet.TokenId= v.TokenId
+		tdsheet.TokenId = v.TokenId
 		tdsheet.FeeSellCny = v.FeeTotalCny
-		tdsheet.FeeSellTotal =v.FeeTotal
+		tdsheet.FeeSellTotal = v.FeeTotal
 		tdsheet.SellTotal = v.Total
-		tdsheet.SellTotalCny=v.TotalCny
-		tdsheet.Date =v.Date
+		tdsheet.SellTotalCny = v.TotalCny
+		tdsheet.Date = v.Date
 		if has {
-			_, err := engine.Cols("fee_sell_total", "fee_sell_cny", "sell_total", "sell_total_cny").Where("token_id=? and date=?",tdsheet.TokenId,tdsheet.Date).Update(&tdsheet)
+			_, err := engine.Cols("fee_sell_total", "fee_sell_cny", "sell_total", "sell_total_cny").Where("token_id=? and date=?", tdsheet.TokenId, tdsheet.Date).Update(&tdsheet)
 			if err != nil {
 				utils.AdminLog.Info("sellList定时任务执行更新数据失败", err.Error())
 				fmt.Println(err.Error())
@@ -455,10 +454,10 @@ func (tk *TokenDailySheet) TimingFuncNew(begin, end int64) {
 	}
 	//法币 冻结
 	//更新 字段 BalanceAll FrozenAll
-	for _,vu:=range tokenIdList{
+	for _, vu := range tokenIdList {
 		fmt.Println("balance_all")
-		balance,free,err:=new(UserCurrency).GetUserCurrencyBalanceAndFree(vu.Id)
-		if err!=nil{
+		balance, free, err := new(UserCurrency).GetUserCurrencyBalanceAndFree(vu.Id)
+		if err != nil {
 			utils.AdminLog.Info("sellList定时任务执行更新数据失败", err.Error())
 			fmt.Println(err.Error())
 			continue
@@ -470,18 +469,18 @@ func (tk *TokenDailySheet) TimingFuncNew(begin, end int64) {
 			fmt.Println(err)
 			utils.AdminLog.Errorln(err)
 		}
-		tdsheet.TokenId=int64(vu.Id)
+		tdsheet.TokenId = int64(vu.Id)
 		tdsheet.FrozenAll = free
 		tdsheet.BalanceAll = balance
 		tdsheet.Date = begin
-		if has{
-			_,err:=engine.Cols("balance_all","frozen_all").Where("token_id=? and date=?",tdsheet.TokenId,tdsheet.Date).Update(&tdsheet)
-			if err!=nil{
+		if has {
+			_, err := engine.Cols("balance_all", "frozen_all").Where("token_id=? and date=?", tdsheet.TokenId, tdsheet.Date).Update(&tdsheet)
+			if err != nil {
 				fmt.Println(err)
 				utils.AdminLog.Errorln(err)
 			}
-		}else{
-			_,err:=engine.Cols("token_id","balance_all","frozen_all","date").InsertOne(&tdsheet)
+		} else {
+			_, err := engine.Cols("token_id", "balance_all", "frozen_all", "date").InsertOne(&tdsheet)
 			if err != nil {
 				fmt.Println(err)
 				utils.AdminLog.Errorln(err)
@@ -491,10 +490,10 @@ func (tk *TokenDailySheet) TimingFuncNew(begin, end int64) {
 	}
 	//法币 冻结
 	//更新 字段 BalanceAll FrozenAll
-	for _,vu:=range tokenIdList{
+	for _, vu := range tokenIdList {
 		fmt.Println("balance_all")
-		balance,free,err:=new(UserToken).GetUserTokenBalance(vu.Id)
-		if err!=nil{
+		balance, free, err := new(UserToken).GetUserTokenBalance(vu.Id)
+		if err != nil {
 			utils.AdminLog.Info("sellList定时任务执行更新数据失败", err.Error())
 			fmt.Println(err.Error())
 			continue
@@ -506,20 +505,20 @@ func (tk *TokenDailySheet) TimingFuncNew(begin, end int64) {
 			fmt.Println(err)
 			utils.AdminLog.Errorln(err)
 		}
-		tdsheet.TokenId=int64(vu.Id)
-		fmt.Println("前",tdsheet.FrozenAll,tdsheet.BalanceAll)
-		tdsheet.FrozenAll,_ = convert.Int64AddInt64(tdsheet.FrozenAll,free)
-		tdsheet.BalanceAll, _= convert.Int64AddInt64(tdsheet.BalanceAll,balance)
-		fmt.Println("后",tdsheet.FrozenAll,tdsheet.BalanceAll)
+		tdsheet.TokenId = int64(vu.Id)
+		fmt.Println("前", tdsheet.FrozenAll, tdsheet.BalanceAll)
+		tdsheet.FrozenAll, _ = convert.Int64AddInt64(tdsheet.FrozenAll, free)
+		tdsheet.BalanceAll, _ = convert.Int64AddInt64(tdsheet.BalanceAll, balance)
+		fmt.Println("后", tdsheet.FrozenAll, tdsheet.BalanceAll)
 		tdsheet.Date = begin
-		if has{
-			_,err:=engine.Cols("balance_all","frozen_all").Where("token_id=? and date=?",tdsheet.TokenId,tdsheet.Date).Update(&tdsheet)
-			if err!=nil{
+		if has {
+			_, err := engine.Cols("balance_all", "frozen_all").Where("token_id=? and date=?", tdsheet.TokenId, tdsheet.Date).Update(&tdsheet)
+			if err != nil {
 				fmt.Println(err)
 				utils.AdminLog.Errorln(err)
 			}
-		}else{
-			_,err:=engine.Cols("token_id","balance_all","frozen_all","date").InsertOne(&tdsheet)
+		} else {
+			_, err := engine.Cols("token_id", "balance_all", "frozen_all", "date").InsertOne(&tdsheet)
 			if err != nil {
 				fmt.Println(err)
 				utils.AdminLog.Errorln(err)
@@ -580,11 +579,11 @@ func (t *TokenDailySheet) Run_tool() {
 	fmt.Println("当前时间戳", unix)
 	begin := 1533657600
 	BeginTime := int64(begin)
-	i:=0
+	i := 0
 	for BeginTime < unix {
 		i++
-		fmt.Println("第",i,"次循环")
-		t.TimingFuncNew(BeginTime, BeginTime+86400)//test
+		fmt.Println("第", i, "次循环")
+		t.TimingFuncNew(BeginTime, BeginTime+86400) //test
 		BeginTime += 86400
 	}
 
