@@ -18,6 +18,7 @@ func main() {
 		panic("环境变量ADMIN_API_ENV未设置")
 	}
 
+
 	// 定时任务
 	cron.InitCron()
 	go models.DailyStart()
