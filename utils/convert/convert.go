@@ -105,6 +105,15 @@ func StringSubString(a string, bArr ...string) (string, error) {
 	return aDec.String(), nil
 }
 
+//stringtoint64
+func StringToInt64(a string)(int64,error){
+	aa,err :=decimal.NewFromString(a)
+	if err!=nil{
+		return 0,err
+	}
+	return aa.IntPart(),nil
+}
+
 //两数相加
 func Int64AddInt64(a , b int64) (int64, error) {
 	aa:= decimal.New(a,0)

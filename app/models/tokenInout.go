@@ -64,7 +64,7 @@ func (t *TokenInout) GetTotalInfoList(page, rows, tid, opt int, search string) (
 		tmp := fmt.Sprintf(" AND uid=%s", search)
 		sql += tmp
 	}
-	sql += " GROUP BY DAY, uid)t "
+	sql += " GROUP BY DAY, uid)t  WHERE t.amount!=0 "
 	sql = sql1 + sql
 	//if date != `` {
 	//	sub := date[:8]
@@ -108,7 +108,7 @@ func (t *TokenInout) GetTotalInfoList(page, rows, tid, opt int, search string) (
 func (t *TokenInout) GetTotalList(page, rows, tokenId, opt int, date string) (*ModelList, error) {
 	engine := utils.Engine_wallet
 	sql1 := "FROM (SELECT DATE_FORMAT(created_time,'%Y%m%d') DAY,id,opt,SUM(amount) count,token_name name,tokenid tid FROM token_inout WHERE "
-	sql := fmt.Sprintf("opt= %d GROUP BY DAY, tokenid) t ", opt)
+	sql := fmt.Sprintf("opt= %d GROUP BY DAY, tokenid) t WHERE t.amount!=0 ", opt)
 	sql = sql1 + sql
 	limitSql := " limit %d offset %d"
 	search := "where t.id>0"
