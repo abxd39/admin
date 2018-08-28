@@ -89,12 +89,12 @@ func (t *TotalTradeCNY) TableName() string {
 }
 
 type DayCount struct {
-	TokenId     int64 `json:"token_id"`  //货币id
-	Total       int64 `json:"total"`     //数量
-	TotalCny    int64 `json:"total_cny"` //折合
-	FeeTotal    int64 `json:"fee_total"`
-	FeeTotalCny int64 `json:"fee_total_cny"`
-	Date        int64 `xorm:"-" json:"date"` //日期
+	TokenId     int64  `json:"token_id"`  //货币id
+	Total       string `json:"total"`     //数量
+	TotalCny    string `json:"total_cny"` //折合
+	FeeTotal    string `json:"fee_total"`
+	FeeTotalCny string `json:"fee_total_cny"`
+	Date        int64  `xorm:"-" json:"date"` //日期
 }
 
 func (t *DayCount) TableName() string {
@@ -107,9 +107,11 @@ func (t *Trade) Get(tid int, bt, et, opt int64) (*DayCount, error) {
 	_, err := engine.Select(" token_admission_id token_id ,FROM_UNIXTIME(deal_time,'%Y-%m-%d %H:%i:%s') date, SUM(num) total ,SUM(total_cny) total_cny,SUM(fee) fee_total,SUM(fee_cny) fee_total_cny ").Where("token_admission_id=? and opt=?  and deal_time between ? and ? ", tid, opt, bt, et).Get(dc)
 	if err != nil {
 		utils.AdminLog.Errorln(err.Error())
+		fmt.Println(err.Error())
 		return nil, err
 	}
 	dc.Date = bt
+	fmt.Println("daycount===========", dc)
 	return dc, nil
 
 }
@@ -279,8 +281,8 @@ func (this *Trade) GetFeeInfoList(page, rows, uid, opt int, date uint64, name st
 	}
 	//fmt.Println("len=",len(list))
 	for i, v := range list {
-		list[i].TotalTrue = this.Int64ToFloat64By8Bit(v.TotalCny)
-		list[i].FeeTrue = this.Int64ToFloat64By8Bit(v.FeeCny)
+		list[i].TotalTrue = this.Int64ToFloat64By8Bit(v.Num)
+		list[i].FeeTrue = this.Int64ToFloat64By8Bit(v.Fee)
 	}
 	mlist.Items = list
 	return mlist, nil
