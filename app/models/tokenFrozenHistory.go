@@ -34,6 +34,7 @@ func (f*FrozenHistory)GetFrozenHistory(page,rows,typ,tid,status int,bt,et uint64
 	query = query.Join("LEFT", "g_common.user u ", "u.uid= fh.uid")
 	query = query.Join("LEFT", "g_common.user_ex ex", "fh.uid=ex.uid")
 	//opt,tid 是必须的所以不可能为空
+	query = query.Where("fh.frozen/100000000 !=0 or fh.num/100000000 !=0")
 	if typ!=0{
 		query=query.Where("fh.type=?",typ)
 	}

@@ -239,6 +239,8 @@ func (cu *CurrencyController) total(c *gin.Context) {
 			}
 		}
 		value[i].TotalCNY = convert.Int64ToStringBy8Bit(totalTokenInt + totalCurrencyInt)
+		totalCurrencyInt =0
+		totalTokenInt =0
 	}
 	result.Items = value
 	cu.Put(c, "list", result)
@@ -494,6 +496,7 @@ func (cu *CurrencyController) totalCurrencyBalance(c *gin.Context) {
 	req := struct {
 		Page   int    `form:"page" json:"page" binding:"required"`
 		Rows   int    `form:"rows" json:"rows" `
+		TokenId int   `form:"tid" json:"tid"`
 		Search string `form:"search" json:"search" ` //搜索的内容
 		Status int    `form:"status" json:"status" ` //用户账号状态
 	}{}
@@ -503,9 +506,8 @@ func (cu *CurrencyController) totalCurrencyBalance(c *gin.Context) {
 		cu.RespErr(c, err)
 		return
 	}
-	fmt.Println(".0.................0.0.0.0.0.0.0.0.......")
 	////result, err := new(models.UserGroup).GetAllUser(req.Page, req.Page_num, req.Status, req.Search)
-	result, err := new(models.UserCurrency).CurrencyBalanceNew(req.Page, req.Rows, req.Status, req.Search)
+	result, err := new(models.UserCurrency).CurrencyBalanceNew(req.Page, req.Rows,req.Status,req.TokenId, req.Search)
 	if err != nil {
 		cu.RespErr(c, err)
 	}
@@ -519,7 +521,7 @@ func (cu *CurrencyController) totalCurrencyBalance(c *gin.Context) {
 	for _, value := range value {
 		uidList = append(uidList, uint64(value.Uid))
 	}
-	fmt.Println("uid", uidList)
+	//fmt.Println("uid", uidList)
 
 	tokenList, err := new(apis.VendorApi).GetCny(uidList, 2)
 	if err != nil {

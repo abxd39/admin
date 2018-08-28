@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"log"
+
 	"github.com/robfig/cron"
 )
 
@@ -23,7 +24,7 @@ import (
 type TokenDailySheet struct {
 	BaseModel    `xorm:"-"`
 	Id           int   `xorm:"not null pk autoincr comment('自增id') TINYINT(4)"`
-	TokenId      int   `xorm:"not null comment('货币id') INT(11)" json:"token_id"`
+	TokenId      int64 `xorm:"not null comment('货币id') INT(11)" json:"token_id"`
 	FeeBuyCny    int64 `xorm:"not null comment('买手续费折合cny') BIGINT(20)" json:"fee_buy_cny"`
 	FeeBuyTotal  int64 `xorm:"not null comment('买手续费总额') BIGINT(20)" json:"fee_buy_total"`
 	FeeSellCny   int64 `xorm:"not null comment('卖手续费折合cny') BIGINT(20)" json:"fee_sell_cny"`
@@ -155,121 +156,180 @@ func (this *TokenDailySheet) GetDailySheetList(page, rows int, date uint64) (*Mo
 	return mList, tfd, nil
 }
 
-// 作为工具是需要
-var BeginTime int64 =0
 //李宇舶 写的
-func (tk *TokenDailySheet) TimingFunc(begin, end int64) {
-	//g:=make([]*Trade,0)
-	//buy
-	fmt.Println("定时任务开始--------------------------------------->")
-	fmt.Println(time.Now().Unix())
+//func (tk *TokenDailySheet) TimingFunc(begin, end int64) {
+//	//g:=make([]*Trade,0)
+//	//buy
+//	fmt.Println("定时任务开始--------------------------------------->")
+//	fmt.Println(time.Now().Unix())
+//	engine := utils.Engine_token
+//	// 统计买的手续费
+//	sql := fmt.Sprintf("select sum(num) as a,sum(fee) as b ,sum(fee_cny) as c ,sum(total_cny) as d,token_admission_id  from trade where deal_time>=%d and deal_time<%d  and opt=1 group by token_admission_id", begin, end)
+//	r, err := engine.Query(sql)
+//	if err != nil {
+//		utils.AdminLog.Errorln(err.Error())
+//		return
+//	}
+//
+//	l := make(map[int]*TokenDailySheet)
+//
+//	for _, v := range r {
+//		h := &TokenDailySheet{}
+//		t, ok := v["token_admission_id"]
+//		if !ok {
+//			utils.AdminLog.Errorln("ok u")
+//		}
+//
+//		a, ok := v["a"]
+//		if !ok {
+//			utils.AdminLog.Errorln("ok a")
+//		}
+//		b, ok := v["b"]
+//		if !ok {
+//			utils.AdminLog.Errorln("ok b")
+//		}
+//		c, ok := v["c"]
+//		if !ok {
+//			utils.AdminLog.Errorln("ok c")
+//		}
+//		d, ok := v["d"]
+//		if !ok {
+//			utils.AdminLog.Errorln("ok d")
+//		}
+//
+//		h.TokenId = tk.BytesToIntAscii(t)
+//		h.BuyTotal = tk.BytesToInt64Ascii(a)
+//		h.FeeBuyTotal = tk.BytesToInt64Ascii(b)
+//		h.FeeBuyCny = tk.BytesToInt64Ascii(c)
+//		h.BuyTotalCny = tk.BytesToInt64Ascii(d)
+//		l[h.TokenId] = h
+//	}
+//
+//	// 统计卖的手续费
+//	sql = fmt.Sprintf("select token_id, sum(num) as a,sum(fee) as b ,sum(fee_cny) as c ,sum(total_cny) as d,token_admission_id  from trade where deal_time>=%d and deal_time<%d  and opt=2 group by token_admission_id", begin, end)
+//	r, err = engine.Query(sql)
+//	if err != nil {
+//		utils.AdminLog.Errorln(err.Error())
+//		return
+//	}
+//
+//	for _, v := range r {
+//		h := &TokenDailySheet{}
+//		t, _ := v["token_admission_id"]
+//		a, _ := v["a"]
+//		b, _ := v["b"]
+//		c, _ := v["c"]
+//		d, _ := v["d"]
+//
+//		t_ := convert.BytesToIntAscii(t)
+//		m, ok := l[t_]
+//		if !ok {
+//			h.TokenId = convert.BytesToIntAscii(t)
+//			h.SellTotal = convert.BytesToInt64Ascii(a)
+//			h.FeeSellTotal = convert.BytesToInt64Ascii(b)
+//			h.FeeSellCny = convert.BytesToInt64Ascii(c)
+//			h.SellTotalCny = convert.BytesToInt64Ascii(d)
+//			l[h.TokenId] = h
+//		} else {
+//			m.SellTotal = convert.BytesToInt64Ascii(a)
+//			m.FeeSellTotal = convert.BytesToInt64Ascii(b)
+//			m.FeeSellCny = convert.BytesToInt64Ascii(c)
+//			m.SellTotalCny = convert.BytesToInt64Ascii(d)
+//		}
+//		h.Date = end
+//	}
+//
+//	result := &struct {
+//		Balance int64
+//		Frozeen int64
+//	}{}
+//
+//	fmt.Println("len l:", len(l))
+//
+//	for _, v := range l {
+//		p := time.Unix(begin, 0).Format("2006-01-02 ")
+//		utils.AdminLog.Printf("insert into token_id %d,time %s", v.TokenId, p)
+//		v.Date = begin
+//		sql := fmt.Sprintf("SELECT SUM(t.balance) AS balance ,SUM(t.frozen) AS frozeen FROM `user_token` t WHERE t.token_id=%d", v.TokenId)
+//		_, err := engine.Table("user_token").SQL(sql).Get(result)
+//		if err != nil {
+//			continue
+//		}
+//		v.FrozenAll = result.Frozeen
+//		v.BalanceAll = result.Balance
+//
+//		fmt.Println("================================= v ===============================")
+//		fmt.Println("v:", v.TokenId, v.SellTotalCny, v.BuyTotalCny)
+//		/*
+//			_, err = engine.Table("token_daily_sheet").Cols("token_id", "fee_buy_cny", "fee_buy_total", "fee_sell_cny", "fee_sell_total", "buy_total", "sell_total_cny", "sell_total", "date", "balance_all", "frozen_all").InsertOne(v)
+//			if err != nil {
+//				utils.AdminLog.Errorln(err.Error())
+//				return
+//			}
+//		*/
+//
+//		//  判断当前id这个date是否已经统计
+//		tdsheet := TokenDailySheet{TokenId: v.TokenId, Date: v.Date}
+//		isExistSql := " SELECT token_id, `date` FROM  g_token.`token_daily_sheet`   WHERE token_id=? AND `date`=?"
+//		has, err := engine.Table("token_daily_sheet").SQL(isExistSql, v.TokenId, v.Date).Exist(&tdsheet)
+//		if err != nil {
+//			fmt.Println(err)
+//			utils.AdminLog.Errorln(err)
+//		}
+//		if has {
+//			fmt.Println("exists:", v.TokenId, v.Date)
+//			utils.AdminLog.Infoln("exists:", v.TokenId, v.Date)
+//			continue
+//		}
+//		// 不存在，则插入
+//		newSql := "INSERT INTO `token_daily_sheet` (`token_id`,`fee_buy_cny`,`fee_buy_total`,`fee_sell_cny`,`fee_sell_total`,`buy_total`,`sell_total_cny`,`sell_total`,`balance_all`,`frozen_all`,`date`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+//		_, err = engine.Exec(newSql, v.TokenId, v.FeeBuyCny, v.FeeBuyTotal, v.FeeSellCny, v.FeeSellTotal, v.BuyTotal, v.SellTotalCny, v.SellTotal, v.BalanceAll, v.FrozenAll, v.Date)
+//		if err != nil {
+//			fmt.Println(err)
+//			utils.AdminLog.Errorln(err)
+//			return
+//		}
+//	}
+//	fmt.Println("successful!!!!")
+//}
+
+//wyw 币币交易手续费定时任务呢
+func (tk *TokenDailySheet) TimingFuncNew(begin, end int64) {
+	//币币交易
+	//第一步获取货币id
 	engine := utils.Engine_token
-	// 统计买的手续费
-	sql := fmt.Sprintf("select sum(num) as a,sum(fee) as b ,sum(fee_cny) as c ,sum(total_cny) as d,token_admission_id  from trade where deal_time>=%d and deal_time<%d  and opt=1 group by token_admission_id", begin, end)
-	r, err := engine.Query(sql)
+	tokenIdList, err := new(Tokens).GetTokensList()
 	if err != nil {
 		utils.AdminLog.Errorln(err.Error())
 		return
 	}
-
-	l := make(map[int]*TokenDailySheet)
-
-	for _, v := range r {
-		h := &TokenDailySheet{}
-		t, ok := v["token_admission_id"]
-		if !ok {
-			utils.AdminLog.Errorln("ok u")
-		}
-
-		a, ok := v["a"]
-		if !ok {
-			utils.AdminLog.Errorln("ok a")
-		}
-		b, ok := v["b"]
-		if !ok {
-			utils.AdminLog.Errorln("ok b")
-		}
-		c, ok := v["c"]
-		if !ok {
-			utils.AdminLog.Errorln("ok c")
-		}
-		d, ok := v["d"]
-		if !ok {
-			utils.AdminLog.Errorln("ok d")
-		}
-
-		h.TokenId = tk.BytesToIntAscii(t)
-		h.BuyTotal = tk.BytesToInt64Ascii(a)
-		h.FeeBuyTotal = tk.BytesToInt64Ascii(b)
-		h.FeeBuyCny = tk.BytesToInt64Ascii(c)
-		h.BuyTotalCny = tk.BytesToInt64Ascii(d)
-		l[h.TokenId] = h
-	}
-
-	// 统计卖的手续费
-	sql = fmt.Sprintf("select token_id, sum(num) as a,sum(fee) as b ,sum(fee_cny) as c ,sum(total_cny) as d,token_admission_id  from trade where deal_time>=%d and deal_time<%d  and opt=2 group by token_admission_id", begin, end)
-	r, err = engine.Query(sql)
-	if err != nil {
-		utils.AdminLog.Errorln(err.Error())
-		return
-	}
-
-	for _, v := range r {
-		h := &TokenDailySheet{}
-		t, _ := v["token_admission_id"]
-		a, _ := v["a"]
-		b, _ := v["b"]
-		c, _ := v["c"]
-		d, _ := v["d"]
-
-		t_ := convert.BytesToIntAscii(t)
-		m, ok := l[t_]
-		if !ok {
-			h.TokenId = convert.BytesToIntAscii(t)
-			h.SellTotal = convert.BytesToInt64Ascii(a)
-			h.FeeSellTotal = convert.BytesToInt64Ascii(b)
-			h.FeeSellCny = convert.BytesToInt64Ascii(c)
-			h.SellTotalCny = convert.BytesToInt64Ascii(d)
-			l[h.TokenId] = h
-		} else {
-			m.SellTotal = convert.BytesToInt64Ascii(a)
-			m.FeeSellTotal = convert.BytesToInt64Ascii(b)
-			m.FeeSellCny = convert.BytesToInt64Ascii(c)
-			m.SellTotalCny = convert.BytesToInt64Ascii(d)
-		}
-		h.Date = end
-	}
-
-	result := &struct {
-		Balance int64
-		Frozeen int64
-	}{}
-
-	fmt.Println("len l:", len(l))
-
-	for _, v := range l {
-		p := time.Unix(begin, 0).Format("2006-01-02 ")
-		utils.AdminLog.Printf("insert into token_id %d,time %s", v.TokenId, p)
-		v.Date = begin
-		sql := fmt.Sprintf("SELECT SUM(t.balance) AS balance ,SUM(t.frozen) AS frozeen FROM `user_token` t WHERE t.token_id=%d", v.TokenId)
-		_, err := engine.Table("user_token").SQL(sql).Get(result)
-		if err != nil {
+	buyList := make([]DayCount, 0)
+	sellList := make([]DayCount, 0)
+	//买入
+	for _, v := range tokenIdList {
+		if v.Id==0{
 			continue
 		}
-		v.FrozenAll = result.Frozeen
-		v.BalanceAll = result.Balance
+		buy, err := new(Trade).Get(v.Id, begin,end, 1)
+		if err != nil {
+			fmt.Println(err.Error())
+			continue
+		}
+		buyList = append(buyList, *buy)
 
-		fmt.Println("================================= v ===============================")
-		fmt.Println("v:", v.TokenId, v.SellTotalCny, v.BuyTotalCny)
-		/*
-			_, err = engine.Table("token_daily_sheet").Cols("token_id", "fee_buy_cny", "fee_buy_total", "fee_sell_cny", "fee_sell_total", "buy_total", "sell_total_cny", "sell_total", "date", "balance_all", "frozen_all").InsertOne(v)
-			if err != nil {
-				utils.AdminLog.Errorln(err.Error())
-				return
-			}
-		*/
+		sell, err := new(Trade).Get(v.Id, begin,end, 2)
+		if err != nil {
+			fmt.Println(err.Error())
+			continue
+		}
+		sellList = append(sellList, *sell)
 
-		//  判断当前id这个date是否已经统计
+	}
+
+
+	//插入数据
+	for _, v := range buyList {
+		fmt.Println("buy")
 		tdsheet := TokenDailySheet{TokenId: v.TokenId, Date: v.Date}
 		isExistSql := " SELECT token_id, `date` FROM  g_token.`token_daily_sheet`   WHERE token_id=? AND `date`=?"
 		has, err := engine.Table("token_daily_sheet").SQL(isExistSql, v.TokenId, v.Date).Exist(&tdsheet)
@@ -277,21 +337,136 @@ func (tk *TokenDailySheet) TimingFunc(begin, end int64) {
 			fmt.Println(err)
 			utils.AdminLog.Errorln(err)
 		}
+		tdsheet.TokenId =v.TokenId
+		tdsheet.FeeBuyTotal= v.FeeTotal
+		tdsheet.FeeBuyCny=v.FeeTotalCny
+		tdsheet.BuyTotal=v.Total
+		tdsheet.BuyTotalCny=v.TotalCny
+		tdsheet.Date = v.Date
 		if has {
-			fmt.Println("exists:", v.TokenId, v.Date)
-			utils.AdminLog.Infoln("exists:", v.TokenId, v.Date)
-			continue
+
+			_, err := engine.Cols("fee_buy_total", "fee_buy_cny", "buy_total", "buy_total_cny").Where("token_id=? and date=?",tdsheet.TokenId,tdsheet.Date).Update(&tdsheet)
+			if err != nil {
+				utils.AdminLog.Info("buyList定时任务执行更新数据失败", err.Error())
+				fmt.Println(err.Error())
+
+			}
+		} else {
+			_, err := engine.Cols("token_id", "fee_buy_total", "fee_buy_cny", "buy_total", "buy_total_cny", "date").InsertOne(&tdsheet)
+			if err != nil {
+				utils.AdminLog.Info("buyList定时任务执行更新数据失败", err.Error())
+				fmt.Println(err.Error())
+
+			}
 		}
-		// 不存在，则插入
-		newSql := "INSERT INTO `token_daily_sheet` (`token_id`,`fee_buy_cny`,`fee_buy_total`,`fee_sell_cny`,`fee_sell_total`,`buy_total`,`sell_total_cny`,`sell_total`,`balance_all`,`frozen_all`,`date`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-		_, err = engine.Exec(newSql, v.TokenId, v.FeeBuyCny, v.FeeBuyTotal, v.FeeSellCny, v.FeeSellTotal, v.BuyTotal, v.SellTotalCny, v.SellTotal, v.BalanceAll, v.FrozenAll, v.Date)
+
+	}
+
+	for _, v := range sellList {
+		fmt.Println("sell")
+		tdsheet := TokenDailySheet{TokenId: v.TokenId, Date: v.Date}
+		isExistSql := " SELECT token_id, `date` FROM  g_token.`token_daily_sheet`   WHERE token_id=? AND `date`=?"
+		has, err := engine.Table("token_daily_sheet").SQL(isExistSql, v.TokenId, v.Date).Exist(&tdsheet)
 		if err != nil {
 			fmt.Println(err)
 			utils.AdminLog.Errorln(err)
-			return
 		}
+		tdsheet.TokenId= v.TokenId
+		tdsheet.FeeSellCny = v.FeeTotalCny
+		tdsheet.FeeSellTotal =v.FeeTotal
+		tdsheet.SellTotal = v.Total
+		tdsheet.SellTotalCny=v.TotalCny
+		tdsheet.Date =v.Date
+		if has {
+			_, err := engine.Cols("fee_sell_total", "fee_sell_cny", "sell_total", "sell_total_cny").Where("token_id=? and date=?",tdsheet.TokenId,tdsheet.Date).Update(&tdsheet)
+			if err != nil {
+				utils.AdminLog.Info("sellList定时任务执行更新数据失败", err.Error())
+				fmt.Println(err.Error())
+			}
+		} else {
+			_, err := engine.Cols("token_id", "fee_sell_total", "fee_sell_cny", "sell_total", "sell_total_cny", "date").InsertOne(&tdsheet)
+			if err != nil {
+				utils.AdminLog.Info("sellList定时任务执行更新数据失败", err.Error())
+				fmt.Println(err.Error())
+			}
+		}
+
 	}
-	fmt.Println("successful!!!!")
+	//法币 冻结
+	//更新 字段 BalanceAll FrozenAll
+	for _,vu:=range tokenIdList{
+		fmt.Println("balance_all")
+		balance,free,err:=new(UserCurrency).GetUserCurrencyBalanceAndFree(vu.Id)
+		if err!=nil{
+			utils.AdminLog.Info("sellList定时任务执行更新数据失败", err.Error())
+			fmt.Println(err.Error())
+			continue
+		}
+		tdsheet := TokenDailySheet{TokenId: int64(vu.Id), Date: begin}
+		isExistSql := " SELECT token_id, `date` FROM  g_token.`token_daily_sheet`   WHERE token_id=? AND `date`=?"
+		has, err := engine.Table("token_daily_sheet").SQL(isExistSql, vu.Id, begin).Exist(&tdsheet)
+		if err != nil {
+			fmt.Println(err)
+			utils.AdminLog.Errorln(err)
+		}
+		tdsheet.TokenId=int64(vu.Id)
+		tdsheet.FrozenAll = free
+		tdsheet.BalanceAll = balance
+		tdsheet.Date = begin
+		if has{
+			_,err:=engine.Cols("balance_all","frozen_all").Where("token_id=? and date=?",tdsheet.TokenId,tdsheet.Date).Update(&tdsheet)
+			if err!=nil{
+				fmt.Println(err)
+				utils.AdminLog.Errorln(err)
+			}
+		}else{
+			_,err:=engine.Cols("token_id","balance_all","frozen_all","date").InsertOne(&tdsheet)
+			if err != nil {
+				fmt.Println(err)
+				utils.AdminLog.Errorln(err)
+			}
+		}
+
+	}
+	//法币 冻结
+	//更新 字段 BalanceAll FrozenAll
+	for _,vu:=range tokenIdList{
+		fmt.Println("balance_all")
+		balance,free,err:=new(UserToken).GetUserTokenBalance(vu.Id)
+		if err!=nil{
+			utils.AdminLog.Info("sellList定时任务执行更新数据失败", err.Error())
+			fmt.Println(err.Error())
+			continue
+		}
+		tdsheet := TokenDailySheet{TokenId: int64(vu.Id), Date: begin}
+		isExistSql := " SELECT token_id, `date` FROM  g_token.`token_daily_sheet`   WHERE token_id=? AND `date`=?"
+		has, err := engine.Table("token_daily_sheet").SQL(isExistSql, vu.Id, begin).Get(&tdsheet)
+		if err != nil {
+			fmt.Println(err)
+			utils.AdminLog.Errorln(err)
+		}
+		tdsheet.TokenId=int64(vu.Id)
+		fmt.Println("前",tdsheet.FrozenAll,tdsheet.BalanceAll)
+		tdsheet.FrozenAll,_ = convert.Int64AddInt64(tdsheet.FrozenAll,free)
+		tdsheet.BalanceAll, _= convert.Int64AddInt64(tdsheet.BalanceAll,balance)
+		fmt.Println("后",tdsheet.FrozenAll,tdsheet.BalanceAll)
+		tdsheet.Date = begin
+		if has{
+			_,err:=engine.Cols("balance_all","frozen_all").Where("token_id=? and date=?",tdsheet.TokenId,tdsheet.Date).Update(&tdsheet)
+			if err!=nil{
+				fmt.Println(err)
+				utils.AdminLog.Errorln(err)
+			}
+		}else{
+			_,err:=engine.Cols("token_id","balance_all","frozen_all","date").InsertOne(&tdsheet)
+			if err != nil {
+				fmt.Println(err)
+				utils.AdminLog.Errorln(err)
+			}
+		}
+
+	}
+
 }
 
 func (t *TokenDailySheet) Run() {
@@ -301,7 +476,7 @@ func (t *TokenDailySheet) Run() {
 	theTime, _ := time.ParseInLocation(timeLayout, toBeCharge, loc)
 	unix := theTime.Unix()
 	fmt.Println("当前时间戳", unix)
-	t.TimingFunc(unix-86400, unix)
+	t.TimingFuncNew(unix-86400, unix)
 	//t.TimingFunc(1532448000, unix)
 }
 
@@ -342,11 +517,14 @@ func (t *TokenDailySheet) Run_tool() {
 	theTime, _ := time.ParseInLocation(timeLayout, toBeCharge, loc)
 	unix := theTime.Unix()
 	fmt.Println("当前时间戳", unix)
-	begin:=1533139200
-	BeginTime = int64(begin)
-	for  BeginTime < unix{
-		t.TimingFunc(BeginTime, unix)
-		BeginTime+=86400
+	begin := 1533657600
+	BeginTime := int64(begin)
+	i:=0
+	for BeginTime < unix {
+		i++
+		fmt.Println("第",i,"次循环")
+		t.TimingFuncNew(BeginTime, BeginTime+86400)//test
+		BeginTime += 86400
 	}
 
 }

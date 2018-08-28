@@ -86,6 +86,32 @@ func (t *TotalTradeCNY) TableName() string {
 	return "trade"
 }
 
+type  DayCount struct {
+	TokenId int64 `json:"token_id"`//货币id
+	Total int64 `json:"total"`//数量
+	TotalCny int64 `json:"total_cny"`//折合
+	FeeTotal int64 `json:"fee_total"`
+	FeeTotalCny int64 `json:"fee_total_cny"`
+	Date int64 `xorm:"-" json:"date"` //日期
+}
+
+func (t *DayCount) TableName() string {
+	return "trade"
+}
+
+func (t*Trade) Get(tid int , bt,et,opt int64)(*DayCount,error){
+	engine :=utils.Engine_token
+	dc:=new(DayCount)
+	_,err:=engine.Select(" token_admission_id token_id ,FROM_UNIXTIME(deal_time,'%Y-%m-%d %H:%i:%s') date, SUM(num) total ,SUM(total_cny) total_cny,SUM(fee) fee_total,SUM(fee_cny) fee_total_cny ").Where("token_admission_id=? and opt=?  and deal_time between ? and ? ",tid,opt,bt,et).Get(dc)
+	if err!=nil{
+		utils.AdminLog.Errorln(err.Error())
+		return nil,err
+	}
+	dc.Date =bt
+	return dc,nil
+
+}
+
 //func (this *Trade) TotalTotalTradeList(page, rows int, date uint64) (*ModelList, error) {
 //	fmt.Println("bibi 交易手续费一天汇总")
 //	engine := utils.Engine_token

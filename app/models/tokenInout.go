@@ -52,7 +52,7 @@ func (t *TokenInoutGroup) TableName() string {
 func (t *TokenInout) GetTotalInfoList(page, rows, tid, opt int, search string) (*ModelList, error) {
 	enginge := utils.Engine_wallet
 	//SELECT t.time,t.token_name,t.total,t.uid
-	sql1 := " FROM (SELECT DATE_FORMAT(created_time,'%Y%m%d') DAY,created_time time ,opt,SUM(amount) amount ,tokenid,token_name name,uid FROM token_inout "
+	sql1 := " FROM (SELECT DATE_FORMAT(created_time,'%Y-%m-%d %H:%i:%s') DAY,created_time time ,opt,SUM(amount) amount ,tokenid,token_name name,uid FROM token_inout "
 	sql := fmt.Sprintf("WHERE opt=%d", opt)
 	if tid != 0 {
 		tmp := fmt.Sprintf(" AND tokenid=%d", tid)
@@ -83,7 +83,7 @@ func (t *TokenInout) GetTotalInfoList(page, rows, tid, opt int, search string) (
 	}
 	offset, mList := t.Paging(page, rows, int(count.Count))
 	type Return struct {
-		Day    int
+		Day    string
 		Uid    int
 		Amount int64
 		Total  string `xorm:"-"` //提币总数

@@ -71,15 +71,15 @@ func (this *EntrustDetail) EvacuateOder(uid int, odid string) error {
 
 }
 
-func (this *EntrustDetail) GetTokenOrderList(page, rows, adId, status, bt, et, uid int, symbol, tradeId string) (*ModelList, error) {
+func (this *EntrustDetail) GetTokenOrderList(page, rows, adId, status, bt, et, uid ,ty int, symbol string) (*ModelList, error) {
 	engine := utils.Engine_token
 	query := engine.Desc("en.entrust_id")
 	query = query.Alias("en")
 	query = query.Desc("en.entrust_id ")
 	//query = query.Join("left", "trade t", "t.entrust_id = en.entrust_id ")
 	query = query.Where("en.symbol=?", symbol)
-	if tradeId != `` {
-		query = query.Where("en.entrust_id=?", tradeId)
+	if ty != 0 {
+		query = query.Where("en.type=?", ty)
 	}
 
 	if adId != 0 {

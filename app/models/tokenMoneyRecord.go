@@ -113,6 +113,7 @@ func (m *MoneyRecord) GetMoneyListForDateOrType(page, rows, ty, status int, tid 
 	query := engine.Alias("uch").Desc("u.uid")
 	query = query.Join("LEFT", "g_common.user u ", "u.uid= uch.uid")
 	query = query.Join("LEFT", "g_common.user_ex ex", "uch.uid=ex.uid")
+	query = query.Where("uch.num/10000000 !=0 or uch.balance/100000000 ")
 	subDate := time.Now().Unix()
 	if bt!=0{
 		if et!=0{
@@ -246,7 +247,7 @@ func (m *MoneyRecord) GetPlatformAll(page, rows int, tid, bt, et uint64) (*Model
 		condition += fmt.Sprintf("  AND token_id=%d ", tid)
 	}
 
-	condition += " GROUP BY day , token_id"
+	condition += " GROUP BY day , token_id  order by day desc "
 	count := fmt.Sprintf("SELECT COUNT(*) COUNT FROM (%s)t", sql+condition)
 	num := &struct {
 		Count int
@@ -289,7 +290,7 @@ func (m *MoneyRecord) GetPlatformAll(page, rows int, tid, bt, et uint64) (*Model
 //平台内充值明细
 func (m *MoneyRecord) GetPlatForTokenOfDay(page, rows, uid, tid int, date uint64) (*ModelList, error) {
 	engine := utils.Engine_token
-	sql := "SELECT created_time day, SUM(num) total ,uid,comment FROM g_token.money_record  "
+	sql := "SELECT FROM_UNIXTIME(created_time,'%Y-%m-%d %H:%i:%s') day, SUM(num) total ,uid,comment FROM g_token.money_record  "
 
 	var condition string
 	//condition = fmt.Sprintf("WHERE TYPE=14 AND token_id=%d AND created_time  BETWEEN %d AND %d ", tid, date, date+86400)

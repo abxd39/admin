@@ -253,27 +253,27 @@ func (VendorApi) PostOutTokenBtc(uid, tid, id int, addr, mount string) error {
 	}
 	request.Header.Set("Content-Type", "application/json;charset=UTF-8")
 	client := http.Client{}
-	result, err := client.Do(request)
-	if err != nil {
-		return err
-	}
-	rsp := &struct {
-		Code int    `json:"code"`
-		Msg  string `json:"msg"`
-	}{}
-	body, err := ioutil.ReadAll(result.Body)
-	if err != nil {
-		return err
-	}
-	fmt.Println(walletUrl + "/wallet/biti_btc?")
-	fmt.Println(string(body))
-	err = json.Unmarshal(body, rsp)
-	if err != nil {
-		return err
-	}
-	if rsp.Code != 0 {
-		return errors.New(rsp.Msg)
-	}
+	client.Do(request)
+	//if err != nil {
+	//	return err
+	//}
+	//rsp := &struct {
+	//	Code int    `json:"code"`
+	//	Msg  string `json:"msg"`
+	//}{}
+	//body, err := ioutil.ReadAll(result.Body)
+	//if err != nil {
+	//	return err
+	//}
+	//fmt.Println(walletUrl + "/wallet/biti_btc?")
+	//fmt.Println(string(body))
+	//err = json.Unmarshal(body, rsp)
+	//if err != nil {
+	//	return err
+	//}
+	//if rsp.Code != 0 {
+	//	return errors.New(rsp.Msg)
+	//}
 	return nil
 }
 
@@ -422,23 +422,22 @@ func (VendorApi) GetCny(uid []uint64, mark int) ([]Cny, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("1111111111111111111111111")
 	fmt.Println(userUrl + url)
 	request.Header.Set("Content-Type", "application/json;charset=UTF-8")
 	client := http.Client{}
 	rsp, err := client.Do(request)
 	if err != nil {
-		fmt.Println("123111111")
+
 		return nil, err
 	}
 	body, err := ioutil.ReadAll(rsp.Body)
 	if err != nil {
-		fmt.Println("1472555556565656")
+
 		return nil, err
 	}
-	fmt.Println("6666666666666666666666666")
+
 	result := new(Token)
-	fmt.Println(string(body))
+	//fmt.Println(string(body))
 	err = json.Unmarshal(body, result)
 	if err != nil {
 		fmt.Println(err.Error())
@@ -451,7 +450,7 @@ func (VendorApi) GetCny(uid []uint64, mark int) ([]Cny, error) {
 	//if len(result.Data.list)<=0{
 	//	return nil, errors.New("return value empty")
 	//}
-	fmt.Println("result.Data.list", result.Data.List)
+	//fmt.Println("result.Data.list", result.Data.List)
 	return result.Data.List, nil
 }
 

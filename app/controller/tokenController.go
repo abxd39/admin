@@ -516,16 +516,19 @@ func (this *TokenController) ChangeDetail(c *gin.Context) {
 		for _, v := range value {
 			uidList = append(uidList, v.Uid)
 		}
-		balanceList, err := new(models.MoneyRecord).GetMoneyListForUId(uidList)
+		balanceList, err := new(models.UserToken).GetBalanceForUid(uidList)
 		if err != nil {
 			this.RespErr(c, err)
 			return
 		}
+		fmt.Println("value=",len(value),"uid=",len(balanceList))
 		for i, v := range value {
 			for _, bv := range balanceList {
-				if int(v.Uid) == bv.Uid {
+				if v.Uid == int64(bv.Uid) {
 					value[i].NumTrue = convert.Int64ToFloat64By8Bit(v.Num)
+					//fmt.Println("前=",v.Num,"后=",value[i].NumTrue)
 					value[i].SurplusTrue = convert.Int64ToFloat64By8Bit(bv.Balance)
+					break
 				}
 			}
 			for _, vt := range tokenlist {
@@ -731,7 +734,7 @@ func (this *TokenController) GetTokenOderList(c *gin.Context) {
 		Page      int    `form:"page" json:"page" binding:"required"`
 		Rows      int    `form:"rows" json:"rows" `
 		Uid       int    `form:"uid" json:"uid" `
-		TradeId   string `form:"trade_id" json:"trade_id" ` //交易类型id 市价交易or 限价交易
+		Tp   int `form:"ty" json:"ty" ` //交易类型id 市价交易or 限价交易
 		BeginTime int    `form:"bt" json:"bt"`
 		EndTime   int    `form:"et" json:"et"`
 		Symbol    string `form:"symbol" json:"symbol"  binding:"required" ` //交易对
@@ -745,7 +748,7 @@ func (this *TokenController) GetTokenOderList(c *gin.Context) {
 		this.RespErr(c, err)
 		return
 	}
-	list, err := new(models.EntrustDetail).GetTokenOrderList(req.Page, req.Rows, req.AdId, req.Status, req.BeginTime, req.EndTime, req.Uid, req.Symbol, req.TradeId)
+	list, err := new(models.EntrustDetail).GetTokenOrderList(req.Page, req.Rows, req.AdId, req.Status, req.BeginTime, req.EndTime, req.Uid, req.Tp,req.Symbol)
 	if err != nil {
 		this.RespErr(c, err)
 		return

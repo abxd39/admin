@@ -50,6 +50,28 @@ func (*UserToken) TableName() string {
 	return "user_token"
 }
 
+func (*UserToken) GetUserTokenBalance( tid int)(balance ,free int64,err error){
+	engine := utils.Engine_token
+	result, err := engine.Where("token_id=?", tid).SumsInt(&UserToken{}, "balance", "frozen")
+	if err != nil {
+		return 0, 0, err
+	}
+	return result[0], result[1], nil
+}
+
+
+
+//更具用戶UID获取账户余额
+func  (t*UserToken)GetBalanceForUid( uid []int64)([]UserToken,error){
+	engine := utils.Engine_token
+	list:=make([]UserToken,0)
+	err:=engine.In("uid",uid).Find(&list)
+	if err!=nil{
+		return nil,err
+	}
+	return list,nil
+}
+
 func (u *DetailToken) GetTokenDetailOfUid(page, rows, uid, tokenId int) (*ModelList, error) {
 	engine := utils.Engine_token
 	query := engine.Alias("dt").Where("uid=?", uid)

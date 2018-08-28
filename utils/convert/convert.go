@@ -92,6 +92,13 @@ func StringAddStrings(a string, bs ...string) (string, error) {
 	return stra.String(), nil
 }
 
+//两数相加
+func Int64AddInt64(a , b int64) (int64, error) {
+	aa:= decimal.New(a,0)
+	bb:=decimal.New(b,0)
+	return aa.Add(bb).IntPart(), nil
+}
+
 //大数string 相除
 func StringDivString(a, b string) (string, error) {
 	astr, err := decimal.NewFromString(a)

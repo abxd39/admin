@@ -126,6 +126,7 @@ func (this *TokenInoutDailySheet) GetInOutDailySheetList(page, rows, tokenId int
 
 	engine := utils.Engine_wallet
 	query := engine.Desc("id")
+	query = query.Where("total/100000000 !=0 or total_day_num/100000000 !=0 or total_fee!=0 or total_day_num_fee/100000000 !=0 ")
 	if tokenId != 0 {
 		query = query.Where("token_id=?", tokenId)
 	}
@@ -165,6 +166,7 @@ func (this *TokenInoutDailySheet) GetInOutDailySheetList(page, rows, tokenId int
 func (t *TokenInoutDailySheet) DayPutDailySheet(page, rows, tid int, bt, et string) (*ModelList, error) {
 	engine := utils.Engine_wallet
 	query := engine.Desc("id")
+	query = query.Where("total_day_put/100000000 !=0 or total_put/100000000 !=0")
 	if tid != 0 {
 		query = query.Where("token_id=?", tid)
 	}
@@ -200,10 +202,17 @@ func (t *TokenInoutDailySheet) DayPutDailySheet(page, rows, tid int, bt, et stri
 		return nil, err
 	}
 	for i, v := range list {
-		list[i].TotalPutTrue = t.Int64ToFloat64By8Bit(v.TotalDayPut)
+		list[i].TotalPutTrue = t.Int64ToFloat64By8Bit(v.TotalPut)
 		list[i].TotalDayPutTrue = t.Int64ToFloat64By8Bit(v.TotalDayPut)
 	}
-	mList.Items = list
+	//result:=make([]temp,0)
+	//for _,v:=range list {
+	//	if v.TotalDayPutTrue !=0 || v.TotalPutTrue !=0{
+	//		result = append(result,v)
+	//	}
+	//}
+	//_,mList = t.Paging(page,rows,len(result))
+	mList.Items =list
 	return mList, nil
 }
 
@@ -211,6 +220,7 @@ func (t *TokenInoutDailySheet) DayPutDailySheet(page, rows, tid int, bt, et stri
 func (t *TokenInoutDailySheet) DayOutDailySheet(page, rows, tid int, bt, et string) (*ModelList, error) {
 	engine := utils.Engine_wallet
 	query := engine.Desc("id")
+	query =query.Where("total/100000000 !=0 or total_day_num/100000000 !=0")
 	if tid != 0 {
 		query = query.Where("token_id=?", tid)
 	}
@@ -248,6 +258,7 @@ func (t *TokenInoutDailySheet) DayOutDailySheet(page, rows, tid int, bt, et stri
 		list[i].TotalTrue = t.Int64ToFloat64By8Bit(v.Total)
 		list[i].TotalNumTrue = t.Int64ToFloat64By8Bit(v.TotalDayNum)
 	}
+
 	mList.Items = list
 	return mList, nil
 }
