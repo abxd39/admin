@@ -1,9 +1,11 @@
 package models
 
 import (
-	"admin/utils"
 	"fmt"
 	"time"
+
+	"admin/errors"
+	"admin/utils"
 	"admin/utils/convert"
 )
 
@@ -40,18 +42,18 @@ type Trade struct {
 	Opt          int    `xorm:"comment(' buy  1或sell 2') index unique(uni_reade_no) TINYINT(4)"`
 	DealTime     int64  `xorm:"comment('成交时间') index BIGINT(11)"`
 	//States       int    `xorm:"comment('0是挂单，1是部分成交,2成交， -1撤销') INT(11)"`
-	FeeCny    int64  `xorm:"comment('手续费折合CNY') BIGINT(20)"`
-	TotalCny  int64  `xorm:"comment('总交易额折合CNY') BIGINT(20)"`
-	EntrustId string `xorm:"VARCHAR(32)"`
-	TokenAdmissionId  int `xorm:"comment('入账货币id') TINYINT(4)" json:"token_admission_id"`
+	FeeCny           int64  `xorm:"comment('手续费折合CNY') BIGINT(20)"`
+	TotalCny         int64  `xorm:"comment('总交易额折合CNY') BIGINT(20)"`
+	EntrustId        string `xorm:"VARCHAR(32)"`
+	TokenAdmissionId int    `xorm:"comment('入账货币id') TINYINT(4)" json:"token_admission_id"`
 }
 
 type TradeReturn struct {
 	Trade          `xorm:"extends"`
-	TradeNum    	int64 `xorm:" comment('已成交') BIGINT(20)" json:"trade_num"`
-	AllNum         int64   `xorm:"not null comment('总数量') BIGINT(20)"`  //总数
+	TradeNum       int64  `xorm:" comment('已成交') BIGINT(20)" json:"trade_num"`
+	AllNum         int64  `xorm:"not null comment('总数量') BIGINT(20)"`  //总数
 	SurplusNum     int64  `xorm:"not null comment('剩余数量') BIGINT(20)"` //余数
-	ToAccountNum   string `xorm:"-" json:"to_account_num"`//实际到账数量
+	ToAccountNum   string `xorm:"-" json:"to_account_num"`             //实际到账数量
 	FinishCount    string `xorm:"-" json:"finish_count"`               //已成
 	FeeTrue        string `xorm:"-" json:"fee_true"`
 	AllNumTrue     string `xorm:"-" json:"all_num_true"`
@@ -86,29 +88,29 @@ func (t *TotalTradeCNY) TableName() string {
 	return "trade"
 }
 
-type  DayCount struct {
-	TokenId int64 `json:"token_id"`//货币id
-	Total int64 `json:"total"`//数量
-	TotalCny int64 `json:"total_cny"`//折合
-	FeeTotal int64 `json:"fee_total"`
+type DayCount struct {
+	TokenId     int64 `json:"token_id"`  //货币id
+	Total       int64 `json:"total"`     //数量
+	TotalCny    int64 `json:"total_cny"` //折合
+	FeeTotal    int64 `json:"fee_total"`
 	FeeTotalCny int64 `json:"fee_total_cny"`
-	Date int64 `xorm:"-" json:"date"` //日期
+	Date        int64 `xorm:"-" json:"date"` //日期
 }
 
 func (t *DayCount) TableName() string {
 	return "trade"
 }
 
-func (t*Trade) Get(tid int , bt,et,opt int64)(*DayCount,error){
-	engine :=utils.Engine_token
-	dc:=new(DayCount)
-	_,err:=engine.Select(" token_admission_id token_id ,FROM_UNIXTIME(deal_time,'%Y-%m-%d %H:%i:%s') date, SUM(num) total ,SUM(total_cny) total_cny,SUM(fee) fee_total,SUM(fee_cny) fee_total_cny ").Where("token_admission_id=? and opt=?  and deal_time between ? and ? ",tid,opt,bt,et).Get(dc)
-	if err!=nil{
+func (t *Trade) Get(tid int, bt, et, opt int64) (*DayCount, error) {
+	engine := utils.Engine_token
+	dc := new(DayCount)
+	_, err := engine.Select(" token_admission_id token_id ,FROM_UNIXTIME(deal_time,'%Y-%m-%d %H:%i:%s') date, SUM(num) total ,SUM(total_cny) total_cny,SUM(fee) fee_total,SUM(fee_cny) fee_total_cny ").Where("token_admission_id=? and opt=?  and deal_time between ? and ? ", tid, opt, bt, et).Get(dc)
+	if err != nil {
 		utils.AdminLog.Errorln(err.Error())
-		return nil,err
+		return nil, err
 	}
-	dc.Date =bt
-	return dc,nil
+	dc.Date = bt
+	return dc, nil
 
 }
 
@@ -184,13 +186,13 @@ func (t*Trade) Get(tid int , bt,et,opt int64)(*DayCount,error){
 
 func (this *Trade) GetTokenRecordList(page, rows, opt, uid int, bt, et uint64, name string) (*ModelList, error) {
 	engine := utils.Engine_token
-	 fmt.Println("这里到了没有啊 ")
+	fmt.Println("这里到了没有啊 ")
 	query := engine.Desc("t.entrust_id")
 	query = query.Alias("t").Join("left", "entrust_detail e", "e.entrust_id= t.entrust_id")
-	if name!=``{
+	if name != `` {
 		query = query.Where("(e.states=2 or e.states=1) and e.symbol=?", name) //交易对
 	}
-	tm:=time.Now().Unix()
+	tm := time.Now().Unix()
 	if opt != 0 {
 		query = query.Where("t.opt=?", opt) //交易方向
 	}
@@ -204,7 +206,7 @@ func (this *Trade) GetTokenRecordList(page, rows, opt, uid int, bt, et uint64, n
 			query = query.Where("t.deal_time BETWEEN ? AND ? ", bt, bt+86400)
 		}
 
-	} else{
+	} else {
 		query = query.Where("t.deal_time BETWEEN ? AND ? ", tm-86400, tm)
 	}
 	tempQuery := *query
@@ -220,7 +222,7 @@ func (this *Trade) GetTokenRecordList(page, rows, opt, uid int, bt, et uint64, n
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("list",list)
+	fmt.Println("list", list)
 	for i, v := range list {
 		//allNum, surPlusNUm := this.SubductionZeroMethodInt64(v.AllNum, v.SurplusNum)
 		list[i].AllNumTrue = convert.Int64ToStringBy8Bit(v.AllNum)
@@ -282,4 +284,67 @@ func (this *Trade) GetFeeInfoList(page, rows, uid, opt int, date uint64, name st
 	}
 	mlist.Items = list
 	return mlist, nil
+}
+
+// 手续费合计
+type TokenFeeTotal struct {
+	TodayTotal       string `xorm:"today_total"`         // 今日合计
+	YesterdayTotal   string `xorm:"yesterday_total"`     // 上日合计
+	LastWeekDayTotal string `xorm:"last_week_day_total"` // 上周同日合计
+}
+
+// 手续费合计
+// 今日、上日、上周同日
+func (this *Trade) FeeTotal() (*TokenFeeTotal, error) {
+	// 计算日期
+	todayDate := time.Now().Format(utils.LAYOUT_DATE)
+	datetime, _ := time.Parse(utils.LAYOUT_DATE_TIME, fmt.Sprintf("%s 00:00:00", todayDate))
+	todayTime := datetime.Unix() // 零点
+	yesterdayTime := todayTime - 24*60*60
+	lastWeekDayTime := todayTime - 7*24*60*60
+
+	// 开始合计
+	//1. 今日
+	feeTotal := &TokenFeeTotal{}
+	session := utils.Engine_token.Where("1=1")
+	_, err := session.
+		Table(this).
+		Select("IFNULL(sum(fee), 0) today_total").
+		And("deal_time>=?", todayTime).
+		Get(feeTotal)
+	if err != nil {
+		return nil, errors.NewSys(err)
+	}
+
+	//2. 上日
+	yesFeeTotal := &TokenFeeTotal{}
+	yesSession := utils.Engine_token.Where("1=1")
+	_, err = yesSession.
+		Table(this).
+		Select("IFNULL(sum(fee), 0) yesterday_total").
+		And("deal_time>=?", yesterdayTime).
+		And("deal_time<?", yesterdayTime+24*60*60).
+		Get(yesFeeTotal)
+	if err != nil {
+		return nil, errors.NewSys(err)
+	}
+
+	//3. 上周同日
+	lastWeekFeeTotal := &TokenFeeTotal{}
+	lastWeekSession := utils.Engine_token.Where("1=1")
+	_, err = lastWeekSession.
+		Table(this).
+		Select("IFNULL(sum(fee), 0) last_week_day_total").
+		And("deal_time>=?", lastWeekDayTime).
+		And("deal_time<?", lastWeekDayTime+24*60*60).
+		Get(lastWeekFeeTotal)
+	if err != nil {
+		return nil, errors.NewSys(err)
+	}
+
+	// 合并
+	feeTotal.YesterdayTotal = yesFeeTotal.YesterdayTotal
+	feeTotal.LastWeekDayTotal = lastWeekFeeTotal.LastWeekDayTotal
+
+	return feeTotal, nil
 }

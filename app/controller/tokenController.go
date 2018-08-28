@@ -522,7 +522,7 @@ func (this *TokenController) ChangeDetail(c *gin.Context) {
 			this.RespErr(c, err)
 			return
 		}
-		fmt.Println("value=",len(value),"uid=",len(balanceList))
+		fmt.Println("value=", len(value), "uid=", len(balanceList))
 		for i, v := range value {
 			for _, bv := range balanceList {
 				if v.Uid == int64(bv.Uid) {
@@ -734,7 +734,7 @@ func (this *TokenController) GetTokenOderList(c *gin.Context) {
 		Page      int    `form:"page" json:"page" binding:"required"`
 		Rows      int    `form:"rows" json:"rows" `
 		Uid       int    `form:"uid" json:"uid" `
-		Tp   int `form:"ty" json:"ty" ` //交易类型id 市价交易or 限价交易
+		Tp        int    `form:"ty" json:"ty" ` //交易类型id 市价交易or 限价交易
 		BeginTime int    `form:"bt" json:"bt"`
 		EndTime   int    `form:"et" json:"et"`
 		Symbol    string `form:"symbol" json:"symbol"  binding:"required" ` //交易对
@@ -748,7 +748,7 @@ func (this *TokenController) GetTokenOderList(c *gin.Context) {
 		this.RespErr(c, err)
 		return
 	}
-	list, err := new(models.EntrustDetail).GetTokenOrderList(req.Page, req.Rows, req.AdId, req.Status, req.BeginTime, req.EndTime, req.Uid, req.Tp,req.Symbol)
+	list, err := new(models.EntrustDetail).GetTokenOrderList(req.Page, req.Rows, req.AdId, req.Status, req.BeginTime, req.EndTime, req.Uid, req.Tp, req.Symbol)
 	if err != nil {
 		this.RespErr(c, err)
 		return
@@ -902,23 +902,30 @@ func (t *TokenController) ListTransfer(ctx *gin.Context) {
 func (t *TokenController) FeeTotal(ctx *gin.Context) {
 	// 调用model
 	//1. 币币买入、卖出手续费
-	tokenFeeTotal, err := new(models.TokenDailySheet).FeeTotal()
+	tokenFeeTotal, err := new(models.Trade).FeeTotal()
 	if err != nil {
 		t.RespErr(ctx, err)
 		return
 	}
 
 	//2. 法币买入、卖出手续费
-	currencyFeeTotal, err := new(models.CurrencyDailySheet).FeeTotal()
+	currencyFeeTotal, err := new(models.UserCurrencyHistory).FeeTotal()
+	if err != nil {
+		t.RespErr(ctx, err)
+		return
+	}
+
+	//3. 提币手续费
+	inOutFeeTotal, err := new(models.TokenInout).FeeTotal()
 	if err != nil {
 		t.RespErr(ctx, err)
 		return
 	}
 
 	// 整理数据
-	todayTotal, _ := convert.StringAddString(tokenFeeTotal.TodayTotal, currencyFeeTotal.TodayTotal)
-	yesterdayTotal, _ := convert.StringAddString(tokenFeeTotal.YesterdayTotal, currencyFeeTotal.YesterdayTotal)
-	lastWeekDayTotal, _ := convert.StringAddString(tokenFeeTotal.LastWeekDayTotal, currencyFeeTotal.LastWeekDayTotal)
+	todayTotal, _ := convert.StringAddString(tokenFeeTotal.TodayTotal, currencyFeeTotal.TodayTotal, inOutFeeTotal.TodayTotal)
+	yesterdayTotal, _ := convert.StringAddString(tokenFeeTotal.YesterdayTotal, currencyFeeTotal.YesterdayTotal, inOutFeeTotal.YesterdayTotal)
+	lastWeekDayTotal, _ := convert.StringAddString(tokenFeeTotal.LastWeekDayTotal, currencyFeeTotal.LastWeekDayTotal, inOutFeeTotal.LastWeekDayTotal)
 
 	upDay, _ := convert.StringSubString(todayTotal, yesterdayTotal)
 	upDay, _ = convert.StringTo8Bit(upDay)

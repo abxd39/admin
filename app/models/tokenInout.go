@@ -6,6 +6,7 @@ import (
 	"admin/utils"
 	"admin/utils/convert"
 	"fmt"
+	"time"
 )
 
 //冲 提 币明细流水表
@@ -240,7 +241,7 @@ func (t *TokenInout) OptTakeToken(id, status int) error {
 		return err
 	}
 	//审核通过
-	fmt.Println("id=",id,"status=",status)
+	fmt.Println("id=", id, "status=", status)
 	if status == utils.VERIFY_OUT_TOKEN_MARK {
 		fmt.Println("审核通过")
 		mount := t.Int64ToFloat64By8Bit(t.Amount)
@@ -284,4 +285,72 @@ func (t *TokenInout) OptTakeToken(id, status int) error {
 	sess.Commit()
 	return nil
 
+}
+
+// 手续费合计
+type InOutFeeTotal struct {
+	TodayTotal       string `xorm:"today_total"`         // 今日合计
+	YesterdayTotal   string `xorm:"yesterday_total"`     // 上日合计
+	LastWeekDayTotal string `xorm:"last_week_day_total"` // 上周同日合计
+}
+
+// 手续费合计
+// 今日、上日、上周同日
+func (this *TokenInout) FeeTotal() (*InOutFeeTotal, error) {
+	// 计算日期
+	todayDate := time.Now().Format(utils.LAYOUT_DATE)
+	todayTime, _ := time.Parse(utils.LAYOUT_DATE_TIME, fmt.Sprintf("%s 00:00:00", todayDate))
+	yesterdayTime := todayTime.AddDate(0, 0, -1)
+	lastWeekDayTime := todayTime.AddDate(0, 0, -7)
+
+	todayDate = fmt.Sprintf("%s 00:00:00", todayDate)
+	yesterdayDateBegin := fmt.Sprintf("%s 00:00:00", yesterdayTime.Format(utils.LAYOUT_DATE))
+	yesterdayDateEnd := fmt.Sprintf("%s 23:59:59", yesterdayTime.Format(utils.LAYOUT_DATE))
+	lastWeekDayDateBegin := fmt.Sprintf("%s 00:00:00", lastWeekDayTime.Format(utils.LAYOUT_DATE))
+	lastWeekDayDateEnd := fmt.Sprintf("%s 23:59:59", lastWeekDayTime.Format(utils.LAYOUT_DATE))
+
+	// 开始合计
+	//1. 今日
+	feeTotal := &InOutFeeTotal{}
+	session := utils.Engine_wallet.Where("1=1")
+	_, err := session.
+		Table(this).
+		Select("IFNULL(sum(fee), 0) today_total").
+		And("created_time>=?", todayDate).
+		Get(feeTotal)
+	if err != nil {
+		return nil, errors.NewSys(err)
+	}
+
+	//2. 上日
+	yesFeeTotal := &InOutFeeTotal{}
+	yesSession := utils.Engine_wallet.Where("1=1")
+	_, err = yesSession.
+		Table(this).
+		Select("IFNULL(sum(fee), 0) yesterday_total").
+		And("created_time>=?", yesterdayDateBegin).
+		And("created_time<=?", yesterdayDateEnd).
+		Get(yesFeeTotal)
+	if err != nil {
+		return nil, errors.NewSys(err)
+	}
+
+	//3. 上周同日
+	lastWeekFeeTotal := &InOutFeeTotal{}
+	lastWeekSession := utils.Engine_wallet.Where("1=1")
+	_, err = lastWeekSession.
+		Table(this).
+		Select("IFNULL(sum(fee), 0) last_week_day_total").
+		And("created_time>=?", lastWeekDayDateBegin).
+		And("created_time<=?", lastWeekDayDateEnd).
+		Get(lastWeekFeeTotal)
+	if err != nil {
+		return nil, errors.NewSys(err)
+	}
+
+	// 合并
+	feeTotal.YesterdayTotal = yesFeeTotal.YesterdayTotal
+	feeTotal.LastWeekDayTotal = lastWeekFeeTotal.LastWeekDayTotal
+
+	return feeTotal, nil
 }
