@@ -40,3 +40,7 @@ func router(r *gin.Engine) {
 	new(controller.ConfigController).Router(r)
 	new(controller.WallectController).Router(r)
 }
+
+
+
+

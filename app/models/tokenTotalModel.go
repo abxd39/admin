@@ -211,5 +211,7 @@ func (this *UserToken) GetAllTokenCoin(tokenIdList []int32) (allbalanceList []To
 	if err != nil {
 		fmt.Println(err)
 	}
+
 	return
+
 }

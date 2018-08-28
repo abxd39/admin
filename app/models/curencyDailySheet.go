@@ -3,7 +3,6 @@ package models
 import (
 	"admin/errors"
 	"admin/utils"
-	"fmt"
 	"time"
 )
 
@@ -138,77 +137,13 @@ type CurrencyTradeTrend struct {
 	Date         string `xorm:"date"`
 }
 
-// 手续费合计
-type CurrencyFeeTotal struct {
-	TodayTotal       string `xorm:"today_total"`         // 今日合计
-	YesterdayTotal   string `xorm:"yesterday_total"`     // 上日合计
-	LastWeekDayTotal string `xorm:"last_week_day_total"` // 上周同日合计
-}
-
-// 手续费合计
-// 今日、上日、上周同日
-func (this *CurrencyDailySheet) FeeTotal() (*CurrencyFeeTotal, error) {
-	// 计算日期
-	todayDate := time.Now().Format(utils.LAYOUT_DATE)
-	todayTime, _ := time.Parse(utils.LAYOUT_DATE_TIME, fmt.Sprintf("%s 00:00:00", todayDate))
-	yesterdayTime := todayTime.AddDate(0, 0, -1)
-	lastWeekDayTime := todayTime.AddDate(0, 0, -7)
-
-	todayDate = fmt.Sprintf("%s 00:00:00", todayDate)
-	yesterdayDate := fmt.Sprintf("%s 00:00:00", yesterdayTime.Format(utils.LAYOUT_DATE))
-	lastWeekDayDate := fmt.Sprintf("%s 00:00:00", lastWeekDayTime.Format(utils.LAYOUT_DATE))
-
-	// 开始合计
-	//1. 今日
-	feeTotal := &CurrencyFeeTotal{}
-	session := utils.Engine_currency.Where("1=1")
-	_, err := session.
-		Table(this).
-		Select("IFNULL(sum(fee_buy_total+fee_sell_total), 0) today_total").
-		And("date=?", todayDate).
-		Get(feeTotal)
-	if err != nil {
-		return nil, errors.NewSys(err)
-	}
-
-	//2. 上日
-	yesFeeTotal := &CurrencyFeeTotal{}
-	yesSession := utils.Engine_currency.Where("1=1")
-	_, err = yesSession.
-		Table(this).
-		Select("IFNULL(sum(fee_buy_total+fee_sell_total), 0) yesterday_total").
-		And("date=?", yesterdayDate).
-		Get(yesFeeTotal)
-	if err != nil {
-		return nil, errors.NewSys(err)
-	}
-
-	//3. 上周同日
-	lastWeekFeeTotal := &CurrencyFeeTotal{}
-	lastWeekSession := utils.Engine_currency.Where("1=1")
-	_, err = lastWeekSession.
-		Table(this).
-		Select("IFNULL(sum(fee_buy_total+fee_sell_total), 0) last_week_day_total").
-		And("date=?", lastWeekDayDate).
-		Get(lastWeekFeeTotal)
-	if err != nil {
-		return nil, errors.NewSys(err)
-	}
-
-	// 合并
-	feeTotal.YesterdayTotal = yesFeeTotal.YesterdayTotal
-	feeTotal.LastWeekDayTotal = lastWeekFeeTotal.LastWeekDayTotal
-
-	return feeTotal, nil
-}
-
 // 交易趋势
 func (this *CurrencyDailySheet) TradeTrendList(filter map[string]interface{}) ([]*CurrencyTradeTrend, error) {
 	// 时间区间，默认最近一周
 	today := time.Now().Format(utils.LAYOUT_DATE)
 	todayTime, _ := time.Parse(utils.LAYOUT_DATE, today)
 
-	dateBegin := todayTime.AddDate(0, 0, -6).Format(utils.LAYOUT_DATE)
+	dateBegin := todayTime.AddDate(0, 0, -7).Format(utils.LAYOUT_DATE)
 	dateEnd := today
 
 	// 开始查询

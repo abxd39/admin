@@ -52,13 +52,6 @@ type total struct {
 	Date  int64  `json:"date"`
 }
 
-// 手续费合计
-type TokenFeeTotal struct {
-	TodayTotal       string `xorm:"today_total"`         // 今日合计
-	YesterdayTotal   string `xorm:"yesterday_total"`     // 上日合计
-	LastWeekDayTotal string `xorm:"last_week_day_total"` // 上周同日合计
-}
-
 // 走势返回string，内容是int
 // 如果用int64，数据太大时xorm sum会溢出报错
 type TokenTradeTrend struct {
@@ -73,60 +66,6 @@ type TokenTradeTrend struct {
 	Date         int64  `xorm:"date"`
 }
 
-// 手续费合计
-// 今日、上日、上周同日
-func (this *TokenDailySheet) FeeTotal() (*TokenFeeTotal, error) {
-	// 计算日期
-	todayDate := time.Now().Format(utils.LAYOUT_DATE)
-	datetime, _ := time.Parse(utils.LAYOUT_DATE_TIME, fmt.Sprintf("%s 00:00:00", todayDate))
-	todayTime := datetime.Unix() // 零点
-	yesterdayTime := todayTime - 24*60*60
-	lastWeekDayTime := todayTime - 7*24*60*60
-
-	// 开始合计
-	//1. 今日
-	feeTotal := &TokenFeeTotal{}
-	session := utils.Engine_token.Where("1=1")
-	_, err := session.
-		Table(this).
-		Select("IFNULL(sum(fee_buy_total+fee_sell_total), 0) today_total").
-		And("date=?", todayTime).
-		Get(feeTotal)
-	if err != nil {
-		return nil, errors.NewSys(err)
-	}
-
-	//2. 上日
-	yesFeeTotal := &TokenFeeTotal{}
-	yesSession := utils.Engine_token.Where("1=1")
-	_, err = yesSession.
-		Table(this).
-		Select("IFNULL(sum(fee_buy_total+fee_sell_total), 0) yesterday_total").
-		And("date=?", yesterdayTime).
-		Get(yesFeeTotal)
-	if err != nil {
-		return nil, errors.NewSys(err)
-	}
-
-	//3. 上周同日
-	lastWeekFeeTotal := &TokenFeeTotal{}
-	lastWeekSession := utils.Engine_token.Where("1=1")
-	_, err = lastWeekSession.
-		Table(this).
-		Select("IFNULL(sum(fee_buy_total+fee_sell_total), 0) last_week_day_total").
-		And("date=?", lastWeekDayTime).
-		Get(lastWeekFeeTotal)
-	if err != nil {
-		return nil, errors.NewSys(err)
-	}
-
-	// 合并
-	feeTotal.YesterdayTotal = yesFeeTotal.YesterdayTotal
-	feeTotal.LastWeekDayTotal = lastWeekFeeTotal.LastWeekDayTotal
-
-	return feeTotal, nil
-}
-
 // 交易走势
 func (this *TokenDailySheet) TradeTrendList(filter map[string]interface{}) ([]*TokenTradeTrend, error) {
 	// 时间区间，默认最近一周
@@ -136,7 +75,7 @@ func (this *TokenDailySheet) TradeTrendList(filter map[string]interface{}) ([]*T
 	}
 	todayTime := today.Unix()
 
-	dateBegin := todayTime - 6*24*60*60
+	dateBegin := todayTime - 7*24*60*60
 	dateEnd := todayTime
 
 	// 开始查询
@@ -521,7 +460,7 @@ func (tk *TokenDailySheet) TimingFuncNew(begin, end int64) {
 		fmt.Println("后", tdsheet.FrozenAll, tdsheet.BalanceAll)
 		tdsheet.Date = begin
 		if has {
-			if tdsheet.FrozenAll == 0 && tdsheet.BalanceAll ==0{
+			if tdsheet.FrozenAll == 0 && tdsheet.BalanceAll == 0 {
 				continue
 			}
 			_, err := engine.Cols("balance_all", "frozen_all").Where("token_id=? and date=?", tdsheet.TokenId, tdsheet.Date).Update(&tdsheet)

@@ -302,6 +302,7 @@ func (cu *CurrencyController) totalCoin(c *gin.Context) {
 		TotalUser  int64  `json:"total_user"`
 		TotalNum   string `json:"total_num"`
 		AverageNum string `json:"average_num"`
+		TotalFree  string  `json:"total_free"`
 	}
 
 	var totalcoinList []TotalCoin
@@ -311,12 +312,35 @@ func (cu *CurrencyController) totalCoin(c *gin.Context) {
 	// 统计币币交易总币数和对应币总持有人数
 	tokenBalanceList, tokenUserCoin, err := new(models.UserToken).GetAllTokenCoin(tokenIdList)
 
+	// 统计手续费
+	addFreeList, delFreeList, err := new(models.TokenFreeHistory).GetFreeByTokenIds(tokenIdList)
+
+	
+
+
 	for _, tk := range tokenList {
+		var totalFree string
 		var totalnum string
 		var totaluser int64
 		var tmp TotalCoin
 		tmp.TokenId = int(tk.Id)
 		tmp.TokenName = tk.Mark
+
+		// 手续费
+		for _, addfree := range addFreeList {
+			if addfree.TokenId == int32(tk.Id)  {
+				totalFree, _= convert.StringAddString(totalFree, addfree.TotalAddFree)
+			}
+		}
+		for _, delfree := range delFreeList {
+			if delfree.TokenId == int32(tk.Id){
+				totalFree,_ = convert.StringSubString(totalFree, delfree.TotalDelFree)
+			}
+		}
+
+
+		//
+
 		for _, tokenBalance := range tokenBalanceList {
 			if tokenBalance.TokenId == int32(tk.Id) {
 				fmt.Println("bibi : ", tk.Mark, " you :", tokenBalance.TotalBalanceStr, tokenBalance.TotalFrozenStr)
@@ -337,6 +361,13 @@ func (cu *CurrencyController) totalCoin(c *gin.Context) {
 		} else {
 			tmp.TotalNum,_ = convert.StringTo8Bit(totalnum)
 		}
+
+		if totalFree == ``{
+			tmp.TotalFree = "0"
+		}else{
+			tmp.TotalFree,_ = convert.StringTo8Bit(totalFree)
+		}
+
 
 		if err != nil {
 			fmt.Println(err)
@@ -370,6 +401,7 @@ func (cu *CurrencyController) totalCoin(c *gin.Context) {
 			}
 
 		}
+
 		totalcoinList = append(totalcoinList, tmp)
 	}
 	respList := new(models.ModelList)
