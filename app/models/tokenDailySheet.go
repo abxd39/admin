@@ -69,7 +69,11 @@ type TokenTradeTrend struct {
 // 交易走势
 func (this *TokenDailySheet) TradeTrendList(filter map[string]interface{}) ([]*TokenTradeTrend, error) {
 	// 时间区间，默认最近一周
-	today, err := time.Parse(utils.LAYOUT_DATE_TIME, fmt.Sprintf("%s 00:00:00", time.Now().Format(utils.LAYOUT_DATE)))
+	loc, err := time.LoadLocation("Local")
+	if err != nil {
+		return nil, errors.NewSys(err)
+	}
+	today, err := time.ParseInLocation(utils.LAYOUT_DATE, time.Now().Format(utils.LAYOUT_DATE), loc)
 	if err != nil {
 		return nil, errors.NewSys(err)
 	}

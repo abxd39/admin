@@ -314,15 +314,25 @@ type TokenTradeTotal struct {
 func (this *Trade) TradeTotal() (*TokenTradeTotal, error) {
 	// 计算日期
 	todayDate := time.Now().Format(utils.LAYOUT_DATE)
-	datetime, _ := time.Parse(utils.LAYOUT_DATE_TIME, fmt.Sprintf("%s 00:00:00", todayDate))
-	todayTime := datetime.Unix() // 零点
-	yesterdayTime := todayTime - 24*60*60
-	lastWeekDayTime := todayTime - 7*24*60*60
+
+	loc, err := time.LoadLocation("Local")
+	if err != nil {
+		return nil, errors.NewSys(err)
+	}
+	datetime, err := time.ParseInLocation(utils.LAYOUT_DATE, todayDate, loc)
+	if err != nil {
+		return nil, errors.NewSys(err)
+	}
+
+	// 零点
+	todayZeroUnix := datetime.Unix()
+	yesterdayZeroUnix := todayZeroUnix - 24*60*60
+	lastWeekDayZeroUnix := todayZeroUnix - 7*24*60*60
 
 	// 开始合计
 	//1. 总计
 	feeTotal := &TokenTradeTotal{}
-	_, err := utils.Engine_token.
+	_, err = utils.Engine_token.
 		Table(this).
 		Select("COUNT(trade_id) total_time, IFNULL(SUM(num+fee), 0) total_num, IFNULL(SUM(fee), 0) total_fee").
 		Get(feeTotal)
@@ -335,7 +345,7 @@ func (this *Trade) TradeTotal() (*TokenTradeTotal, error) {
 	_, err = utils.Engine_token.
 		Table(this).
 		Select("COUNT(trade_id) today_total_time, IFNULL(SUM(num+fee), 0) today_total_num, IFNULL(SUM(fee), 0) today_total_fee").
-		And("deal_time>=?", todayTime).
+		And("deal_time>=?", todayZeroUnix).
 		Get(todayFeeTotal)
 	if err != nil {
 		return nil, errors.NewSys(err)
@@ -346,8 +356,8 @@ func (this *Trade) TradeTotal() (*TokenTradeTotal, error) {
 	_, err = utils.Engine_token.
 		Table(this).
 		Select("COUNT(trade_id) yesterday_total_time, IFNULL(SUM(num+fee), 0) yesterday_total_num, IFNULL(SUM(fee), 0) yesterday_total_fee").
-		And("deal_time>=?", yesterdayTime).
-		And("deal_time<?", yesterdayTime+24*60*60).
+		And("deal_time>=?", yesterdayZeroUnix).
+		And("deal_time<?", yesterdayZeroUnix+24*60*60). // 小于！！！
 		Get(yesFeeTotal)
 	if err != nil {
 		return nil, errors.NewSys(err)
@@ -358,8 +368,8 @@ func (this *Trade) TradeTotal() (*TokenTradeTotal, error) {
 	_, err = utils.Engine_token.
 		Table(this).
 		Select("COUNT(trade_id) last_week_day_total_time, IFNULL(SUM(num+fee), 0) last_week_day_total_num, IFNULL(sum(fee), 0) last_week_day_total_fee").
-		And("deal_time>=?", lastWeekDayTime).
-		And("deal_time<?", lastWeekDayTime+24*60*60).
+		And("deal_time>=?", lastWeekDayZeroUnix).
+		And("deal_time<?", lastWeekDayZeroUnix+24*60*60). // 小于！！！
 		Get(lastWeekFeeTotal)
 	if err != nil {
 		return nil, errors.NewSys(err)

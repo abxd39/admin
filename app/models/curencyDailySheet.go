@@ -141,7 +141,15 @@ type CurrencyTradeTrend struct {
 func (this *CurrencyDailySheet) TradeTrendList(filter map[string]interface{}) ([]*CurrencyTradeTrend, error) {
 	// 时间区间，默认最近一周
 	today := time.Now().Format(utils.LAYOUT_DATE)
-	todayTime, _ := time.Parse(utils.LAYOUT_DATE, today)
+
+	loc, err := time.LoadLocation("Local")
+	if err != nil {
+		return nil, errors.NewSys(err)
+	}
+	todayTime, err := time.ParseInLocation(utils.LAYOUT_DATE, today, loc)
+	if err != nil {
+		return nil, errors.NewSys(err)
+	}
 
 	dateBegin := todayTime.AddDate(0, 0, -7).Format(utils.LAYOUT_DATE)
 	dateEnd := today
@@ -161,7 +169,7 @@ func (this *CurrencyDailySheet) TradeTrendList(filter map[string]interface{}) ([
 	}
 
 	var list []*CurrencyTradeTrend
-	err := session.
+	err = session.
 		Table(this).
 		Select("date, sum(buy_total) as buy_total, sum(buy_cny) as buy_cny"+
 			",sum(sell_total) as sell_total, sum(sell_cny) as sell_cny"+

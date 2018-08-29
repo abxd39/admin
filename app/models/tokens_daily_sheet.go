@@ -33,7 +33,15 @@ type TokensNumTrend struct {
 func (t *TokensDailySheet) NumTrend(filter map[string]interface{}) ([]*TokensNumTrend, error) {
 	// 时间区间，默认最近一周
 	today := time.Now().Format(utils.LAYOUT_DATE)
-	todayTime, _ := time.Parse(utils.LAYOUT_DATE, today)
+
+	loc, err := time.LoadLocation("Local")
+	if err != nil {
+		return nil, errors.NewSys(err)
+	}
+	todayTime, err := time.ParseInLocation(utils.LAYOUT_DATE, today, loc)
+	if err != nil {
+		return nil, errors.NewSys(err)
+	}
 
 	dateBegin := todayTime.AddDate(0, 0, -7).Format(utils.LAYOUT_DATE)
 	dateEnd := today
@@ -53,7 +61,7 @@ func (t *TokensDailySheet) NumTrend(filter map[string]interface{}) ([]*TokensNum
 	}
 
 	var list []*TokensNumTrend
-	err := session.
+	err = session.
 		Table(t).
 		Select("date, sum(token_total) as token_total, sum(currency_total) as currency_total, sum(total) as total").
 		And("date>=?", dateBegin).
