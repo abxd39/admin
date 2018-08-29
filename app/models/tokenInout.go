@@ -312,7 +312,16 @@ type InOutTradeTotal struct {
 func (this *TokenInout) TradeTotal() (*InOutTradeTotal, error) {
 	// 计算日期
 	todayDate := time.Now().Format(utils.LAYOUT_DATE)
-	todayTime, _ := time.Parse(utils.LAYOUT_DATE_TIME, fmt.Sprintf("%s 00:00:00", todayDate))
+
+	loc, err := time.LoadLocation("Local")
+	if err != nil {
+		return nil, errors.NewSys(err)
+	}
+	todayTime, err := time.ParseInLocation(utils.LAYOUT_DATE, todayDate, loc)
+	if err != nil {
+		return nil, errors.NewSys(err)
+	}
+
 	yesterdayTime := todayTime.AddDate(0, 0, -1)
 	lastWeekDayTime := todayTime.AddDate(0, 0, -7)
 
@@ -325,7 +334,7 @@ func (this *TokenInout) TradeTotal() (*InOutTradeTotal, error) {
 	// 开始合计
 	//1. 合计
 	feeTotal := &InOutTradeTotal{}
-	_, err := utils.Engine_wallet.
+	_, err = utils.Engine_wallet.
 		Table(this).
 		Select("COUNT(id) total_time, IFNULL(SUM(amount+fee), 0) total_num, IFNULL(SUM(fee), 0) total").
 		Where("opt=2").

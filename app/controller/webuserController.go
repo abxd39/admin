@@ -733,10 +733,11 @@ func (w *WebUserManageController) RegisterTrend(ctx *gin.Context) {
 	y := make([]int, listLen)
 
 	var totalRegisterNum int
+	loc, _ := time.LoadLocation("Local")
 	for k, v := range list {
 		totalRegisterNum += v.RegisterNum
 
-		datetime, _ := time.Parse(utils.LAYOUT_DATE, v.RegisterDate)
+		datetime, _ := time.ParseInLocation(utils.LAYOUT_DATE, v.RegisterDate, loc)
 		x[k] = datetime.Format("0102")
 		y[k] = v.RegisterNum
 	}

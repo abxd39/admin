@@ -267,7 +267,15 @@ func (t *TokenInoutDailySheet) DayOutDailySheet(page, rows, tid int, bt, et stri
 func (this *TokenInoutDailySheet) InOutTrendList(filter map[string]interface{}) ([]*InOutTrend, error) {
 	// 时间区间，默认最近一周
 	today := time.Now().Format(utils.LAYOUT_DATE)
-	todayTime, _ := time.Parse(utils.LAYOUT_DATE, today)
+
+	loc, err := time.LoadLocation("Local")
+	if err != nil {
+		return nil, errors.NewSys(err)
+	}
+	todayTime, err := time.ParseInLocation(utils.LAYOUT_DATE, today, loc)
+	if err != nil {
+		return nil, errors.NewSys(err)
+	}
 
 	dateBegin := todayTime.AddDate(0, 0, -7).Format(utils.LAYOUT_DATE)
 	dateEnd := today
@@ -287,7 +295,7 @@ func (this *TokenInoutDailySheet) InOutTrendList(filter map[string]interface{}) 
 	}
 
 	var list []*InOutTrend
-	err := session.Table(this).
+	err = session.Table(this).
 		Select("date, sum(total_day_num) as in_total, sum(total_day_put) as out_total, sum(total_day_num_fee) as fee_total").
 		And("date>=?", dateBegin+" 00:00:00").
 		And("date<=?", dateEnd+" 00:00:00").

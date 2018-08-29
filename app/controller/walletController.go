@@ -60,8 +60,9 @@ func (w *WallectController) InOutTrend(ctx *gin.Context) {
 
 	allInTotal := "0"  // 充币总计
 	allOutTotal := "0" // 提币总计
+	loc, _ := time.LoadLocation("Local")
 	for k, v := range list {
-		datetime, _ := time.Parse(utils.LAYOUT_DATE_TIME, v.Date)
+		datetime, _ := time.ParseInLocation(utils.LAYOUT_DATE_TIME, v.Date, loc)
 		x[k] = datetime.Format("0102")
 		yIn[k], _ = convert.StringTo8Bit(v.InTotal)
 		yOut[k], _ = convert.StringTo8Bit(v.OutTotal)

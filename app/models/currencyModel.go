@@ -24,6 +24,10 @@ type UserCurrency struct {
 	FreezeCny  int64  `xorm:"default 0 comment('冻结折合人民币') BIGINT(20)" json:"freeze_cny"`
 }
 
+func (UserCurrency) TableName() string {
+	return "user_currency"
+}
+
 //折合 rmb
 type AmountToCny struct {
 	UserCurrency `xorm:"extends"`

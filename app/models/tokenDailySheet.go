@@ -69,14 +69,18 @@ type TokenTradeTrend struct {
 // 交易走势
 func (this *TokenDailySheet) TradeTrendList(filter map[string]interface{}) ([]*TokenTradeTrend, error) {
 	// 时间区间，默认最近一周
-	today, err := time.Parse(utils.LAYOUT_DATE_TIME, fmt.Sprintf("%s 00:00:00", time.Now().Format(utils.LAYOUT_DATE)))
+	loc, err := time.LoadLocation("Local")
 	if err != nil {
 		return nil, errors.NewSys(err)
 	}
-	todayTime := today.Unix()
+	today, err := time.ParseInLocation(utils.LAYOUT_DATE, time.Now().Format(utils.LAYOUT_DATE), loc)
+	if err != nil {
+		return nil, errors.NewSys(err)
+	}
+	todayZeroUnix := today.Unix()
 
-	dateBegin := todayTime - 7*24*60*60
-	dateEnd := todayTime
+	dateBegin := todayZeroUnix - 7*24*60*60
+	dateEnd := todayZeroUnix
 
 	// 开始查询
 	session := utils.Engine_token.Where("1=1")
