@@ -10,6 +10,7 @@ import (
 func InitCron() {
 	if utils.Cfg.MustBool("cron", "run", false) {
 		c := cron.New()
+		c.AddFunc("0 0 3 * * *", doTokensDailySheet)   // 凌晨3点
 		c.AddFunc("0 0 3 * * *", doTransferDailySheet) // 凌晨3点
 		c.Start()
 	}
@@ -21,4 +22,9 @@ func doTransferDailySheet() {
 
 	// 开始汇总
 	new(models.TransferDailySheet).DoDailySheet(today)
+}
+
+// 币种数量
+func doTokensDailySheet() {
+
 }

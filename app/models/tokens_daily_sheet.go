@@ -67,3 +67,8 @@ func (t *TokensDailySheet) NumTrend(filter map[string]interface{}) ([]*TokensNum
 
 	return list, nil
 }
+
+// 币种数量汇总，基于g_token/user_token、g_currency/user_currency表
+func (t *TokensDailySheet) DoDailySheet(today string) {
+
+}
