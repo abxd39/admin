@@ -170,8 +170,14 @@ func (t *PersonalProperty) TotalUserBalance(page, rows, status,tid int,Range, se
 		return nil, err
 	}
 	for i,v:=range list{
-		list[i].BalanceTrue = convert.Int64ToStringBy8Bit(v.Balance)
-		list[i].FrozenTrue =convert.Int64ToStringBy8Bit(v.Frozen)
+		if tid !=0{
+			list[i].BalanceTrue = convert.Int64ToStringBy8Bit(v.Balance)
+			list[i].FrozenTrue =convert.Int64ToStringBy8Bit(v.Frozen)
+		}else {
+			list[i].BalanceTrue = "-"
+			list[i].FrozenTrue ="-"
+		}
+
 	}
 	mList.Items = list
 	return mList, nil
