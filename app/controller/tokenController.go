@@ -720,7 +720,7 @@ func (this *TokenController) getRecordList(c *gin.Context) {
 	}
 	for i, v := range value {
 		for _, vt := range tokenlist {
-			if vt.Id == uint32(v.TokenId) {
+			if vt.Id == uint32(v.TokenAdmissionId) {
 				value[i].TokenName = vt.Mark
 				break
 			}

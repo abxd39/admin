@@ -111,7 +111,6 @@ func (t *Trade) Get(tid int, bt, et, opt int64) (*DayCount, error) {
 		return nil, err
 	}
 	dc.Date = bt
-	fmt.Println("daycount===========", dc)
 	return dc, nil
 
 }
