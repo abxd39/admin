@@ -629,7 +629,7 @@ func (this *TokenController) GetTokenBalance(c *gin.Context) {
 	req := struct {
 		Page   int    `form:"page" json:"page" binding:"required"`
 		Rows   int    `form:"rows" json:"rows" `
-		Tid 	int `form:"tid" json:"tid"`
+		Tid    int    `form:"tid" json:"tid"`
 		Range  string `form:"range" json:"range" `
 		Status int    `form:"status" json:"status" `
 		Search string `form:"search" json:"search" `
@@ -641,7 +641,7 @@ func (this *TokenController) GetTokenBalance(c *gin.Context) {
 		return
 	}
 	fmt.Printf("GetTokenBalance%#v\n", req)
-	list, err := new(models.PersonalProperty).TotalUserBalance(req.Page, req.Rows, req.Status,req.Tid,req.Range, req.Search)
+	list, err := new(models.PersonalProperty).TotalUserBalance(req.Page, req.Rows, req.Status, req.Tid, req.Range, req.Search)
 	if err != nil {
 		this.RespErr(c, err)
 		return
@@ -1054,6 +1054,8 @@ func (t *TokenController) FeeTotal(ctx *gin.Context) {
 
 // 手续费走势
 func (t *TokenController) FeeTrend(ctx *gin.Context) {
+	loc, _ := time.LoadLocation("Local")
+
 	// 筛选
 	tokenFilter := make(map[string]interface{})
 	currencyFilter := make(map[string]interface{})
@@ -1068,7 +1070,7 @@ func (t *TokenController) FeeTrend(ctx *gin.Context) {
 			t.RespErr(ctx, "参数date_begin格式错误")
 			return
 		}
-		dateTime, _ := time.Parse(utils.LAYOUT_DATE, v)
+		dateTime, _ := time.ParseInLocation(utils.LAYOUT_DATE, v, loc)
 
 		tokenFilter["date_begin"] = dateTime.Unix()
 		currencyFilter["date_begin"] = v
@@ -1079,7 +1081,7 @@ func (t *TokenController) FeeTrend(ctx *gin.Context) {
 			t.RespErr(ctx, "参数date_end格式错误")
 			return
 		}
-		dateTime, _ := time.Parse(utils.LAYOUT_DATE, v)
+		dateTime, _ := time.ParseInLocation(utils.LAYOUT_DATE, v, loc)
 
 		tokenFilter["date_end"] = dateTime.Unix()
 		currencyFilter["date_end"] = v
@@ -1116,13 +1118,13 @@ func (t *TokenController) FeeTrend(ctx *gin.Context) {
 
 	currencyListMap := make(map[string]*models.CurrencyTradeTrend)
 	for _, v := range currencyList {
-		datetime, _ := time.Parse(utils.LAYOUT_DATE_TIME, v.Date)
+		datetime, _ := time.ParseInLocation(utils.LAYOUT_DATE_TIME, v.Date, loc)
 		currencyListMap[datetime.Format("0102")] = v
 	}
 
 	inOutListMap := make(map[string]*models.InOutTrend)
 	for _, v := range inOutList {
-		datetime, _ := time.Parse(utils.LAYOUT_DATE_TIME, v.Date)
+		datetime, _ := time.ParseInLocation(utils.LAYOUT_DATE_TIME, v.Date, loc)
 		inOutListMap[datetime.Format("0102")] = v
 	}
 
@@ -1189,6 +1191,8 @@ func (t *TokenController) FeeTrend(ctx *gin.Context) {
 
 // 币币交易走势
 func (t *TokenController) TradeTrend(ctx *gin.Context) {
+	loc, _ := time.LoadLocation("Local")
+
 	// 筛选
 	filter := make(map[string]interface{})
 	if v := t.GetString(ctx, "token_id"); v != "" {
@@ -1199,7 +1203,7 @@ func (t *TokenController) TradeTrend(ctx *gin.Context) {
 			t.RespErr(ctx, "参数date_begin格式错误")
 			return
 		}
-		dateTime, _ := time.Parse(utils.LAYOUT_DATE, v)
+		dateTime, _ := time.ParseInLocation(utils.LAYOUT_DATE, v, loc)
 
 		filter["date_begin"] = dateTime.Unix()
 	}
@@ -1208,7 +1212,7 @@ func (t *TokenController) TradeTrend(ctx *gin.Context) {
 			t.RespErr(ctx, "参数date_end格式错误")
 			return
 		}
-		dateTime, _ := time.Parse(utils.LAYOUT_DATE, v)
+		dateTime, _ := time.ParseInLocation(utils.LAYOUT_DATE, v, loc)
 
 		filter["date_end"] = dateTime.Unix()
 	}
@@ -1293,8 +1297,9 @@ func (t *TokenController) NumTrend(ctx *gin.Context) {
 	y := make([]string, listLen)
 
 	var allTotal = "0"
+	loc, _ := time.LoadLocation("Local")
 	for k, v := range list {
-		datetime, _ := time.Parse(utils.LAYOUT_DATE, v.Date)
+		datetime, _ := time.ParseInLocation(utils.LAYOUT_DATE, v.Date, loc)
 		total, _ := convert.StringAddString(v.TokenTotal, v.CurrencyTotal)
 
 		x[k] = datetime.Format("0102")

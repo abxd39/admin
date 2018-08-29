@@ -239,8 +239,8 @@ func (cu *CurrencyController) total(c *gin.Context) {
 			}
 		}
 		value[i].TotalCNY = convert.Int64ToStringBy8Bit(totalTokenInt + totalCurrencyInt)
-		totalCurrencyInt =0
-		totalTokenInt =0
+		totalCurrencyInt = 0
+		totalTokenInt = 0
 	}
 	result.Items = value
 	cu.Put(c, "list", result)
@@ -302,7 +302,7 @@ func (cu *CurrencyController) totalCoin(c *gin.Context) {
 		TotalUser  int64  `json:"total_user"`
 		TotalNum   string `json:"total_num"`
 		AverageNum string `json:"average_num"`
-		TotalFree  string  `json:"total_free"`
+		TotalFree  string `json:"total_free"`
 	}
 
 	var totalcoinList []TotalCoin
@@ -315,9 +315,6 @@ func (cu *CurrencyController) totalCoin(c *gin.Context) {
 	// 统计手续费
 	addFreeList, delFreeList, err := new(models.TokenFreeHistory).GetFreeByTokenIds(tokenIdList)
 
-	
-
-
 	for _, tk := range tokenList {
 		var totalFree string
 		var totalnum string
@@ -328,16 +325,15 @@ func (cu *CurrencyController) totalCoin(c *gin.Context) {
 
 		// 手续费
 		for _, addfree := range addFreeList {
-			if addfree.TokenId == int32(tk.Id)  {
-				totalFree, _= convert.StringAddString(totalFree, addfree.TotalAddFree)
+			if addfree.TokenId == int32(tk.Id) {
+				totalFree, _ = convert.StringAddString(totalFree, addfree.TotalAddFree)
 			}
 		}
 		for _, delfree := range delFreeList {
-			if delfree.TokenId == int32(tk.Id){
-				totalFree,_ = convert.StringSubString(totalFree, delfree.TotalDelFree)
+			if delfree.TokenId == int32(tk.Id) {
+				totalFree, _ = convert.StringSubString(totalFree, delfree.TotalDelFree)
 			}
 		}
-
 
 		//
 
@@ -359,15 +355,14 @@ func (cu *CurrencyController) totalCoin(c *gin.Context) {
 		if totalnum == `` {
 			tmp.TotalNum = "0"
 		} else {
-			tmp.TotalNum,_ = convert.StringTo8Bit(totalnum)
+			tmp.TotalNum, _ = convert.StringTo8Bit(totalnum)
 		}
 
-		if totalFree == ``{
+		if totalFree == `` {
 			tmp.TotalFree = "0"
-		}else{
-			tmp.TotalFree,_ = convert.StringTo8Bit(totalFree)
+		} else {
+			tmp.TotalFree, _ = convert.StringTo8Bit(totalFree)
 		}
-
 
 		if err != nil {
 			fmt.Println(err)
@@ -526,11 +521,11 @@ func (cu *CurrencyController) ExportTotalCurrencyBalance(c *gin.Context) {
 
 func (cu *CurrencyController) totalCurrencyBalance(c *gin.Context) {
 	req := struct {
-		Page   int    `form:"page" json:"page" binding:"required"`
-		Rows   int    `form:"rows" json:"rows" `
-		TokenId int   `form:"tid" json:"tid"`
-		Search string `form:"search" json:"search" ` //搜索的内容
-		Status int    `form:"status" json:"status" ` //用户账号状态
+		Page    int    `form:"page" json:"page" binding:"required"`
+		Rows    int    `form:"rows" json:"rows" `
+		TokenId int    `form:"tid" json:"tid"`
+		Search  string `form:"search" json:"search" ` //搜索的内容
+		Status  int    `form:"status" json:"status" ` //用户账号状态
 	}{}
 	err := c.ShouldBind(&req)
 	if err != nil {
@@ -539,7 +534,7 @@ func (cu *CurrencyController) totalCurrencyBalance(c *gin.Context) {
 		return
 	}
 	////result, err := new(models.UserGroup).GetAllUser(req.Page, req.Page_num, req.Status, req.Search)
-	result, err := new(models.UserCurrency).CurrencyBalanceNew(req.Page, req.Rows,req.Status,req.TokenId, req.Search)
+	result, err := new(models.UserCurrency).CurrencyBalanceNew(req.Page, req.Rows, req.Status, req.TokenId, req.Search)
 	if err != nil {
 		cu.RespErr(c, err)
 	}
@@ -704,8 +699,9 @@ func (t *CurrencyController) TradeTrend(ctx *gin.Context) {
 
 	allBuyTotal := "0"  // 买入总计
 	allSellTotal := "0" // 卖出总计
+	loc, _ := time.LoadLocation("Local")
 	for k, v := range list {
-		datetime, _ := time.Parse(utils.LAYOUT_DATE_TIME, v.Date)
+		datetime, _ := time.ParseInLocation(utils.LAYOUT_DATE_TIME, v.Date, loc)
 		x[k] = datetime.Format("0102")
 		yBuy[k], _ = convert.StringTo8Bit(v.BuyTotal)
 		ySell[k], _ = convert.StringTo8Bit(v.SellTotal)
