@@ -67,28 +67,17 @@ func (t *TransferDailySheet) DoDailySheet(today string) error {
 		utils.AdminLog.Error("【划转日汇总】loc err：", err.Error())
 		return errors.NewSys(err)
 	}
-
 	todayTime, err := time.ParseInLocation(utils.LAYOUT_DATE, today, loc)
 	if err != nil {
 		utils.AdminLog.Error("【划转日汇总】todayTime err：", err.Error())
 		return errors.NewSys(err)
 	}
 
-	yesterdayDate := todayTime.AddDate(0, 0, -1).Format(utils.LAYOUT_DATE)
-	yesterdayBeginTime, err := time.ParseInLocation(utils.LAYOUT_DATE_TIME, fmt.Sprintf("%s 00:00:00", yesterdayDate), loc)
-	if err != nil {
-		utils.AdminLog.Error("【划转日汇总】yesterdayBeginTime err：", err.Error())
-		return errors.NewSys(err)
-	}
+	yesterdayTime := todayTime.AddDate(0, 0, -1)
+	yesterdayBeginUnix := yesterdayTime.Unix()
+	yesterdayEndUnix := yesterdayTime.Unix() + 24*60*60 - 1 //23:59:59
 
-	yesterdayEndTime, err := time.ParseInLocation(utils.LAYOUT_DATE_TIME, fmt.Sprintf("%s 23:59:59", yesterdayDate), loc)
-	if err != nil {
-		utils.AdminLog.Error("【划转日汇总】yesterdayEndTime err：", err.Error())
-		return errors.NewSys(err)
-	}
-
-	yesterdayBeginUnix := yesterdayBeginTime.Unix()
-	yesterdayEndUnix := yesterdayEndTime.Unix()
+	yesterdayDate := yesterdayTime.Format(utils.LAYOUT_DATE)
 
 	// 开始汇总
 	// 1.币币划转到法币
