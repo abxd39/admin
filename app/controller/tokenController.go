@@ -629,6 +629,8 @@ func (this *TokenController) GetTokenBalance(c *gin.Context) {
 	req := struct {
 		Page   int    `form:"page" json:"page" binding:"required"`
 		Rows   int    `form:"rows" json:"rows" `
+		Tid 	int `form:"tid" json:"tid"`
+		Range  string `form:"range" json:"range" `
 		Status int    `form:"status" json:"status" `
 		Search string `form:"search" json:"search" `
 	}{}
@@ -639,7 +641,7 @@ func (this *TokenController) GetTokenBalance(c *gin.Context) {
 		return
 	}
 	fmt.Printf("GetTokenBalance%#v\n", req)
-	list, err := new(models.PersonalProperty).TotalUserBalance(req.Page, req.Rows, req.Status, req.Search)
+	list, err := new(models.PersonalProperty).TotalUserBalance(req.Page, req.Rows, req.Status,req.Tid,req.Range, req.Search)
 	if err != nil {
 		this.RespErr(c, err)
 		return
@@ -653,7 +655,7 @@ func (this *TokenController) GetTokenBalance(c *gin.Context) {
 	for _, value := range value {
 		uidList = append(uidList, uint64(value.Uid))
 	}
-	fmt.Println("uid", uidList)
+	//fmt.Println("uid", uidList)
 
 	tokenList, err := new(apis.VendorApi).GetCny(uidList, 1)
 	if err != nil {
