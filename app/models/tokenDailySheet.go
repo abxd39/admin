@@ -77,10 +77,10 @@ func (this *TokenDailySheet) TradeTrendList(filter map[string]interface{}) ([]*T
 	if err != nil {
 		return nil, errors.NewSys(err)
 	}
-	todayTime := today.Unix()
+	todayZeroUnix := today.Unix()
 
-	dateBegin := todayTime - 7*24*60*60
-	dateEnd := todayTime
+	dateBegin := todayZeroUnix - 7*24*60*60
+	dateEnd := todayZeroUnix
 
 	// 开始查询
 	session := utils.Engine_token.Where("1=1")
