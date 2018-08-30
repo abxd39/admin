@@ -333,6 +333,10 @@ func (tk *TokenDailySheet) TimingFuncNew(begin, end int64) {
 				fmt.Println(err.Error())
 			}
 		} else {
+			tdsheet.SellTotalCny=buyTotalCny
+			tdsheet.SellTotal=buyTotal
+			tdsheet.FeeSellCny=feeTotalCny
+			tdsheet.FeeSellTotal=feeTotal
 			_, err := engine.Cols("token_id", "fee_sell_total", "fee_sell_cny", "sell_total", "sell_total_cny", "date").InsertOne(&tdsheet)
 			if err != nil {
 				utils.AdminLog.Info("sellList定时任务执行更新数据失败", err.Error())
