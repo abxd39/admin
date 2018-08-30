@@ -230,6 +230,7 @@ func (this *TokenController) GetTotalTokenList(c *gin.Context) {
 	return
 }
 
+
 func (this *TokenController) GetTotalTokenInfoList(c *gin.Context) {
 	req := struct {
 		Opt     int    `form:"opt" json:"opt" binding:"required"` //1充 2 提币
