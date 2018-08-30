@@ -358,7 +358,7 @@ func (this *TokenController) GetAddTakeList(c *gin.Context) {
 		this.RespErr(c, err)
 		return
 	}
-	list, err := new(models.TokenHistoryGroup).GetAddTakeList(req.Page, req.Rows, req.TokenId, req.Uid)
+	list, err := new(models.TokenInout).GetAddTakeList(req.Page, req.Rows, req.TokenId, req.Uid)
 	if err != nil {
 		utils.AdminLog.Println(err.Error())
 		this.RespErr(c, err)
