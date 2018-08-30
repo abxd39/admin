@@ -83,7 +83,7 @@ type TokenFeeHistoryGroup struct {
 	Uid         int `json:"uid"`
 	Amount      int64 `json:"amount"`
 	Fee         int64 `json:"fee"`
-	Mark         string `json:"mark"`   
+	Mark         string `json:"mark"`
 	NumTrue      string `json:"num_true"`
 	FeeTrue      string `json:"fee_true"`
 	CreatedTime string `json:"created_time"`

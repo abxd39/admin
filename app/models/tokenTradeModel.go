@@ -68,9 +68,10 @@ func (t *TradeReturn) TableName() string {
 
 type TradeEx struct {
 	Trade          `xorm:"extends"`
-	ConfigTokenCny `xorm:"extends"`
+	//ConfigTokenCny `xorm:"extends"`
 	TotalTrue      float64 //交易总额
 	FeeTrue        float64 //交易手续费
+	Mark string `json:"mark"`
 }
 
 type TotalTradeCNY struct {
@@ -279,9 +280,20 @@ func (this *Trade) GetFeeInfoList(page, rows, uid, opt int, date uint64, name st
 		return nil, err
 	}
 	//fmt.Println("len=",len(list))
+
+	tidList,err:=new(Tokens).GetTokensList()
+	if err!=nil{
+		return nil,err
+	}
 	for i, v := range list {
-		list[i].TotalTrue = this.Int64ToFloat64By8Bit(v.Num)
-		list[i].FeeTrue = this.Int64ToFloat64By8Bit(v.Fee)
+		list[i].TotalTrue = convert.Int64ToFloat64By8Bit(v.Num)
+		list[i].FeeTrue = convert.Int64ToFloat64By8Bit(v.Fee)
+		for _,vt:=range tidList{
+			if vt.Id == v.TokenAdmissionId{
+				list[i].Mark = vt.Mark
+				break
+			}
+		}
 	}
 	mlist.Items = list
 	return mlist, nil
