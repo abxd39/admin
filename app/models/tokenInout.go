@@ -11,28 +11,56 @@ import (
 
 //冲 提 币明细流水表
 
+//type TokenInout struct {
+//	BaseModel   `xorm:"-"`
+//	Id          int    `xorm:"not null pk autoincr comment('自增id') INT(11)"`
+//	Uid         int    `xorm:"not null comment('用户id') INT(11)"`
+//	Opt         int    `xorm:"not null comment('操作方向 1 充币 2 提币') TINYINT(4)"`
+//	Txhash      string `xorm:"not null comment('交易hash') VARCHAR(200)"`
+//	From        string `xorm:"not null comment('打款方') VARCHAR(42)"`
+//	To          string `xorm:"not null comment('收款方') VARCHAR(42)"`
+//	Amount      int64  `xorm:"not null comment('金额(数量)') BIGINT(20)"`
+//	Fee         int64  `xorm:"not null comment('提币手续费(数量)') BIGINT(20)"`
+//	AmountCny   int64  `xorm:"not null comment('提币数量折合cny') BIGINT(20)"`
+//	FeeCny      int64  `xorm:"not null comment('手续费折合cny') BIGINT(20)"`
+//	Value       string `xorm:"not null comment('原始16进制转账数据') VARCHAR(32)"`
+//	Chainid     int    `xorm:"not null comment('链id') INT(11)"`
+//	Contract    string `xorm:"not null default '' comment('合约地址') VARCHAR(42)"`
+//	Tokenid     int    `xorm:"not null comment('币种id') INT(11)"`
+//	States      int    `xorm:"not null comment('人充提币状态 1正在提币，2 已完成，3提币已取消，4提币失败') TINYINT(1)"`
+//	TokenName   string `xorm:"not null comment('币种名称') VARCHAR(10)"`
+//	CreatedTime string `xorm:"not null default 'CURRENT_TIMESTAMP' comment('创建时间 提币创建时间') TIMESTAMP"`
+//	DoneTime    string `xorm:"not null default '0000-00-00 00:00:00' comment('充币到账时间') TIMESTAMP"`
+//	Remarks     string `xorm:"not null comment('备注信息') VARCHAR(100)"`
+//}
+
+
 type TokenInout struct {
 	BaseModel   `xorm:"-"`
-	Id          int    `xorm:"not null pk autoincr comment('自增id') INT(11)"`
-	Uid         int    `xorm:"not null comment('用户id') INT(11)"`
-	Opt         int    `xorm:"not null comment('操作方向 1 充币 2 提币') TINYINT(4)"`
-	Txhash      string `xorm:"not null comment('交易hash') VARCHAR(200)"`
-	From        string `xorm:"not null comment('打款方') VARCHAR(42)"`
-	To          string `xorm:"not null comment('收款方') VARCHAR(42)"`
-	Amount      int64  `xorm:"not null comment('金额(数量)') BIGINT(20)"`
-	Fee         int64  `xorm:"not null comment('提币手续费(数量)') BIGINT(20)"`
-	AmountCny   int64  `xorm:"not null comment('提币数量折合cny') BIGINT(20)"`
-	FeeCny      int64  `xorm:"not null comment('手续费折合cny') BIGINT(20)"`
-	Value       string `xorm:"not null comment('原始16进制转账数据') VARCHAR(32)"`
-	Chainid     int    `xorm:"not null comment('链id') INT(11)"`
-	Contract    string `xorm:"not null default '' comment('合约地址') VARCHAR(42)"`
-	Tokenid     int    `xorm:"not null comment('币种id') INT(11)"`
-	States      int    `xorm:"not null comment('人充提币状态 1正在提币，2 已完成，3提币已取消，4提币失败') TINYINT(1)"`
-	TokenName   string `xorm:"not null comment('币种名称') VARCHAR(10)"`
+	Id          int       `xorm:"not null pk autoincr comment('自增id') index INT(11)"`
+	Uid         int       `xorm:"not null comment('用户id') INT(11)"`
+	Opt         int       `xorm:"not null comment('操作方向 1 充币 2 提币') TINYINT(4)"`
+	Txhash      string    `xorm:"not null comment('交易hash') VARCHAR(191)"`
+	From        string    `xorm:"not null comment('打款方') VARCHAR(42)"`
+	To          string    `xorm:"not null comment('收款方') VARCHAR(42)"`
+	Amount      int64     `xorm:"not null comment('金额(数量)') BIGINT(20)"`
+	Fee         int64     `xorm:"not null comment('提币手续费(数量)') BIGINT(20)"`
+	AmountCny   int64     `xorm:"not null comment('提币数量折合cny') BIGINT(20)"`
+	FeeCny      int64     `xorm:"not null comment('手续费折合cny') BIGINT(20)"`
+	Value       string    `xorm:"not null comment('原始16进制转账数据') VARCHAR(32)"`
+	Chainid     int       `xorm:"not null comment('链id') INT(11)"`
+	Contract    string    `xorm:"not null default '' comment('合约地址') VARCHAR(42)"`
+	Tokenid     int       `xorm:"not null comment('币种id') INT(11)"`
+	States      int       `xorm:"not null comment('人充提币状态 1正在提币，2 已完成，3提币已取消，4提币失败') TINYINT(1)"`
+	TokenName   string    `xorm:"not null comment('币种名称') VARCHAR(10)"`
 	CreatedTime string `xorm:"not null default 'CURRENT_TIMESTAMP' comment('创建时间 提币创建时间') TIMESTAMP"`
 	DoneTime    string `xorm:"not null default '0000-00-00 00:00:00' comment('充币到账时间') TIMESTAMP"`
-	Remarks     string `xorm:"not null comment('备注信息') VARCHAR(100)"`
+	Remarks     string    `xorm:"not null comment('备注信息') VARCHAR(100)"`
+	Gas         int64     `xorm:"comment('gas数量') BIGINT(20)"`
+	GasPrice    int64     `xorm:"comment('gas价格,单位：wei') BIGINT(20)"`
+	RealFee     int64     `xorm:"comment('实际消耗手续费') BIGINT(20)"`
 }
+
 
 type TokenInoutGroup struct {
 	TokenInout `xorm:"extends"`
@@ -48,6 +76,59 @@ type TokenInoutGroup struct {
 func (t *TokenInoutGroup) TableName() string {
 	return "token_inout"
 }
+
+type TokenFeeHistoryGroup struct {
+	//TokenInout `xorm:"-"`
+	Id          int `json:"id"`
+	Uid         int `json:"uid"`
+	Amount      int64 `json:"amount"`
+	Fee         int64 `json:"fee"`
+	Mark         string `json:"mark"`
+	NumTrue      string `json:"num_true"`
+	FeeTrue      string `json:"fee_true"`
+	CreatedTime string `json:"created_time"`
+}
+
+func (this *TokenFeeHistoryGroup) TableName() string {
+	return "token_inout"
+}
+
+//p5-1-1-1提币手续费明细
+func (this *TokenInout) GetAddTakeList(page, rows, tid, uid int) (*ModelList, error) {
+	fmt.Println("p5-1-1-1提币手续费明细")
+	engine := utils.Engine_wallet
+	query := engine.Alias("ti").Desc("ti.id")
+	query = query.Join("LEFT", "g_common.tokens t", "t.id=ti.tokenid")
+	query = query.Where("ti.states=2")//已完成
+	if tid != 0 {
+		query = query.Where("ti.tokenid=?", tid)
+	}
+	if uid != 0 {
+		query = query.Where("ti.uid=?", uid)
+	}
+	//if date != 0 {
+	//	query = query.Where("check_time BETWEEN ? AND ?", date, date+864000)
+	//}
+	countQuery := *query
+	count, err := countQuery.Count(&TokenInout{})
+	if err != nil {
+		return nil, err
+	}
+
+	offset, mlist := this.Paging(page, rows, int(count))
+	list := make([]TokenFeeHistoryGroup, 0)
+	err = query.Limit(mlist.PageSize, offset).Find(&list)
+	if err != nil {
+		return nil, err
+	}
+	for i, v := range list {
+		list[i].FeeTrue = convert.Int64ToStringBy8Bit(v.Fee)
+		list[i].NumTrue = convert.Int64AddInt64Float64Percent(v.Amount,v.Fee)
+	}
+	mlist.Items = list
+	return mlist, nil
+}
+
 
 //日提币 每个用户提币信息
 func (t *TokenInout) GetTotalInfoList(page, rows, tid, opt int, search string) (*ModelList, error) {

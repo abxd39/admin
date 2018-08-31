@@ -162,142 +162,6 @@ func (this *TokenDailySheet) GetDailySheetList(page, rows int, date uint64) (*Mo
 	return mList, tfd, nil
 }
 
-//李宇舶 写的
-//func (tk *TokenDailySheet) TimingFunc(begin, end int64) {
-//	//g:=make([]*Trade,0)
-//	//buy
-//	fmt.Println("定时任务开始--------------------------------------->")
-//	fmt.Println(time.Now().Unix())
-//	engine := utils.Engine_token
-//	// 统计买的手续费
-//	sql := fmt.Sprintf("select sum(num) as a,sum(fee) as b ,sum(fee_cny) as c ,sum(total_cny) as d,token_admission_id  from trade where deal_time>=%d and deal_time<%d  and opt=1 group by token_admission_id", begin, end)
-//	r, err := engine.Query(sql)
-//	if err != nil {
-//		utils.AdminLog.Errorln(err.Error())
-//		return
-//	}
-//
-//	l := make(map[int]*TokenDailySheet)
-//
-//	for _, v := range r {
-//		h := &TokenDailySheet{}
-//		t, ok := v["token_admission_id"]
-//		if !ok {
-//			utils.AdminLog.Errorln("ok u")
-//		}
-//
-//		a, ok := v["a"]
-//		if !ok {
-//			utils.AdminLog.Errorln("ok a")
-//		}
-//		b, ok := v["b"]
-//		if !ok {
-//			utils.AdminLog.Errorln("ok b")
-//		}
-//		c, ok := v["c"]
-//		if !ok {
-//			utils.AdminLog.Errorln("ok c")
-//		}
-//		d, ok := v["d"]
-//		if !ok {
-//			utils.AdminLog.Errorln("ok d")
-//		}
-//
-//		h.TokenId = tk.BytesToIntAscii(t)
-//		h.BuyTotal = tk.BytesToInt64Ascii(a)
-//		h.FeeBuyTotal = tk.BytesToInt64Ascii(b)
-//		h.FeeBuyCny = tk.BytesToInt64Ascii(c)
-//		h.BuyTotalCny = tk.BytesToInt64Ascii(d)
-//		l[h.TokenId] = h
-//	}
-//
-//	// 统计卖的手续费
-//	sql = fmt.Sprintf("select token_id, sum(num) as a,sum(fee) as b ,sum(fee_cny) as c ,sum(total_cny) as d,token_admission_id  from trade where deal_time>=%d and deal_time<%d  and opt=2 group by token_admission_id", begin, end)
-//	r, err = engine.Query(sql)
-//	if err != nil {
-//		utils.AdminLog.Errorln(err.Error())
-//		return
-//	}
-//
-//	for _, v := range r {
-//		h := &TokenDailySheet{}
-//		t, _ := v["token_admission_id"]
-//		a, _ := v["a"]
-//		b, _ := v["b"]
-//		c, _ := v["c"]
-//		d, _ := v["d"]
-//
-//		t_ := convert.BytesToIntAscii(t)
-//		m, ok := l[t_]
-//		if !ok {
-//			h.TokenId = convert.BytesToIntAscii(t)
-//			h.SellTotal = convert.BytesToInt64Ascii(a)
-//			h.FeeSellTotal = convert.BytesToInt64Ascii(b)
-//			h.FeeSellCny = convert.BytesToInt64Ascii(c)
-//			h.SellTotalCny = convert.BytesToInt64Ascii(d)
-//			l[h.TokenId] = h
-//		} else {
-//			m.SellTotal = convert.BytesToInt64Ascii(a)
-//			m.FeeSellTotal = convert.BytesToInt64Ascii(b)
-//			m.FeeSellCny = convert.BytesToInt64Ascii(c)
-//			m.SellTotalCny = convert.BytesToInt64Ascii(d)
-//		}
-//		h.Date = end
-//	}
-//
-//	result := &struct {
-//		Balance int64
-//		Frozeen int64
-//	}{}
-//
-//	fmt.Println("len l:", len(l))
-//
-//	for _, v := range l {
-//		p := time.Unix(begin, 0).Format("2006-01-02 ")
-//		utils.AdminLog.Printf("insert into token_id %d,time %s", v.TokenId, p)
-//		v.Date = begin
-//		sql := fmt.Sprintf("SELECT SUM(t.balance) AS balance ,SUM(t.frozen) AS frozeen FROM `user_token` t WHERE t.token_id=%d", v.TokenId)
-//		_, err := engine.Table("user_token").SQL(sql).Get(result)
-//		if err != nil {
-//			continue
-//		}
-//		v.FrozenAll = result.Frozeen
-//		v.BalanceAll = result.Balance
-//
-//		fmt.Println("================================= v ===============================")
-//		fmt.Println("v:", v.TokenId, v.SellTotalCny, v.BuyTotalCny)
-//		/*
-//			_, err = engine.Table("token_daily_sheet").Cols("token_id", "fee_buy_cny", "fee_buy_total", "fee_sell_cny", "fee_sell_total", "buy_total", "sell_total_cny", "sell_total", "date", "balance_all", "frozen_all").InsertOne(v)
-//			if err != nil {
-//				utils.AdminLog.Errorln(err.Error())
-//				return
-//			}
-//		*/
-//
-//		//  判断当前id这个date是否已经统计
-//		tdsheet := TokenDailySheet{TokenId: v.TokenId, Date: v.Date}
-//		isExistSql := " SELECT token_id, `date` FROM  g_token.`token_daily_sheet`   WHERE token_id=? AND `date`=?"
-//		has, err := engine.Table("token_daily_sheet").SQL(isExistSql, v.TokenId, v.Date).Exist(&tdsheet)
-//		if err != nil {
-//			fmt.Println(err)
-//			utils.AdminLog.Errorln(err)
-//		}
-//		if has {
-//			fmt.Println("exists:", v.TokenId, v.Date)
-//			utils.AdminLog.Infoln("exists:", v.TokenId, v.Date)
-//			continue
-//		}
-//		// 不存在，则插入
-//		newSql := "INSERT INTO `token_daily_sheet` (`token_id`,`fee_buy_cny`,`fee_buy_total`,`fee_sell_cny`,`fee_sell_total`,`buy_total`,`sell_total_cny`,`sell_total`,`balance_all`,`frozen_all`,`date`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-//		_, err = engine.Exec(newSql, v.TokenId, v.FeeBuyCny, v.FeeBuyTotal, v.FeeSellCny, v.FeeSellTotal, v.BuyTotal, v.SellTotalCny, v.SellTotal, v.BalanceAll, v.FrozenAll, v.Date)
-//		if err != nil {
-//			fmt.Println(err)
-//			utils.AdminLog.Errorln(err)
-//			return
-//		}
-//	}
-//	fmt.Println("successful!!!!")
-//}
 
 //wyw 币币交易手续费定时任务呢
 func (tk *TokenDailySheet) TimingFuncNew(begin, end int64) {
@@ -341,27 +205,65 @@ func (tk *TokenDailySheet) TimingFuncNew(begin, end int64) {
 		fmt.Println("buy")
 		tdsheet := TokenDailySheet{TokenId: v.TokenId, Date: v.Date}
 		isExistSql := " SELECT token_id, `date` FROM  g_token.`token_daily_sheet`   WHERE token_id=? AND `date`=?"
-		has, err := engine.Table("token_daily_sheet").SQL(isExistSql, v.TokenId, v.Date).Exist(&tdsheet)
+		has, err := engine.Table("token_daily_sheet").SQL(isExistSql, v.TokenId, v.Date).Get(&tdsheet)
 		if err != nil {
 			fmt.Println(err)
 			utils.AdminLog.Errorln(err)
 		}
-		tdsheet.TokenId = v.TokenId
-		tdsheet.FeeBuyTotal, _ = convert.StringToInt64(v.FeeTotal)
-		tdsheet.FeeBuyCny, _ = convert.StringToInt64(v.FeeTotalCny)
-		tdsheet.BuyTotal, _ = convert.StringToInt64(v.Total)
-		tdsheet.BuyTotalCny, _ = convert.StringToInt64(v.TotalCny)
-		tdsheet.Date = v.Date
+
+		 feeTotal, err := convert.StringToInt64(v.FeeTotal)
+		 if err!=nil{
+			 utils.AdminLog.Info("buy", err.Error())
+			 fmt.Println(err.Error())
+		 }
+		 feeTotalCny, err := convert.StringToInt64(v.FeeTotalCny)
+		if err!=nil{
+			utils.AdminLog.Info("buy", err.Error())
+			fmt.Println(err.Error())
+		}
+		 buyTotal, err := convert.StringToInt64(v.Total)
+		if err!=nil{
+			utils.AdminLog.Info("buy", err.Error())
+			fmt.Println(err.Error())
+		}
+		 buyTotalCny, err := convert.StringToInt64(v.TotalCny)
+		if err!=nil{
+			utils.AdminLog.Info("buy", err.Error())
+			fmt.Println(err.Error())
+		}
 		fmt.Println("but", tdsheet)
 		if has {
-
-			_, err := engine.Cols("fee_buy_total", "fee_buy_cny", "buy_total", "buy_total_cny").Where("token_id=? and date=?", tdsheet.TokenId, tdsheet.Date).Update(&tdsheet)
+			tdsheet.BuyTotalCny,err =convert.Int64AddInt64(tdsheet.BuyTotalCny,buyTotalCny)
+			if err!=nil{
+				utils.AdminLog.Info("buy", err.Error())
+				fmt.Println(err.Error())
+			}
+			tdsheet.BuyTotal,err=convert.Int64AddInt64(tdsheet.BuyTotal,buyTotal)
+			if err!=nil{
+				utils.AdminLog.Info("buy", err.Error())
+				fmt.Println(err.Error())
+			}
+			tdsheet.FeeBuyCny,err=convert.Int64AddInt64(tdsheet.FeeBuyCny,feeTotalCny)
+			if err!=nil{
+				utils.AdminLog.Info("buy", err.Error())
+				fmt.Println(err.Error())
+			}
+			tdsheet.FeeBuyTotal,err=convert.Int64AddInt64(tdsheet.FeeBuyTotal,feeTotal)
+			if err!=nil{
+				utils.AdminLog.Info("buy", err.Error())
+				fmt.Println(err.Error())
+			}
+			_, err := engine.Cols("fee_buy_total", "fee_buy_cny", "buy_total", "buy_total_cny").Where("id=?", tdsheet.Id).Update(&tdsheet)
 			if err != nil {
 				utils.AdminLog.Info("buyList定时任务执行更新数据失败", err.Error())
 				fmt.Println(err.Error())
 
 			}
 		} else {
+			tdsheet.BuyTotalCny=buyTotalCny
+			tdsheet.BuyTotal=buyTotal
+			tdsheet.FeeBuyCny=feeTotalCny
+			tdsheet.FeeBuyTotal=feeTotal
 			_, err := engine.Cols("token_id", "fee_buy_total", "fee_buy_cny", "buy_total", "buy_total_cny", "date").InsertOne(&tdsheet)
 			if err != nil {
 				utils.AdminLog.Info("buyList定时任务执行更新数据失败", err.Error())
@@ -376,25 +278,65 @@ func (tk *TokenDailySheet) TimingFuncNew(begin, end int64) {
 		fmt.Println("sell")
 		tdsheet := TokenDailySheet{TokenId: v.TokenId, Date: v.Date}
 		isExistSql := " SELECT token_id, `date` FROM  g_token.`token_daily_sheet`   WHERE token_id=? AND `date`=?"
-		has, err := engine.Table("token_daily_sheet").SQL(isExistSql, v.TokenId, v.Date).Exist(&tdsheet)
+		has, err := engine.Table("token_daily_sheet").SQL(isExistSql, v.TokenId, v.Date).Get(&tdsheet)
 		if err != nil {
 			fmt.Println(err)
 			utils.AdminLog.Errorln(err)
 		}
-		tdsheet.TokenId = v.TokenId
-		tdsheet.FeeSellCny, _ = convert.StringToInt64(v.FeeTotalCny)
-		tdsheet.FeeSellTotal, _ = convert.StringToInt64(v.FeeTotal)
-		tdsheet.SellTotal, _ = convert.StringToInt64(v.Total)
-		tdsheet.SellTotalCny, _ = convert.StringToInt64(v.TotalCny)
-		tdsheet.Date = v.Date
+
+		feeTotal, err := convert.StringToInt64(v.FeeTotal)
+		if err != nil {
+			utils.AdminLog.Info("sell", err.Error())
+			fmt.Println(err.Error())
+		}
+		feeTotalCny, err := convert.StringToInt64(v.FeeTotalCny)
+		if err != nil {
+			utils.AdminLog.Info("sell", err.Error())
+			fmt.Println(err.Error())
+		}
+		buyTotal, err := convert.StringToInt64(v.Total)
+		if err != nil {
+			utils.AdminLog.Info("sell", err.Error())
+			fmt.Println(err.Error())
+		}
+		buyTotalCny, err := convert.StringToInt64(v.TotalCny)
+		if err != nil {
+			utils.AdminLog.Info("sell", err.Error())
+			fmt.Println(err.Error())
+		}
+
 		fmt.Println("sell", tdsheet)
 		if has {
-			_, err := engine.Cols("fee_sell_total", "fee_sell_cny", "sell_total", "sell_total_cny").Where("token_id=? and date=?", tdsheet.TokenId, tdsheet.Date).Update(&tdsheet)
+			tdsheet.SellTotalCny,err =convert.Int64AddInt64(tdsheet.SellTotalCny,buyTotalCny)
+			if err != nil {
+				utils.AdminLog.Info("sell", err.Error())
+				fmt.Println(err.Error())
+			}
+			tdsheet.SellTotal,err=convert.Int64AddInt64(tdsheet.SellTotal,buyTotal)
+			if err != nil {
+				utils.AdminLog.Info("sell", err.Error())
+				fmt.Println(err.Error())
+			}
+			tdsheet.FeeSellCny,err=convert.Int64AddInt64(tdsheet.FeeSellCny,feeTotalCny)
+			if err != nil {
+				utils.AdminLog.Info("sell", err.Error())
+				fmt.Println(err.Error())
+			}
+			tdsheet.FeeSellTotal,err=convert.Int64AddInt64(tdsheet.FeeSellTotal,feeTotal)
+			if err != nil {
+				utils.AdminLog.Info("sell", err.Error())
+				fmt.Println(err.Error())
+			}
+			_, err := engine.Cols("fee_sell_total", "fee_sell_cny", "sell_total", "sell_total_cny").Where("id=?", tdsheet.Id).Update(&tdsheet)
 			if err != nil {
 				utils.AdminLog.Info("sellList定时任务执行更新数据失败", err.Error())
 				fmt.Println(err.Error())
 			}
 		} else {
+			tdsheet.SellTotalCny=buyTotalCny
+			tdsheet.SellTotal=buyTotal
+			tdsheet.FeeSellCny=feeTotalCny
+			tdsheet.FeeSellTotal=feeTotal
 			_, err := engine.Cols("token_id", "fee_sell_total", "fee_sell_cny", "sell_total", "sell_total_cny", "date").InsertOne(&tdsheet)
 			if err != nil {
 				utils.AdminLog.Info("sellList定时任务执行更新数据失败", err.Error())
@@ -415,27 +357,36 @@ func (tk *TokenDailySheet) TimingFuncNew(begin, end int64) {
 		}
 		tdsheet := TokenDailySheet{TokenId: int64(vu.Id), Date: begin}
 		isExistSql := " SELECT token_id, `date` FROM  g_token.`token_daily_sheet`   WHERE token_id=? AND `date`=?"
-		has, err := engine.Table("token_daily_sheet").SQL(isExistSql, vu.Id, begin).Exist(&tdsheet)
+		has, err := engine.Table("token_daily_sheet").SQL(isExistSql, vu.Id, begin).Get(&tdsheet)
 		if err != nil {
 			fmt.Println(err)
 			utils.AdminLog.Errorln(err)
 		}
-		tdsheet.TokenId = int64(vu.Id)
-		tdsheet.FrozenAll = free
-		tdsheet.BalanceAll = balance
-		tdsheet.Date = begin
+
 		fmt.Println("balance_all", tdsheet)
 		if has {
-			_, err := engine.Cols("balance_all", "frozen_all").Where("token_id=? and date=?", tdsheet.TokenId, tdsheet.Date).Update(&tdsheet)
+			tdsheet.FrozenAll,err =convert.Int64AddInt64(tdsheet.FrozenAll,free)
+			if err != nil {
+				utils.AdminLog.Info("frozenAll", err.Error())
+				fmt.Println(err.Error())
+			}
+			tdsheet.BalanceAll ,err =convert.Int64AddInt64(tdsheet.FrozenAll,balance)
+			if err != nil {
+				utils.AdminLog.Info("balanceAll", err.Error())
+				fmt.Println(err.Error())
+			}
+			_, err := engine.Cols("balance_all", "frozen_all").Where("id=?", tdsheet.Id).Update(&tdsheet)
 			if err != nil {
 				fmt.Println(err)
-				utils.AdminLog.Errorln(err)
+				utils.AdminLog.Info("insert", err.Error())
 			}
 		} else {
+			tdsheet.FrozenAll = free
+			tdsheet.BalanceAll = balance
 			_, err := engine.Cols("token_id", "balance_all", "frozen_all", "date").InsertOne(&tdsheet)
 			if err != nil {
 				fmt.Println(err)
-				utils.AdminLog.Errorln(err)
+				utils.AdminLog.Info("update", err.Error())
 			}
 		}
 
@@ -457,22 +408,20 @@ func (tk *TokenDailySheet) TimingFuncNew(begin, end int64) {
 			fmt.Println(err)
 			utils.AdminLog.Errorln(err)
 		}
-		tdsheet.TokenId = int64(vu.Id)
-		fmt.Println("前", tdsheet.FrozenAll, tdsheet.BalanceAll)
 		tdsheet.FrozenAll, _ = convert.Int64AddInt64(tdsheet.FrozenAll, free)
 		tdsheet.BalanceAll, _ = convert.Int64AddInt64(tdsheet.BalanceAll, balance)
-		fmt.Println("后", tdsheet.FrozenAll, tdsheet.BalanceAll)
-		tdsheet.Date = begin
 		if has {
 			if tdsheet.FrozenAll == 0 && tdsheet.BalanceAll == 0 {
 				continue
 			}
+
 			_, err := engine.Cols("balance_all", "frozen_all").Where("token_id=? and date=?", tdsheet.TokenId, tdsheet.Date).Update(&tdsheet)
 			if err != nil {
 				fmt.Println(err)
 				utils.AdminLog.Errorln(err)
 			}
 		} else {
+
 			_, err := engine.Cols("token_id", "balance_all", "frozen_all", "date").InsertOne(&tdsheet)
 			if err != nil {
 				fmt.Println(err)
@@ -535,7 +484,7 @@ func (t *TokenDailySheet) Run_tool() {
 	begin := 1533657600
 	BeginTime := int64(begin)
 	i := 0
-	for BeginTime <= unix {
+	for BeginTime < unix {
 		i++
 		fmt.Println("第", i, "次循环")
 		t.TimingFuncNew(BeginTime, BeginTime+86400) //test

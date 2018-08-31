@@ -5,7 +5,7 @@
 /admin.exe
 /admin
 /go_build_admin_go
-
+/tool
 # 日志
 /log/*
 

@@ -230,6 +230,7 @@ func (this *TokenController) GetTotalTokenList(c *gin.Context) {
 	return
 }
 
+
 func (this *TokenController) GetTotalTokenInfoList(c *gin.Context) {
 	req := struct {
 		Opt     int    `form:"opt" json:"opt" binding:"required"` //1充 2 提币
@@ -358,7 +359,7 @@ func (this *TokenController) GetAddTakeList(c *gin.Context) {
 		this.RespErr(c, err)
 		return
 	}
-	list, err := new(models.TokenHistoryGroup).GetAddTakeList(req.Page, req.Rows, req.TokenId, req.Uid)
+	list, err := new(models.TokenInout).GetAddTakeList(req.Page, req.Rows, req.TokenId, req.Uid)
 	if err != nil {
 		utils.AdminLog.Println(err.Error())
 		this.RespErr(c, err)
@@ -720,7 +721,7 @@ func (this *TokenController) getRecordList(c *gin.Context) {
 	}
 	for i, v := range value {
 		for _, vt := range tokenlist {
-			if vt.Id == uint32(v.TokenId) {
+			if vt.Id == uint32(v.TokenAdmissionId) {
 				value[i].TokenName = vt.Mark
 				break
 			}

@@ -2,14 +2,10 @@ package main
 
 import (
 	"os"
-	"github.com/gin-gonic/gin"
-	"github.com/gin-contrib/sessions"
 	"admin/app"
 	"admin/utils"
-	"admin/middleware"
 	"admin/cron"
 	"admin/app/models"
-	"admin/session"
 	"fmt"
 )
 
@@ -23,14 +19,6 @@ func main() {
 	cron.InitCron()
 	go models.DailyStart()
 
-	// 配置gin
-	r := gin.Default()
-	// session
-	r.Use(sessions.Sessions("mysession", session.Store))
-
-	// custom middleware
-	r.Use(middleware.JsCors())
-	r.Use(middleware.CheckLogin())
 
 	// 启动gin
 	app.Init()

@@ -140,14 +140,16 @@ func (t *PersonalProperty) TotalUserBalance(page, rows, status,tid int,Range, se
 		query = query.Where("ut.token_id=?",tid)
 	}
 	fmt.Println("range===========",Range)
+	value:=100000000
+	Range =strings.Trim(Range," ")
 	if strings.Compare(Range,"1~1000")==0{
-		query =query.Where("ut.balance div 100000000  between ? and ? and ut.frozen div 100000000 between ? and ?",1,1000,1,1000)
+		query =query.Where("(ut.frozen >? and ut.frozen<?)",1*value,1000*value)
 	}else if strings.Compare(Range,"1001~10000")==0{
-		query =query.Where("ut.balance div 100000000 between ? and ? and ut.frozen div 100000000 between ? and ?  ",1001,10000,1001,10000)
+		query =query.Where("(ut.frozen >? and ut.frozen<?) ",1001*value,10000*value)
 	}else if strings.Compare(Range,"10001~50000")==0{
-		query =query.Where("ut.balance div 100000000 between ? and ? and ut.frozen div 100000000 between ? and ?",10001,50000,10001,50000)
+		query =query.Where("(ut.frozen >? and ut.frozen<?) ",10001*value,50000*value)
 	}else if strings.Compare(Range,"50万以上")==0{
-		query =query.Where("ut.balance div 100000000 >? or ut.frozen >?",500000,500000)
+		query =query.Where("ut.balance  >? or ut.frozen >?",500000*value,500000*value)
 	}
 	if status != 0 {
 		query = query.Where("u.status=?", status)
