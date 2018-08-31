@@ -167,12 +167,17 @@ func (w *WebUser) SecondAffirmLimit(uid, status int) error {
 		sess.Rollback()
 		return err
 	}
-	err = new(apis.VendorApi).AddAwardToken(uid)
-	if err != nil {
-		sess.Rollback()
-		fmt.Println("赠送奖励失败")
-		return err
+
+	//九月一号之后不送币 2018年9月1号 时间戳为  1535731200
+	if time.Now().Unix() < 1535731200{
+		err = new(apis.VendorApi).AddAwardToken(uid)
+		if err != nil {
+			sess.Rollback()
+			fmt.Println("赠送奖励失败")
+			return err
+		}
 	}
+
 	sess.Commit()
 	err = new(apis.VendorApi).Reflash(uid)
 	if err != nil {
