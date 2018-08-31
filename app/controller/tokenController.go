@@ -862,6 +862,9 @@ func (t *TokenController) ListTransfer(ctx *gin.Context) {
 	if v := t.GetString(ctx, "token_id"); v != "" {
 		filter["token_id"] = v
 	}
+	if v := t.GetString(ctx, "type"); v != "" {
+		filter["type"] = v
+	}
 	if v := t.GetString(ctx, "transfer_date"); v != "" {
 		filter["transfer_date"] = v
 	}

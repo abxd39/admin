@@ -182,7 +182,10 @@ func (m *MoneyRecord) GetMoneyListForUId(uid []int64) ([]MoneyRecord, error) {
 
 //流水列表
 func (s *MoneyRecord) List(pageIndex, pageSize int, filter map[string]interface{}) (*ModelList, []*MoneyRecordWithToken, error) {
-	query := utils.Engine_token.Alias("mr").Join("LEFT", []string{new(UserToken).TableName(), "ut"}, "ut.token_id=mr.token_id AND ut.uid=mr.uid").Where("1=1")
+	query := utils.Engine_token.
+		Alias("mr").
+		Join("LEFT", []string{new(UserToken).TableName(), "ut"}, "ut.token_id=mr.token_id AND ut.uid=mr.uid").
+		Where("1=1")
 
 	//筛选
 	orderBy := "mr.id DESC"
@@ -192,6 +195,9 @@ func (s *MoneyRecord) List(pageIndex, pageSize int, filter map[string]interface{
 	if _, ok := filter["transfer"]; ok { //划转流水
 		query.And("mr.type IN (?,?)", 10, 11)
 		orderBy = "mr.transfer_time DESC, mr.id DESC"
+	}
+	if v, ok := filter["token_id"]; ok {
+		query.And("mr.token_id=?", v)
 	}
 	if v, ok := filter["type"]; ok {
 		query.And("mr.type=?", v)
