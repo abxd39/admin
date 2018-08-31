@@ -4,6 +4,7 @@ import (
 	"admin/utils"
 	"errors"
 	"fmt"
+	"time"
 )
 
 //二级认证结构
@@ -66,7 +67,7 @@ func (u *UserSecondaryCertificationGroup) GetSecondaryCertificationOfUid(uid int
 }
 
 //二级认证列表
-func (u *UserSecondaryCertification) GetSecondaryCertificationList(page, rows, verify_status, user_status, time int, search string) (*ModelList, error) {
+func (u *UserSecondaryCertification) GetSecondaryCertificationList(page, rows, verify_status, user_status, tm int, search string) (*ModelList, error) {
 
 	engine := utils.Engine_common
 	//query := engine.Desc("id")
@@ -106,8 +107,8 @@ func (u *UserSecondaryCertification) GetSecondaryCertificationList(page, rows, v
 		temp := fmt.Sprintf("AND t.status=%d ", user_status)
 		condition += temp
 	}
-	if time != 0 {
-		temp := fmt.Sprintf(" AND us.verify_time BETWEEN %d AND %d ", time, time+86400)
+	if tm != 0 {
+		temp := fmt.Sprintf(" AND us.verify_time BETWEEN %d AND %d ", tm, tm+86400)
 		condition += temp
 	}
 	if search != `` {
@@ -137,8 +138,9 @@ func (u *UserSecondaryCertification) GetSecondaryCertificationList(page, rows, v
 		Status                int
 		Uid                   int
 		VerifyCount           int
-		VerifyTime            int
+		VerifyTime            int64
 		VideoRecordingDigital string
+		VerifyTimeStr string `xorm:"-" json:"verify_time_str"`
 	}
 	list := make([]UserCer, 0)
 	limitSql := fmt.Sprintf(" ORDER BY us.`uid`  DESC LIMIT %d OFFSET %d", modellist.PageSize, offset)
@@ -153,6 +155,9 @@ func (u *UserSecondaryCertification) GetSecondaryCertificationList(page, rows, v
 			fmt.Println("---> securityauth=", list[index].SecurityAuth)
 			list[index].TwoVerifyMark = 1
 		}
+	}
+	for i,v:=range  list{
+		list[i].VerifyTimeStr = time.Unix(v.VerifyTime,0).Format("2006-01-02 15:04:05")
 	}
 	modellist.Items = list
 	return modellist, nil

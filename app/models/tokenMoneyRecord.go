@@ -34,6 +34,7 @@ func (m *MoneyRecord) TableName() string {
 type MoneyRecordGroup struct {
 	MoneyRecord `xorm:"extends"`
 	UserInfo    `xorm:"extends"`
+	CreatedTimeStr string `xorm:"-" json:"created_time_str"`
 }
 
 func (m *MoneyRecord) BackstagePut(count float64, uid, tid int, comment string) error {
@@ -155,6 +156,7 @@ func (m *MoneyRecord) GetMoneyListForDateOrType(page, rows, ty, status int, tid 
 	for i, v := range list {
 		list[i].NumTrue = m.Int64ToFloat64By8Bit(v.Num)
 		list[i].SurplusTrue = m.Int64ToFloat64By8Bit(v.Balance)
+		list[i].CreatedTimeStr = time.Unix(v.CreatedTime,0).Format("2006-01-02 15:04:05")
 	}
 	modelList.Items = list
 	return modelList, nil

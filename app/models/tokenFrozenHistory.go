@@ -3,6 +3,7 @@ package models
 import (
 	"admin/utils"
 	"fmt"
+	"time"
 )
 
 //注册奖励表
@@ -23,6 +24,8 @@ type FrozenHistoryGroup struct {
 	FrozenHistory `xorm:"extends"`
 	UserInfo    `xorm:"extends"`
 	Balance int64	`xorm:"-",json:"balance"`
+	CreateTimeStr string	`xorm:"-" json:"create_time_str"`
+
 }
 func (f*FrozenHistoryGroup) TableName()string{
 	return "frozen_history"
@@ -67,6 +70,10 @@ func (f*FrozenHistory)GetFrozenHistory(page,rows,typ,tid,status int,bt,et uint64
 	err=query.Limit(mList.PageSize,offset).Find(&list)
 	if err!=nil{
 		return nil,err
+	}
+
+	for i,v:=range list{
+		list[i].CreateTimeStr = time.Unix(v.CreateTime,0).Format("2006-01-02 15:04:05")
 	}
 	mList.Items =list
 	return mList,nil
