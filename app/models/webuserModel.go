@@ -44,6 +44,7 @@ type UserGroup struct {
 	TWOVerifyMark      int    //二级认证
 	PhoneVerifyMark    int    //电话认证
 	EMAILVerifyMark    int    //邮箱认证
+	RegisterTimeStr    string `xorm:"-" json:"register_time_str"`
 	//TotalCNY           int64  // 账户的折合总资产
 	//TotalCurrentCNY    int64  //法币账户折合
 	//LockCurrentCNY     int64  // 法币折合冻结CNY
@@ -251,7 +252,7 @@ func (w *WebUser) FirstAffirmLimit(uid, status int) error {
 }
 
 //拉取一级实名认证列表
-func (w *WebUser) GetFirstList(page, rows, status, cstatus int, time uint64, search string) (*ModelList, error) {
+func (w *WebUser) GetFirstList(page, rows, status, cstatus int, tm uint64, search string) (*ModelList, error) {
 	engine := utils.Engine_common
 	query := engine.Desc("user.uid")
 	//query = query.Cols("user_ex.real_name", "user.uid", "user_ex.register_time", "user.phone", "user_ex.nick_name", "user.email", "user.security_auth", "user.status")
@@ -267,9 +268,9 @@ func (w *WebUser) GetFirstList(page, rows, status, cstatus int, time uint64, sea
 		query = query.Where("security_auth & ? =?", utils.AUTH_FIRST, utils.AUTH_FIRST)
 	}
 
-	if time != 0 {
+	if tm != 0 {
 		//query = query.Where("")
-		query = query.Where("`user_ex`.`register_time` BETWEEN ? AND ? ", time, time+86400)
+		query = query.Where("`user_ex`.`register_time` BETWEEN ? AND ? ", tm, tm+86400)
 	}
 	if len(search) > 0 {
 		temp := fmt.Sprintf(" concat(IFNULL(`user`.`uid`,''),IFNULL(`user`.`phone`,''),IFNULL(`user_ex`.`nick_name`,''),IFNULL(`user`.`email`,'')) LIKE '%%%s%%'  ", search)
@@ -295,12 +296,15 @@ func (w *WebUser) GetFirstList(page, rows, status, cstatus int, time uint64, sea
 			list[i].RealNameVerifyMark = 1
 		}
 	}
+	for i,v:=range  list{
+		list[i].RegisterTimeStr = time.Unix(v.RegisterTime,0).Format("2006-01-02 15:04:05")
+	}
 	modelList.Items = list
 	return modelList, nil
 }
 
 //获取白名单列表
-func (w *WebUser) GetWhiteList(page, rows, status int, time uint64, search string) (*ModelList, error) {
+func (w *WebUser) GetWhiteList(page, rows, status int, tm uint64, search string) (*ModelList, error) {
 	engine := utils.Engine_common
 	query := engine.Desc("user.uid")
 	query = query.Join("INNER", "user_ex", "user_ex.uid=user.uid")
@@ -310,9 +314,9 @@ func (w *WebUser) GetWhiteList(page, rows, status int, time uint64, search strin
 		query = query.Where("`user`.`status`=?", status)
 		//sql += subsql
 	}
-	if time != 0 {
+	if tm != 0 {
 		//query = query.Where("")
-		query = query.Where("`user_ex`.`register_time` BETWEEN ? AND ? ", time, time+86400)
+		query = query.Where("`user_ex`.`register_time` BETWEEN ? AND ? ", tm, tm+86400)
 	}
 	if len(search) > 0 {
 		temp := fmt.Sprintf(" concat(IFNULL(`user`.`uid`,''),IFNULL(`user`.`phone`,''),IFNULL(`user_ex`.`nick_name`,''),IFNULL(`user`.`email`,'')) LIKE '%%%s%%'  ", search)
@@ -332,7 +336,9 @@ func (w *WebUser) GetWhiteList(page, rows, status int, time uint64, search strin
 		utils.AdminLog.Errorln(err.Error())
 		return nil, err
 	}
-
+	for i,v:=range  list{
+		list[i].RegisterTimeStr = time.Unix(v.RegisterTime,0).Format("2006-01-02 15:04:05")
+	}
 	modelList.Items = list
 	return modelList, nil
 }
@@ -514,6 +520,9 @@ func (w *WebUser) UserList(page, rows, verify, status int, search string, date i
 		if v.SecurityAuth&utils.AUTH_PHONE == utils.AUTH_PHONE {
 			v.PhoneVerifyMark = 1
 		}
+	}
+	for i,v:=range  list{
+		list[i].RegisterTimeStr = time.Unix(v.RegisterTime,0).Format("2006-01-02 15:04:05")
 	}
 	modelList.Items = list
 	return modelList, nil

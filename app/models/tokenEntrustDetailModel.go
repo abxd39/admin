@@ -4,6 +4,7 @@ import "fmt"
 import "admin/utils"
 import (
 	"errors"
+	"time"
 )
 
 //bibi委托表
@@ -36,6 +37,7 @@ type ReturnValueOperator struct {
 	//MountTrue      float64 `json:"mount_true"`
 	FinishCount float64 `xorm:"-" json:"finish_count"` //已成
 	//Fee         int64   `xorm:"-"  json:"fee"`          //手续费
+	CreatedTimeStr string `xorm:"-"  json:"created_time_str"`
 }
 
 func (this *ReturnValueOperator) TableName() string {
@@ -121,6 +123,7 @@ func (this *EntrustDetail) GetTokenOrderList(page, rows, adId, status, bt, et, u
 		list[i].SurplusNumTrue = this.Int64ToFloat64By8Bit(v.SurplusNum)
 		//list[i].MountTrue = this.Int64ToFloat64By8Bit(v.Mount)
 		list[i].FinishCount = list[i].AllNumTrue - list[i].SurplusNumTrue
+		list[i].CreatedTimeStr = time.Unix(v.CreatedTime,0).Format("2006-01-02 15:04:05")
 	}
 	modelList.Items = list
 	return modelList, nil

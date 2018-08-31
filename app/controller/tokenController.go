@@ -12,6 +12,7 @@ import (
 	"admin/utils/convert"
 
 	"admin/apis"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -45,7 +46,7 @@ func (this *TokenController) Router(r *gin.Engine) {
 		g.GET("/total_token_list", this.GetTotalTokenList) //
 		g.GET("/total_token_info_list", this.GetTotalTokenInfoList)
 
-		//日划转汇总
+
 		//币币交易手续费汇总
 		g.GET("/token_order_fee_total", this.GetOderFeeTotalList)
 		//提币手续费汇总表
@@ -186,6 +187,7 @@ func (this *TokenController) GetOderFeeTotalList(c *gin.Context) {
 	}
 	this.Put(c, "data", data)
 	this.Put(c, "list", list)
+
 	this.RespOK(c)
 	return
 }
@@ -229,7 +231,6 @@ func (this *TokenController) GetTotalTokenList(c *gin.Context) {
 	}
 	return
 }
-
 
 func (this *TokenController) GetTotalTokenInfoList(c *gin.Context) {
 	req := struct {
