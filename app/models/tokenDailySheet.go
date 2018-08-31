@@ -121,10 +121,14 @@ func (this *TokenDailySheet) GetDailySheetList(page, rows int, date uint64) (*Mo
 	fmt.Println("bibi 交易手续费汇总")
 	//query := engine.Desc("date")
 	//sql := " SELECT id,date,SUM(fee_buy_cny) buy, SUM(fee_sell_cny) sell  FROM `token_daily_sheet` GROUP BY date ORDER BY `date` DESC "
-	sql := " SELECT * FROM (SELECT id,DATE,SUM(fee_buy_cny) AS buy, SUM(fee_sell_cny) AS sell FROM `token_daily_sheet`  GROUP BY DATE ORDER BY `date`  DESC  )t WHERE t.buy !=0 OR t.sell !=0    "
+	//sql := " SELECT * FROM (SELECT id,DATE,SUM(fee_buy_cny) AS buy, SUM(fee_sell_cny) AS sell FROM `token_daily_sheet`  GROUP BY DATE ORDER BY `date`  DESC  )t WHERE t.buy !=0 OR t.sell !=0    "
+
+	sql := "SELECT * FROM (SELECT id,DATE,SUM(fee_buy_total) AS buy, SUM(fee_sell_total) AS sell FROM `token_daily_sheet`  GROUP BY DATE ORDER BY `date`  DESC  )t WHERE t.buy !=0 OR t.sell !=0   "
+
 	if date != 0 {
 		//sql = fmt.Sprintf(" SELECT id,date,SUM(fee_buy_cny) as buy, SUM(fee_sell_cny) as sell  FROM `token_daily_sheet` where date between %d and %d GROUP BY date ORDER BY `date` DESC", date, date+86400)
-		sql = fmt.Sprintf("SELECT * FROM (SELECT id,DATE,SUM(fee_buy_cny) AS buy, SUM(fee_sell_cny) AS sell FROM `token_daily_sheet`  where date between %d and %d  GROUP BY DATE ORDER BY `date`  DESC  )t WHERE t.buy !=0 OR t.sell !=0   ", date, date+86400)
+		//sql = fmt.Sprintf("SELECT * FROM (SELECT id,DATE,SUM(fee_buy_cny) AS buy, SUM(fee_sell_cny) AS sell FROM `token_daily_sheet`  where date between %d and %d  GROUP BY DATE ORDER BY `date`  DESC  )t WHERE t.buy !=0 OR t.sell !=0   ", date, date+86400)
+		sql = fmt.Sprintf("SELECT * FROM (SELECT id,DATE,SUM(fee_buy_total) AS buy, SUM(fee_sell_total) AS sell FROM `token_daily_sheet`  where date between %d and %d  GROUP BY DATE ORDER BY `date`  DESC  )t WHERE t.buy !=0 OR t.sell !=0   ", date, date+86400)
 	}
 	Count := &struct {
 		Num int64
@@ -151,7 +155,9 @@ func (this *TokenDailySheet) GetDailySheetList(page, rows int, date uint64) (*Mo
 	}
 	mList.Items = list
 	tfd := new(TokenFeeDailySheetGroup)
-	_, err = engine.SQL("SELECT COALESCE(sum(`fee_buy_cny`),0) AS total_buy, COALESCE(sum(`fee_sell_cny`),0) AS total_sell FROM `token_daily_sheet`").Get(tfd)
+	//_, err = engine.SQL("SELECT COALESCE(sum(`fee_buy_cny`),0) AS total_buy, COALESCE(sum(`fee_sell_cny`),0) AS total_sell FROM `token_daily_sheet`").Get(tfd)
+	_, err = engine.SQL("SELECT COALESCE(sum(`fee_buy_total`),0) AS total_buy, COALESCE(sum(`fee_sell_total`),0) AS total_sell FROM `token_daily_sheet`").Get(tfd)
+
 	if err != nil {
 		return nil, nil, err
 	}
@@ -333,10 +339,6 @@ func (tk *TokenDailySheet) TimingFuncNew(begin, end int64) {
 				fmt.Println(err.Error())
 			}
 		} else {
-			tdsheet.SellTotalCny=buyTotalCny
-			tdsheet.SellTotal=buyTotal
-			tdsheet.FeeSellCny=feeTotalCny
-			tdsheet.FeeSellTotal=feeTotal
 			_, err := engine.Cols("token_id", "fee_sell_total", "fee_sell_cny", "sell_total", "sell_total_cny", "date").InsertOne(&tdsheet)
 			if err != nil {
 				utils.AdminLog.Info("sellList定时任务执行更新数据失败", err.Error())
