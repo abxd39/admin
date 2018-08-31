@@ -297,7 +297,7 @@ func (w *WebUser) GetFirstList(page, rows, status, cstatus int, tm uint64, searc
 		}
 	}
 	for i,v:=range  list{
-		list[i].RegisterTimeStr = time.Unix(v.RegisterTime,0).Format("2006-01-02 15:04:05")
+		list[i].RegisterTimeStr = time.Unix(v.AffirmTime,0).Format("2006-01-02 15:04:05")
 	}
 	modelList.Items = list
 	return modelList, nil

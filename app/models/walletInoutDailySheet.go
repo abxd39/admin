@@ -126,7 +126,7 @@ func (this *TokenInoutDailySheet) GetInOutDailySheetList(page, rows, tokenId int
 
 	engine := utils.Engine_wallet
 	query := engine.Desc("id")
-	query = query.Where("total/100000000 !=0 or total_day_num/100000000 !=0 or total_fee!=0 or total_day_num_fee/100000000 !=0 ")
+	query = query.Where("total !=0 or total_day_num !=0 or total_fee !=0 or total_day_num_fee !=0 ")
 	if tokenId != 0 {
 		query = query.Where("token_id=?", tokenId)
 	}
@@ -166,7 +166,7 @@ func (this *TokenInoutDailySheet) GetInOutDailySheetList(page, rows, tokenId int
 func (t *TokenInoutDailySheet) DayPutDailySheet(page, rows, tid int, bt, et string) (*ModelList, error) {
 	engine := utils.Engine_wallet
 	query := engine.Desc("id")
-	query = query.Where("total_day_put/100000000 !=0 or total_put/100000000 !=0")
+	query = query.Where("total_day_put !=0 or total_put !=0")
 	if tid != 0 {
 		query = query.Where("token_id=?", tid)
 	}
@@ -220,7 +220,7 @@ func (t *TokenInoutDailySheet) DayPutDailySheet(page, rows, tid int, bt, et stri
 func (t *TokenInoutDailySheet) DayOutDailySheet(page, rows, tid int, bt, et string) (*ModelList, error) {
 	engine := utils.Engine_wallet
 	query := engine.Desc("id")
-	query = query.Where("total/100000000 !=0 or total_day_num/100000000 !=0")
+	query = query.Where("total !=0 or total_day_num !=0")
 	if tid != 0 {
 		query = query.Where("token_id=?", tid)
 	}

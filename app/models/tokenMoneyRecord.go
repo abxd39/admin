@@ -25,6 +25,7 @@ type MoneyRecord struct {
 type MoneyRecordWithToken struct {
 	MoneyRecord `xorm:"extends"`
 	TokenName   string `xorm:"token_name" json:"token_name"`
+	TransferTimeStr string `xorm:"-" json:"transfer_time_str"`
 }
 
 func (m *MoneyRecord) TableName() string {
@@ -231,6 +232,9 @@ func (s *MoneyRecord) List(pageIndex, pageSize int, filter map[string]interface{
 	if err != nil {
 		return nil, nil, errors.NewSys(err)
 	}
+	for i,v:=range list{
+		list[i].TransferTimeStr = time.Unix(v.TransferTime,0).Format("2006-01-02 15:04:05")
+	}
 	modelList.Items = list
 
 	return modelList, list, nil
@@ -269,6 +273,7 @@ func (m *MoneyRecord) GetPlatformAll(page, rows int, tid, bt, et uint64) (*Model
 		TotalTrue float64 `xorm:"-" json:"total_true"`
 		Name      string  ` xorm:"-" json:"name"`
 		Tid       int     `json:"tid"`
+		TimeStr string `xorm:"-" json:"time_str"`
 	}
 	list := make([]temp, 0)
 	err = engine.SQL(sql + condition + limit).Find(&list)
@@ -287,6 +292,7 @@ func (m *MoneyRecord) GetPlatformAll(page, rows int, tid, bt, et uint64) (*Model
 			}
 		}
 		list[i].TotalTrue = m.Int64ToFloat64By8Bit(v.Total)
+		list[i].TimeStr = time.Unix(v.Time,0).Format("2006-01-02 15:04:05")
 	}
 	mList.Items = list
 	return mList, nil

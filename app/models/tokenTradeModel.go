@@ -70,9 +70,10 @@ func (t *TradeReturn) TableName() string {
 type TradeEx struct {
 	Trade          `xorm:"extends"`
 	//ConfigTokenCny `xorm:"extends"`
-	TotalTrue      float64 //交易总额
-	FeeTrue        float64 //交易手续费
-	Mark string `json:"mark"`
+	TotalTrue     float64 `xorm:"-"` //交易总额
+	FeeTrue       float64 `xorm:"-"` //交易手续费
+	Mark 		string    `xorm:"-" json:"mark"`
+	DealTimeStr      string `xorm:"-" json:"deal_time_str"`
 }
 
 type TotalTradeCNY struct {
@@ -180,7 +181,8 @@ func (this *Trade) GetTokenRecordList(page, rows, opt, uid int, bt, et uint64, n
 func (this *Trade) GetFeeInfoList(page, rows, uid, opt int, date uint64, name string) (*ModelList, error) {
 	engine := utils.Engine_token
 	query := engine.Desc("trade.token_id")
-	query = query.Join("left", "config_token_cny p", "trade.token_id = p.token_id")
+	//query = query.Join("left", "config_token_cny p", "trade.token_id = p.token_id")
+	query =query.Where("fee !=0")
 	tm := time.Now().Unix()
 	toBeCharge := time.Now().Format("2006-01-02 ") + "00:00:00"
 	timeLayout := "2006-01-02 15:04:05"
@@ -227,6 +229,7 @@ func (this *Trade) GetFeeInfoList(page, rows, uid, opt int, date uint64, name st
 				break
 			}
 		}
+		list[i].DealTimeStr  =time.Unix(v.DealTime,0).Format("2006-01-02 15:04:05")
 	}
 	mlist.Items = list
 	return mlist, nil

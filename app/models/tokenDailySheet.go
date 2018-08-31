@@ -50,7 +50,8 @@ type total struct {
 	Buy   string `json:"buy"`
 	Sell  string `json:"sell"`
 	Date  int64  `json:"date"`
-}
+	DateStr string `xorm:"-" json:"date_str"`
+ }
 
 // 走势返回string，内容是int
 // 如果用int64，数据太大时xorm sum会溢出报错
@@ -152,6 +153,7 @@ func (this *TokenDailySheet) GetDailySheetList(page, rows int, date uint64) (*Mo
 		list[i].Total, _ = convert.StringTo8Bit(temp)
 		list[i].Buy, _ = convert.StringTo8Bit(v.Buy)
 		list[i].Sell, _ = convert.StringTo8Bit(v.Sell)
+		list[i].DateStr = time.Unix(v.Date,0).Format("2006-01-02 15:04:05")
 	}
 	mList.Items = list
 	tfd := new(TokenFeeDailySheetGroup)
