@@ -7,6 +7,8 @@ import (
 	"admin/utils/convert"
 	"fmt"
 	"time"
+	"encoding/json"
+	"strings"
 )
 
 //冲 提 币明细流水表
@@ -328,7 +330,9 @@ func (t *TokenInout) OptTakeToken(id, status int) error {
 		mount := t.Int64ToFloat64By8Bit(t.Amount)
 		////fmt.Println("num=",)
 		strMount := fmt.Sprintf("%.10f", mount)
-		if token.Signature == "eip155" || token.Signature == "eip" { //ERC20
+		Name := strings.ToUpper(token.Signature)
+		Name =strings.Trim(Name," ")
+		if Name == "EIP155" || Name == "EIP" { //ERC20
 			fmt.Sprintf(strMount)
 			fmt.Println("获取签名")
 			sign, err := new(apis.VendorApi).GetTradeSigntx(t.Uid, t.Tokenid, t.To, strMount)
@@ -343,10 +347,29 @@ func (t *TokenInout) OptTakeToken(id, status int) error {
 				return err
 			}
 		}
-		if token.Signature == "btc" { //btc
+		if Name == "BTC" { //btc
 			fmt.Println("btc 提币申请")
 			err = new(apis.VendorApi).PostOutTokenBtc(t.Uid, t.Tokenid, t.Id, t.To, strMount)
 			if err != nil {
+				sess.Rollback()
+				return err
+			}
+		}
+		if Name =="OMNI"{ //表示提USDT
+			fmt.Println("usdt 提币申请")
+			params := make(map[string]interface{})
+			params["uid"]=t.Uid
+			params["token_id"]=t.Tokenid
+			params["apply_id"]=t.Id
+			params["from_address"]=t.From
+			params["to_address"]= t.To
+			params["protertyid"]=1 //测试环境 为1 正式环境为=31
+			params["amount"]= convert.Int64ToStringBy8Bit(t.Amount)
+			result,_:=json.Marshal(params)
+			err =new(apis.VendorApi).PostOutTokenUsdt(string(result))
+			if err!=nil{
+				utils.AdminLog.Infof("usdt 提币失败",err.Error())
+				fmt.Println(err.Error())
 				sess.Rollback()
 				return err
 			}

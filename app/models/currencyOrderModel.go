@@ -319,3 +319,4 @@ func (this *Order) GetOrderList(Page, PageNum, AdType, States, TokenId int, sear
 	return modelList, nil
 
 }
+

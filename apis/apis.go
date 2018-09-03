@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"time"
+	"strings"
 )
 
 type VendorApi struct{}
@@ -274,6 +275,39 @@ func (VendorApi) PostOutTokenBtc(uid, tid, id int, addr, mount string) error {
 	//if rsp.Code != 0 {
 	//	return errors.New(rsp.Msg)
 	//}
+	return nil
+}
+
+//usdt 提币
+//wallet/send_usdt_tx
+
+func (VendorApi) PostOutTokenUsdt(param string)error{
+	reader:=strings.NewReader(param)
+	fmt.Println(userUrl + "/wallet/send_usdt_tx")
+	request, err := http.NewRequest("POST", userUrl+"/wallet/send_usdt_tx", reader)
+	if err != nil {
+		return err
+	}
+	request.Header.Set("Content-Type", "application/json;charset=UTF-8")
+	client := http.Client{}
+	result, err := client.Do(request)
+	rsp := &struct {
+		Code int
+		Msg  string
+	}{}
+	body, err := ioutil.ReadAll(result.Body)
+	if err != nil {
+		return err
+	}
+	fmt.Println(string(body))
+	err = json.Unmarshal(body, rsp)
+	if err != nil {
+		return err
+	}
+	fmt.Println(rsp)
+	if rsp.Code != 0 {
+		return errors.New(rsp.Msg)
+	}
 	return nil
 }
 
