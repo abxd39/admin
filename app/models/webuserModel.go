@@ -30,6 +30,7 @@ type WebUser struct {
 	SecurityAuth     int    `xorm:"comment('认证状态1110') TINYINT(8)"`
 	WhiteList        int    `xorm:"not null default 2 comment('用户白名单 1为白名单 免除交易手续费，2 需要缴纳交易手续费') TINYINT(4)"`
 	SetTardeMark     int    `xorm:"default 0 comment('交易密码是否设置状态') INT(8)"`
+
 }
 
 type UserGroup struct {
@@ -116,7 +117,7 @@ func (w *WebUser) SecondAffirmLimit(uid, status int) error {
 		wu.SetTardeMark = wu.SetTardeMark ^ utils.APPLY_FOR_SECOND_NOT_ALREADY //二级认证没有通过
 		wu.SetTardeMark = wu.SetTardeMark &^ utils.APPLY_FOR_SECOND            //申请撤销
 		fmt.Println("uid=", uid, "------------------>二级认证", wu.SetTardeMark)
-		if _, err = sess.Table("user_secondary_certification").Where("uid=?", uid).AllCols().Update(&UserSecondaryCertification{
+		if _, err = sess.Table("user_secondary_certification").Cols("verify_time","video_recording_digital","positive_path","reverse_side_path","in_hand_picture_path").Where("uid=?", uid).Update(&UserSecondaryCertification{
 			ReverseSidePath:       "",
 			InHandPicturePath:     "",
 			PositivePath:          "",
@@ -498,6 +499,7 @@ func (w *WebUser) UserList(page, rows, verify, status int, search string, date i
 	tempQuery := *query
 	count, err := tempQuery.Count(&WebUser{})
 	if err != nil {
+		fmt.Println(err.Error())
 		return nil, err
 	}
 	offset, modelList := w.Paging(page, rows, int(count))
@@ -507,25 +509,11 @@ func (w *WebUser) UserList(page, rows, verify, status int, search string, date i
 	err = query.Limit(modelList.PageSize, offset).Find(&list)
 	if err != nil {
 		utils.AdminLog.Errorln(err.Error())
+		fmt.Println(err.Error())
 		return nil, err
 	}
-	for _, v := range list {
-		if v.SecurityAuth&utils.AUTH_EMAIL == utils.AUTH_EMAIL {
-			v.EMAILVerifyMark = 1
-		}
-		if v.SecurityAuth&utils.AUTH_TWO == utils.AUTH_TWO {
-			v.TWOVerifyMark = 1
-		}
-		if v.SecurityAuth&utils.AUTH_FIRST == utils.AUTH_FIRST {
-			v.RealNameVerifyMark = 1
-		}
-		if v.SecurityAuth&utils.AUTH_GOOGLE == utils.AUTH_GOOGLE {
-			v.GoogleVerifyMark = 1
-		}
-		if v.SecurityAuth&utils.AUTH_PHONE == utils.AUTH_PHONE {
-			v.PhoneVerifyMark = 1
-		}
-	}
+
+
 	for i,v:=range  list{
 		list[i].RegisterTimeStr = time.Unix(v.RegisterTime,0).Format("2006-01-02 15:04:05")
 	}

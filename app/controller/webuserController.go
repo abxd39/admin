@@ -656,23 +656,20 @@ func (w *WebUserManageController) userList(c *gin.Context) {
 		w.RespErr(c, err)
 		return
 	}
-	fmt.Println("0.00.0.0.0.0.000000000000000", result)
 	list, Ok := result.Items.([]models.UserGroup)
 
-	fmt.Println("GetWebUserList-1")
 	if !Ok {
-		fmt.Println("GetWebUserList-2")
 		w.RespErr(c, err)
 		return
 	}
-	list = w.VerifyOperator(list)
+	listNew := w.VerifyOperator(list)
 	if err != nil {
 		w.RespErr(c, err)
 		return
 	}
 	// 设置返回数据
+	result.Items = listNew
 	w.Put(c, "list", result)
-	fmt.Println("GetWebUserList-3")
 	// 返回
 	w.RespOK(c)
 	//c.JSON(http.StatusOK, gin.H{"code": 0, "page": page, "data": reuslt, "total": total, "msg": "成功"})
@@ -680,20 +677,26 @@ func (w *WebUserManageController) userList(c *gin.Context) {
 }
 
 func (w *WebUserManageController) VerifyOperator(list []models.UserGroup) []models.UserGroup {
-	for index, _ := range list {
+	for i, v := range list {
 
-		if list[index].SecurityAuth&utils.AUTH_GOOGLE == utils.AUTH_GOOGLE {
-			list[index].GoogleVerifyMark = 1
+		if v.SecurityAuth&utils.AUTH_EMAIL == utils.AUTH_EMAIL {
+			list[i].EMAILVerifyMark = 1
 		}
-		if list[index].SecurityAuth&utils.AUTH_TWO == utils.AUTH_TWO {
-			list[index].TWOVerifyMark = 1
+		if v.SecurityAuth&utils.AUTH_TWO == utils.AUTH_TWO {
+			list[i].TWOVerifyMark = 1
 		}
-		if list[index].SecurityAuth&utils.AUTH_FIRST == utils.AUTH_FIRST {
-			list[index].RealNameVerifyMark = 1
+		if v.SecurityAuth&utils.AUTH_FIRST == utils.AUTH_FIRST {
+			list[i].RealNameVerifyMark = 1
+		}
+		if v.SecurityAuth&utils.AUTH_GOOGLE == utils.AUTH_GOOGLE {
+			list[i].GoogleVerifyMark = 1
+		}
+		if v.SecurityAuth&utils.AUTH_PHONE == utils.AUTH_PHONE {
+			list[i].PhoneVerifyMark = 1
 		}
 
 	}
-	return nil
+	return list
 }
 
 // 注册量走势
