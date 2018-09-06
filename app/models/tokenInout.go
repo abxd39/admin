@@ -132,7 +132,7 @@ func (this *TokenInout) GetAddTakeList(page, rows, tid, uid int) (*ModelList, er
 }
 
 
-//日提币 每个用户提币信息
+//日提币明细
 func (t *TokenInout) GetTotalInfoList(page, rows, tid, opt int, search string) (*ModelList, error) {
 	enginge := utils.Engine_wallet
 	//SELECT t.time,t.token_name,t.total,t.uid
@@ -327,15 +327,15 @@ func (t *TokenInout) OptTakeToken(id, status int) error {
 	fmt.Println("id=", id, "status=", status)
 	if status == utils.VERIFY_OUT_TOKEN_MARK {
 		fmt.Println("审核通过")
-		mount := t.Int64ToFloat64By8Bit(t.Amount)
-		////fmt.Println("num=",)
-		strMount := fmt.Sprintf("%.10f", mount)
+		//mount := t.Int64ToFloat64By8Bit(t.Amount)
+		mount := convert.Int64ToStringBy8Bit(t.Amount)
+		fmt.Println("提币数量为===",mount)
 		Name := strings.ToUpper(token.Signature)
 		Name =strings.Trim(Name," ")
 		if Name == "EIP155" || Name == "EIP" { //ERC20
-			fmt.Sprintf(strMount)
+			fmt.Sprintf(mount)
 			fmt.Println("获取签名")
-			sign, err := new(apis.VendorApi).GetTradeSigntx(t.Uid, t.Tokenid, t.To, strMount)
+			sign, err := new(apis.VendorApi).GetTradeSigntx(t.Uid, t.Tokenid, t.To, mount)
 			if err != nil {
 				sess.Rollback()
 				return err
@@ -349,7 +349,7 @@ func (t *TokenInout) OptTakeToken(id, status int) error {
 		}
 		if Name == "BTC" { //btc
 			fmt.Println("btc 提币申请")
-			err = new(apis.VendorApi).PostOutTokenBtc(t.Uid, t.Tokenid, t.Id, t.To, strMount)
+			err = new(apis.VendorApi).PostOutTokenBtc(t.Uid, t.Tokenid, t.Id, t.To, mount)
 			if err != nil {
 				sess.Rollback()
 				return err
