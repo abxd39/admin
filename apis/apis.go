@@ -290,7 +290,8 @@ func (VendorApi) PostOutTokenUsdt(param string)error{
 	}
 	request.Header.Set("Content-Type", "application/json;charset=UTF-8")
 	client := http.Client{}
-	result, err := client.Do(request)
+	client.Do(request)
+	/*result, err := client.Do(request)
 	rsp := &struct {
 		Code int
 		Msg  string
@@ -307,7 +308,7 @@ func (VendorApi) PostOutTokenUsdt(param string)error{
 	fmt.Println(rsp)
 	if rsp.Code != 0 {
 		return errors.New(rsp.Msg)
-	}
+	}*/
 	return nil
 }
 
