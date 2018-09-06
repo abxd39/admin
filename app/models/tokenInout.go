@@ -364,7 +364,7 @@ func (t *TokenInout) OptTakeToken(id, status int) error {
 			params["from_address"]=t.From
 			params["to_address"]= t.To
 			params["protertyid"]=1 //测试环境 为1 正式环境为=31
-			params["amount"]= convert.Int64ToStringBy8Bit(t.Amount)
+			params["amount"]= mount//convert.Int64ToStringBy8Bit(t.Amount)
 			result,_:=json.Marshal(params)
 			err =new(apis.VendorApi).PostOutTokenUsdt(string(result))
 			if err!=nil{
